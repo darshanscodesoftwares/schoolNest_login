@@ -4,6 +4,7 @@ const { generateToken } = require('../utils/jwt');
 const users = {
   ADMIN: [
     { id: 'ADM001', name: 'Admin User', email: 'admin@schoolnest.com', password: 'admin123' },
+    { id: 'ADM002', name: 'Kaamesh', email: 'kaamesh@schoolnest.com', password: 'admin123' }
   ],
   TEACHER: [
     { id: 'TCH001', name: 'John Doe', email: 'john@schoolnest.com', password: 'teacher123' },
