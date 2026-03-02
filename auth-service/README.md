@@ -42,7 +42,10 @@ npm run dev
 npm start
 ```
 
-The server will start on `http://localhost:3000`
+The server will start and display both local and network URLs:
+
+- **Local**: `http://localhost:3000`
+- **Network**: `http://<your-local-ip>:3000` (share this with your team)
 
 ## API Endpoints
 

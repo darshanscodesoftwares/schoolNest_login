@@ -29,7 +29,26 @@ app.use((err, req, res, next) => {
 });
 
 // Start server
-app.listen(PORT, () => {
-  console.log(`SchoolNest Auth Service running on http://localhost:${PORT}`);
-  console.log(`Health check: http://localhost:${PORT}/health`);
+const HOST = '0.0.0.0';
+const os = require('os');
+
+const getLocalIP = () => {
+  const interfaces = os.networkInterfaces();
+  for (const name of Object.keys(interfaces)) {
+    for (const iface of interfaces[name]) {
+      if (iface.family === 'IPv4' && !iface.internal) {
+        return iface.address;
+      }
+    }
+  }
+  return 'localhost';
+};
+
+const localIP = getLocalIP();
+
+app.listen(PORT, HOST, () => {
+  console.log(`\n🚀 SchoolNest Auth Service is running!\n`);
+  console.log(`Local:   http://localhost:${PORT}`);
+  console.log(`Network: http://${localIP}:${PORT}\n`);
+  console.log(`Health check: http://${localIP}:${PORT}/health\n`);
 });
