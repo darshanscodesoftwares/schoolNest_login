@@ -7,12 +7,12 @@ const users = {
     { id: 'ADM002', name: 'Kaamesh', email: 'kaamesh@schoolnest.com', password: 'admin123' }
   ],
   TEACHER: [
-    { id: 'TCH001', name: 'John Doe', email: 'john@schoolnest.com', password: 'teacher123' },
-    { id: 'TCH002', name: 'Jane Smith', email: 'jane@schoolnest.com', password: 'teacher123' },
+    { id: 'TCH001', name: 'John Doe', email: 'john@schoolnest.com', password: 'Teacher@123' },
+    { id: 'TCH002', name: 'Jane Smith', email: 'jane@schoolnest.com', password: 'Teacher@123' },
   ],
   PARENT: [
-    { id: 'PAR001', name: 'Alice Johnson', email: 'alice@schoolnest.com', password: 'parent123' },
-    { id: 'PAR002', name: 'Bob Wilson', email: 'bob@schoolnest.com', password: 'parent123' },
+    { id: 'PAR001', name: 'Alice Johnson', email: 'alice@schoolnest.com', password: 'Parent@123' },
+    { id: 'PAR002', name: 'Bob Wilson', email: 'bob@schoolnest.com', password: 'Parent@123' },
   ],
 };
 
