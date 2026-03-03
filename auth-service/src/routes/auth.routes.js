@@ -1,14 +1,13 @@
 const express = require('express');
-const {
-  adminLogin,
-  teacherLogin,
-  parentLogin,
-} = require('../controllers/auth.controller');
+const { login } = require('../controllers/auth.controller');
 
 const router = express.Router();
 
-router.post('/admin/login', adminLogin);
-router.post('/teacher/login', teacherLogin);
-router.post('/parent/login', parentLogin);
+/**
+ * POST /api/v1/auth/login
+ * Login with email and password
+ * Returns JWT token with user details
+ */
+router.post('/login', login);
 
 module.exports = router;

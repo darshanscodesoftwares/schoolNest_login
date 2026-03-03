@@ -1,24 +1,39 @@
 # SchoolNest Auth Service
 
-A simple, temporary authentication service for SchoolNest frontend integration. This is a dummy API designed to provide login functionality during frontend development.
+A production-ready authentication microservice for SchoolNest. Handles user login with JWT token generation, multi-tenant support (school_id), and PostgreSQL integration.
 
 ## Features
 
-- 3 role-based login endpoints (Admin, Teacher, Parent)
-- JWT token generation
-- CORS enabled
-- In-memory user database (dummy data)
-- Clean, production-style code structure
+✅ **Single Login Endpoint** - Unified `POST /api/v1/auth/login` (works for all roles)
+✅ **Database-Backed** - PostgreSQL with roles and users tables
+✅ **Secure Passwords** - bcrypt hashing (salt rounds 10)
+✅ **Multi-Tenant** - Tenant isolation via `school_id`
+✅ **JWT Tokens** - Standard payload format: `{user_id, role, school_id}`
+✅ **Clean Architecture** - Controller → Service → Repository → Database
+✅ **Production-Ready** - Environment configuration, error handling, graceful shutdown
 
 ## Project Structure
 
 ```
 auth-service/
+├── server.js                              # Entry point (bootstrap)
 ├── src/
-│   ├── server.js              # Express app setup
-│   ├── routes/auth.routes.js  # Route definitions
-│   ├── controllers/auth.controller.js  # Business logic
-│   └── utils/jwt.js           # JWT utilities
+│   ├── app.js                             # Express app setup
+│   ├── config/
+│   │   └── db.js                          # PostgreSQL connection pool
+│   ├── controllers/
+│   │   └── auth.controller.js             # Request handlers
+│   ├── routes/
+│   │   └── auth.routes.js                 # Route definitions
+│   ├── services/
+│   │   └── auth.service.js                # Business logic (bcrypt, JWT)
+│   ├── repositories/
+│   │   └── auth.repository.js             # Database queries
+│   └── utils/
+│       └── jwt.js                         # JWT utilities
+├── schema.sql                             # PostgreSQL schema
+├── seed.js                                # Database seeder
+├── .env.example                           # Environment template
 ├── package.json
 └── README.md
 ```
@@ -30,7 +45,50 @@ cd auth-service
 npm install
 ```
 
-## Running Locally
+## Setup
+
+### 1. Database Setup
+
+Create PostgreSQL database:
+```bash
+createdb auth_db
+```
+
+Run schema:
+```bash
+psql auth_db < schema.sql
+```
+
+### 2. Environment Configuration
+
+Copy and configure `.env`:
+```bash
+cp .env.example .env
+```
+
+Edit `.env` with your PostgreSQL credentials:
+```env
+PORT=3000
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER=postgres
+DB_PASSWORD=your_postgres_password
+DB_NAME=auth_db
+JWT_SECRET=your_super_secret_key_here_change_in_production
+```
+
+### 3. Seed Initial Data
+
+```bash
+npm run seed
+```
+
+This inserts 5 test users under `school_id=101`:
+- **1 Admin**: admin@schoolnest.com / Admin@123
+- **2 Teachers**: john@schoolnest.com / Teacher@123, jane@schoolnest.com / Teacher@123
+- **2 Parents**: alice@schoolnest.com / Parent@123, bob@schoolnest.com / Parent@123
+
+## Running
 
 ### Development (with auto-reload)
 ```bash
@@ -42,10 +100,15 @@ npm run dev
 npm start
 ```
 
-The server will start and display both local and network URLs:
+Server displays connection info:
+```
+🚀 SchoolNest Auth Service is running!
 
-- **Local**: `http://localhost:3000`
-- **Network**: `http://<your-local-ip>:3000` (share this with your team)
+Local:   http://localhost:3000
+Network: http://192.168.1.100:3000
+
+Health check: http://192.168.1.100:3000/health
+```
 
 ## API Endpoints
 
@@ -54,104 +117,79 @@ The server will start and display both local and network URLs:
 GET /health
 ```
 
-### Admin Login
-```
-POST /auth/admin/login
-```
-
-### Teacher Login
-```
-POST /auth/teacher/login
+Response:
+```json
+{"status": "ok", "service": "auth-service"}
 ```
 
-### Parent Login
+### Login
 ```
-POST /auth/parent/login
+POST /api/v1/auth/login
 ```
 
-## Request Format
-
-All login endpoints accept a JSON POST request:
-
+Request:
 ```json
 {
-  "email": "user@schoolnest.com",
-  "password": "password123"
+  "email": "john@schoolnest.com",
+  "password": "Teacher@123"
 }
 ```
 
-## Response Format
-
-Success (200):
+Success Response (200):
 ```json
 {
+  "message": "Login successful",
   "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "role": "ADMIN",
   "user": {
-    "id": "ADM001",
-    "name": "Admin User"
+    "id": "TCH001",
+    "role": "TEACHER",
+    "school_id": 101
   }
 }
 ```
 
-Error (401):
+Error Response (401):
 ```json
 {
-  "error": "Invalid email or password"
+  "message": "Invalid email or password"
 }
 ```
 
-Error (400):
+Error Response (400):
 ```json
 {
-  "error": "Email and password are required"
+  "message": "Email and password are required"
 }
 ```
 
-## Dummy User Credentials
+## JWT Payload
 
-### Admin
-- Email: `admin@schoolnest.com`
-- Password: `admin123`
-- ID: `ADM001`
-
-### Teachers
-- Email: `john@schoolnest.com` | Password: `teacher123` | ID: `TCH001`
-- Email: `jane@schoolnest.com` | Password: `teacher123` | ID: `TCH002`
-
-### Parents
-- Email: `alice@schoolnest.com` | Password: `parent123` | ID: `PAR001`
-- Email: `bob@schoolnest.com` | Password: `parent123` | ID: `PAR002`
-
-## Example Curl Requests
-
-### Admin Login
-```bash
-curl -X POST http://localhost:3000/auth/admin/login \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "admin@schoolnest.com",
-    "password": "admin123"
-  }'
+The generated JWT contains (decoded):
+```json
+{
+  "user_id": "TCH001",
+  "role": "TEACHER",
+  "school_id": 101,
+  "iat": 1234567890,
+  "exp": 1234654290
+}
 ```
 
-### Teacher Login
+- **user_id**: User ID from database
+- **role**: User role (ADMIN, TEACHER, PARENT)
+- **school_id**: Tenant school ID (integer)
+- **iat**: Issued at timestamp
+- **exp**: Expiration timestamp (7 days from issue)
+
+## Example Requests
+
+### Login as Teacher
 ```bash
-curl -X POST http://localhost:3000/auth/teacher/login \
+curl -X POST http://localhost:3000/api/v1/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "email": "john@schoolnest.com",
-    "password": "teacher123"
-  }'
-```
-
-### Parent Login
-```bash
-curl -X POST http://localhost:3000/auth/parent/login \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "alice@schoolnest.com",
-    "password": "parent123"
+    "password": "Teacher@123"
   }'
 ```
 
@@ -160,52 +198,93 @@ curl -X POST http://localhost:3000/auth/parent/login \
 curl http://localhost:3000/health
 ```
 
-## JWT Payload
+## Architecture
 
-The generated JWT contains:
+### Controller Layer (`auth.controller.js`)
+- Parses HTTP request
+- Validates input (email, password present)
+- Calls service layer
+- Returns formatted HTTP response
+- Propagates errors via `next(error)`
 
-```json
-{
-  "userId": "ADM001",
-  "role": "ADMIN",
-  "schoolId": "SCH1",
-  "iat": 1234567890,
-  "exp": 1234654290
-}
+### Service Layer (`auth.service.js`)
+- Fetches user from repository
+- Validates password using `bcrypt.compare()`
+- Generates JWT with snake_case payload
+- Returns token + user details
+- Throws errors with statusCode
+
+### Repository Layer (`auth.repository.js`)
+- Single responsibility: database queries
+- Joins `users` with `roles` table
+- Returns user object with role name
+
+### Database
+- **roles** table: id, name (ADMIN, TEACHER, PARENT)
+- **users** table: id, school_id, role_id, name, email, password_hash, created_at
+- Indexes on email (for login speed) and school_id (for tenant queries)
+
+## Configuration
+
+| Variable | Default | Description |
+|---|---|---|
+| `PORT` | 3000 | Server port |
+| `DB_HOST` | localhost | PostgreSQL host |
+| `DB_PORT` | 5432 | PostgreSQL port |
+| `DB_USER` | postgres | PostgreSQL user |
+| `DB_PASSWORD` | - | PostgreSQL password (required) |
+| `DB_NAME` | auth_db | Database name |
+| `JWT_SECRET` | warn + fallback | Secret for signing JWTs (must set in production) |
+
+## Multi-Tenant Isolation
+
+Users belong to a `school_id`. The JWT contains the school_id, allowing downstream services (like academic-service) to enforce tenant isolation on every request by checking the JWT's `school_id` claim.
+
+## Security Notes
+
+- ✅ Passwords hashed with bcrypt (salt rounds 10)
+- ✅ Email uniqueness enforced at database level
+- ✅ No user enumeration (same 401 for not-found + wrong-password)
+- ✅ Graceful shutdown (closes DB pool on SIGTERM/SIGINT)
+- ⚠️ **Must set `JWT_SECRET` in production** (check logs for warning)
+- ⚠️ **HTTPS recommended for production**
+- ⚠️ **Add rate limiting before exposing to internet**
+
+## Testing
+
+### Unit Test (example)
+```javascript
+// Test login endpoint
+POST /api/v1/auth/login
+Body: {"email":"john@schoolnest.com","password":"Teacher@123"}
+Expected: 200 with token
 ```
 
-- **userId**: User ID from in-memory database
-- **role**: User role (ADMIN, TEACHER, PARENT)
-- **schoolId**: Dummy school ID (always "SCH1")
-- **iat**: Issued at timestamp
-- **exp**: Expiration timestamp (7 days from issue)
+## Troubleshooting
 
-## Environment Variables
+### "PostgreSQL pool error: connect ECONNREFUSED"
+- Check PostgreSQL is running: `sudo systemctl status postgresql`
+- Verify DB credentials in `.env`
 
-- `PORT` - Server port (default: 3000)
-- `JWT_SECRET` - Secret key for JWT signing (default: 'your-secret-key-change-in-production')
+### "JWT token decode fails in academic-service"
+- Ensure auth-service uses snake_case payload: `user_id`, `school_id` (not `userId`, `schoolId`)
+- Verify JWT_SECRET matches across services
 
-Example:
-```bash
-JWT_SECRET=your-custom-secret PORT=4000 npm start
-```
+### "Database connection timeout"
+- Increase `connectionTimeoutMillis` in `src/config/db.js`
+- Check PostgreSQL max connections: `SELECT max_conn_cur() FROM pg_settings;`
 
-## Notes
+## Future Enhancements
 
-- This is a **temporary dummy service** for frontend development only
-- **Do not use in production** without proper database integration and security hardening
-- User data is stored in-memory and will be lost on server restart
-- Passwords are stored in plain text (for demo purposes only)
-- Add proper security measures before using with real data
+- [ ] Add refresh token rotation
+- [ ] Implement rate limiting (express-rate-limit)
+- [ ] Add request logging/monitoring
+- [ ] Implement OAuth2 / SAML for SSO
+- [ ] Add email verification
+- [ ] Add password reset flow
+- [ ] Implement API key authentication for service-to-service
+- [ ] Add audit logging
 
-## Next Steps for Production
+## License
 
-When ready to transition to a real service:
-1. Replace in-memory user list with a database
-2. Use bcrypt or similar for password hashing
-3. Implement refresh token rotation
-4. Add rate limiting
-5. Add input validation and sanitization
-6. Implement proper error logging
-7. Add request logging/monitoring
-8. Use environment-based configuration
+MIT
