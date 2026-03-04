@@ -3,7 +3,10 @@ const attendanceService = require('../services/attendance.service');
 const getTeacherClasses = async (req, res, next) => {
   try {
     const classes = await attendanceService.getTeacherClasses(req.user);
-    return res.status(200).json(classes);
+    return res.status(200).json({
+      success: true,
+      data: classes
+    });
   } catch (error) {
     return next(error);
   }
@@ -28,7 +31,7 @@ const getClassStudents = async (req, res, next) => {
 
 const submitAttendance = async (req, res, next) => {
   try {
-    const { class_id: classId, date, attendance } = req.body;
+    const { class_id: classId, attendance_date: date, attendance } = req.body;
 
     const result = await attendanceService.submitAttendance({
       user: req.user,
@@ -43,8 +46,18 @@ const submitAttendance = async (req, res, next) => {
   }
 };
 
+const getAttendanceStatuses = async (req, res, next) => {
+  try {
+    const statuses = await attendanceService.getAttendanceStatuses(req.user);
+    return res.status(200).json(statuses);
+  } catch (error) {
+    return next(error);
+  }
+};
+
 module.exports = {
   getTeacherClasses,
   getClassStudents,
-  submitAttendance
+  submitAttendance,
+  getAttendanceStatuses
 };

@@ -16,6 +16,7 @@ const login = async ({ email, password }) => {
   if (!user) {
     const error = new Error('Invalid email or password');
     error.statusCode = 401;
+    error.code = 'AUTH_FAILED';
     throw error;
   }
 
@@ -25,6 +26,7 @@ const login = async ({ email, password }) => {
   if (!passwordMatch) {
     const error = new Error('Invalid email or password');
     error.statusCode = 401;
+    error.code = 'AUTH_FAILED';
     throw error;
   }
 

@@ -144,6 +144,26 @@ const bulkInsertAttendance = async ({ client, entries }) => {
   await client.query(query);
 };
 
+const getActiveStatuses = async ({ schoolId }) => {
+  const query = {
+    text: `
+      SELECT
+        id,
+        code,
+        label,
+        color
+      FROM attendance_statuses
+      WHERE school_id = $1
+        AND is_active = true
+      ORDER BY id ASC
+    `,
+    values: [schoolId]
+  };
+
+  const { rows } = await pool.query(query);
+  return rows;
+};
+
 module.exports = {
   getTeacherClasses,
   getClassByTeacher,
@@ -151,5 +171,6 @@ module.exports = {
   getAttendanceByClassAndDate,
   getApprovedLeaveByClassAndDate,
   deleteAttendanceByClassAndDate,
-  bulkInsertAttendance
+  bulkInsertAttendance,
+  getActiveStatuses
 };

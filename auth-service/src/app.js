@@ -18,14 +18,25 @@ app.use('/api/v1/auth', authRoutes);
 
 // 404 handler
 app.use((_req, res) => {
-  return res.status(404).json({ message: 'Route not found' });
+  return res.status(404).json({
+    success: false,
+    message: 'Route not found',
+    code: 'ROUTE_NOT_FOUND'
+  });
 });
 
-// Global error handler
+// Global error handler (Frontend-friendly)
 app.use((error, _req, res, _next) => {
   const statusCode = error.statusCode || 500;
-  const message = error.message || 'Internal server error';
-  return res.status(statusCode).json({ message });
+  const isSuccess = statusCode < 400;
+
+  return res.status(statusCode).json({
+    success: isSuccess,
+    message: error.message || 'Internal server error',
+    code: error.code || (statusCode === 500 ? 'INTERNAL_ERROR' : 'UNKNOWN_ERROR'),
+    details: error.details || null,
+    timestamp: new Date().toISOString()
+  });
 });
 
 module.exports = app;

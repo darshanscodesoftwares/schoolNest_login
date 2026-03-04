@@ -13,14 +13,24 @@ app.get('/health', (_req, res) => {
 app.use('/api/v1/academic', authMiddleware, attendanceRoutes);
 
 app.use((req, res) => {
-  res.status(404).json({ message: 'Route not found' });
+  res.status(404).json({
+    success: false,
+    message: 'Route not found',
+    code: 'ROUTE_NOT_FOUND'
+  });
 });
 
+// Global error handler (Frontend-friendly)
 app.use((error, _req, res, _next) => {
   const statusCode = error.statusCode || 500;
+  const isSuccess = statusCode < 400;
 
   res.status(statusCode).json({
-    message: error.message || 'Internal server error'
+    success: isSuccess,
+    message: error.message || 'Internal server error',
+    code: error.code || (statusCode === 500 ? 'INTERNAL_ERROR' : 'UNKNOWN_ERROR'),
+    details: error.details || null,
+    timestamp: new Date().toISOString()
   });
 });
 

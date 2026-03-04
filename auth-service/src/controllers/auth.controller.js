@@ -12,6 +12,10 @@ const login = async (req, res, next) => {
     if (!email || !password) {
       const error = new Error('Email and password are required');
       error.statusCode = 400;
+      error.code = 'VALIDATION_ERROR';
+      error.details = [];
+      if (!email) error.details.push({ field: 'email', message: 'Email is required' });
+      if (!password) error.details.push({ field: 'password', message: 'Password is required' });
       throw error;
     }
 
@@ -19,6 +23,7 @@ const login = async (req, res, next) => {
     const result = await authService.login({ email, password });
 
     return res.status(200).json({
+      success: true,
       message: 'Login successful',
       token: result.token,
       user: result.user

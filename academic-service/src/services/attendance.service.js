@@ -1,12 +1,11 @@
 const pool = require('../config/db');
 const attendanceRepository = require('../repositories/attendance.repository');
 
-const VALID_STATUSES = new Set(['PRESENT', 'ABSENT', 'LATE', 'HALF_DAY']);
-
 const assertTeacherRole = (user) => {
   if (!user || user.role !== 'TEACHER') {
     const error = new Error('Forbidden: only teachers can access this resource');
     error.statusCode = 403;
+    error.code = 'FORBIDDEN';
     throw error;
   }
 };
@@ -15,6 +14,7 @@ const assertValidDate = (date) => {
   if (!date || Number.isNaN(new Date(date).getTime())) {
     const error = new Error('Invalid date. Use format YYYY-MM-DD');
     error.statusCode = 400;
+    error.code = 'INVALID_DATE_FORMAT';
     throw error;
   }
 };
@@ -41,6 +41,7 @@ const getClassStudentsWithAttendance = async ({ user, classId, date }) => {
   if (!classOwned) {
     const error = new Error('Class not found for this teacher in current school');
     error.statusCode = 404;
+    error.code = 'CLASS_NOT_FOUND';
     throw error;
   }
 
@@ -62,6 +63,7 @@ const getClassStudentsWithAttendance = async ({ user, classId, date }) => {
   }));
 
   return {
+    success: true,
     date,
     total_students: merged.length,
     students: merged
@@ -75,6 +77,7 @@ const submitAttendance = async ({ user, classId, date, attendance }) => {
   if (!classId || !Array.isArray(attendance) || attendance.length === 0) {
     const error = new Error('class_id and non-empty attendance array are required');
     error.statusCode = 400;
+    error.code = 'VALIDATION_ERROR';
     throw error;
   }
 
@@ -87,8 +90,15 @@ const submitAttendance = async ({ user, classId, date, attendance }) => {
   if (!classOwned) {
     const error = new Error('Class not found for this teacher in current school');
     error.statusCode = 404;
+    error.code = 'CLASS_NOT_FOUND';
     throw error;
   }
+
+  // Fetch valid statuses from DB
+  const statusRows = await attendanceRepository.getActiveStatuses({
+    schoolId: user.school_id
+  });
+  const VALID_STATUSES = new Set(statusRows.map((s) => s.code));
 
   const classStudents = await attendanceRepository.getStudentsByClass({
     schoolId: user.school_id,
@@ -100,12 +110,14 @@ const submitAttendance = async ({ user, classId, date, attendance }) => {
     if (!entry.student_id || !entry.status) {
       const error = new Error('Each attendance item must contain student_id and status');
       error.statusCode = 400;
+      error.code = 'VALIDATION_ERROR';
       throw error;
     }
 
     if (!validStudentIds.has(entry.student_id)) {
       const error = new Error(`Student ${entry.student_id} does not belong to this class/school`);
       error.statusCode = 400;
+      error.code = 'INVALID_STUDENT';
       throw error;
     }
 
@@ -113,6 +125,7 @@ const submitAttendance = async ({ user, classId, date, attendance }) => {
     if (!VALID_STATUSES.has(normalizedStatus)) {
       const error = new Error(`Invalid status for student ${entry.student_id}`);
       error.statusCode = 400;
+      error.code = 'INVALID_STATUS';
       throw error;
     }
 
@@ -151,26 +164,35 @@ const submitAttendance = async ({ user, classId, date, attendance }) => {
     client.release();
   }
 
-  const summary = normalizedEntries.reduce(
-    (acc, row) => {
-      acc.total += 1;
-      if (row.status === 'PRESENT') acc.present += 1;
-      if (row.status === 'ABSENT') acc.absent += 1;
-      if (row.status === 'LATE') acc.late += 1;
-      if (row.status === 'HALF_DAY') acc.half_day += 1;
-      return acc;
-    },
-    { total: 0, present: 0, absent: 0, late: 0, half_day: 0 }
-  );
+  // Dynamic summary based on actual statuses
+  const summary = { total: normalizedEntries.length };
+  for (const entry of normalizedEntries) {
+    const key = entry.status.toLowerCase();
+    summary[key] = (summary[key] || 0) + 1;
+  }
 
   return {
+    success: true,
     message: 'Attendance Saved Successfully',
     summary
+  };
+};
+
+const getAttendanceStatuses = async (user) => {
+  assertTeacherRole(user);
+
+  const statuses = await attendanceRepository.getActiveStatuses({
+    schoolId: user.school_id
+  });
+
+  return {
+    data: statuses
   };
 };
 
 module.exports = {
   getTeacherClasses,
   getClassStudentsWithAttendance,
-  submitAttendance
+  submitAttendance,
+  getAttendanceStatuses
 };
