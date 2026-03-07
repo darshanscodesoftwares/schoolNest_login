@@ -1,4 +1,4 @@
-const pool = require('../config/db');
+const pool = require('../../../config/db');
 
 const getTeacherClasses = async ({ schoolId, teacherId }) => {
   const query = {

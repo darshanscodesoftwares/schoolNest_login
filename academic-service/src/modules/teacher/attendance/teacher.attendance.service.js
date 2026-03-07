@@ -1,5 +1,5 @@
-const pool = require('../config/db');
-const attendanceRepository = require('../repositories/attendance.repository');
+const pool = require('../../../config/db');
+const attendanceRepository = require('./teacher.attendance.repository');
 
 const assertTeacherRole = (user) => {
   if (!user || user.role !== 'TEACHER') {

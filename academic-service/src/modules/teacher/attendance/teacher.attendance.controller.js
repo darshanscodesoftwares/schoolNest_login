@@ -1,4 +1,4 @@
-const attendanceService = require('../services/attendance.service');
+const attendanceService = require('./teacher.attendance.service');
 
 const getTeacherClasses = async (req, res, next) => {
   try {
