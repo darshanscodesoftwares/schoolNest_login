@@ -60,8 +60,10 @@ const getAttendanceByClassAndDate = async ({ schoolId, classId, date }) => {
   const query = {
     text: `
       SELECT
+        id AS record_id,
         student_id,
-        status
+        status,
+        remarks
       FROM attendance
       WHERE school_id = $1
         AND class_id = $2
@@ -115,15 +117,16 @@ const bulkInsertAttendance = async ({ client, entries }) => {
   const values = [];
 
   entries.forEach((entry, index) => {
-    const offset = index * 6;
-    placeholders.push(`($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, $${offset + 6})`);
+    const offset = index * 7;
+    placeholders.push(`($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, $${offset + 6}, $${offset + 7})`);
     values.push(
       entry.school_id,
       entry.class_id,
       entry.student_id,
       entry.teacher_id,
       entry.date,
-      entry.status
+      entry.status,
+      entry.remarks || null
     );
   });
 
@@ -135,7 +138,8 @@ const bulkInsertAttendance = async ({ client, entries }) => {
         student_id,
         teacher_id,
         date,
-        status
+        status,
+        remarks
       ) VALUES ${placeholders.join(', ')}
     `,
     values
@@ -167,7 +171,7 @@ const getActiveStatuses = async ({ schoolId }) => {
 const getAttendanceByDateRange = async ({ schoolId, classId, fromDate, toDate }) => {
   const query = {
     text: `
-      SELECT a.id, a.date, a.student_id, a.status, s.name, s.roll_no
+      SELECT a.id, a.date, a.student_id, a.status, a.remarks, s.name, s.roll_no
       FROM attendance a
       JOIN students s ON s.id = a.student_id AND s.school_id = a.school_id
       WHERE a.school_id = $1 AND a.class_id = $2 AND a.date BETWEEN $3 AND $4
@@ -242,7 +246,7 @@ const getMonthlyAttendanceReport = async ({ schoolId, classId, month }) => {
 const getAttendanceById = async ({ schoolId, recordId }) => {
   const query = {
     text: `
-      SELECT id, school_id, class_id, student_id, teacher_id, date, status, created_at, updated_at
+      SELECT id, school_id, class_id, student_id, teacher_id, date, status, remarks, created_at, updated_at
       FROM attendance
       WHERE id = $1 AND school_id = $2
       LIMIT 1
@@ -254,15 +258,15 @@ const getAttendanceById = async ({ schoolId, recordId }) => {
   return rows[0] || null;
 };
 
-const updateAttendanceStatus = async ({ schoolId, recordId, status }) => {
+const updateAttendanceRecord = async ({ schoolId, recordId, status, remarks }) => {
   const query = {
     text: `
       UPDATE attendance
-      SET status = $3, updated_at = NOW()
+      SET status = $3, remarks = $4, updated_at = NOW()
       WHERE id = $1 AND school_id = $2
-      RETURNING id, student_id, class_id, date, status, updated_at
+      RETURNING id, student_id, class_id, date, status, remarks, updated_at
     `,
-    values: [recordId, schoolId, status]
+    values: [recordId, schoolId, status, remarks]
   };
 
   const { rows } = await pool.query(query);
@@ -297,6 +301,6 @@ module.exports = {
   getStudentAttendanceSummary,
   getMonthlyAttendanceReport,
   getAttendanceById,
-  updateAttendanceStatus,
+  updateAttendanceRecord,
   deleteAttendanceById
 };

@@ -108,12 +108,13 @@ const getClassReport = async (req, res, next) => {
 const updateAttendance = async (req, res, next) => {
   try {
     const { recordId } = req.params;
-    const { status } = req.body;
+    const { status, remarks } = req.body;
 
     const result = await attendanceService.updateAttendanceRecord({
       user: req.user,
       recordId,
-      status
+      status,
+      remarks
     });
 
     return res.status(200).json(result);

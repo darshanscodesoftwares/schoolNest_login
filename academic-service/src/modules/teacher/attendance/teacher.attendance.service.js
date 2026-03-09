@@ -51,21 +51,35 @@ const getClassStudentsWithAttendance = async ({ user, classId, date }) => {
     attendanceRepository.getApprovedLeaveByClassAndDate({ schoolId: user.school_id, classId, date })
   ]);
 
-  const attendanceMap = new Map(attendanceRows.map((row) => [row.student_id, row.status]));
+  const attendanceMap = new Map(attendanceRows.map((row) => [row.student_id, row]));
   const leaveSet = new Set(leaveRows.map((row) => row.student_id));
 
-  const merged = students.map((student) => ({
-    student_id: student.student_id,
-    roll_no: student.roll_no,
-    name: student.name,
-    leave_applied: leaveSet.has(student.student_id),
-    attendance_status: attendanceMap.get(student.student_id) || null
-  }));
+  const merged = students.map((student) => {
+    const att = attendanceMap.get(student.student_id);
+    return {
+      student_id: student.student_id,
+      roll_no: student.roll_no,
+      name: student.name,
+      leave_applied: leaveSet.has(student.student_id),
+      record_id: att ? att.record_id : null,
+      attendance_status: att ? att.status : null,
+      remarks: att ? att.remarks : null
+    };
+  });
+
+  const summary = { present: 0, absent: 0, late: 0, half_day: 0 };
+  for (const student of merged) {
+    if (student.attendance_status) {
+      const key = student.attendance_status.toLowerCase();
+      if (key in summary) summary[key]++;
+    }
+  }
 
   return {
     success: true,
     date,
     total_students: merged.length,
+    summary,
     students: merged
   };
 };
@@ -135,7 +149,8 @@ const submitAttendance = async ({ user, classId, date, attendance }) => {
       student_id: entry.student_id,
       teacher_id: user.user_id,
       date,
-      status: normalizedStatus
+      status: normalizedStatus,
+      remarks: entry.remarks || null
     };
   });
 
@@ -228,17 +243,23 @@ const getAttendanceHistory = async ({ user, classId, fromDate, toDate }) => {
       grouped[record.date] = [];
     }
     grouped[record.date].push({
+      record_id: record.id,
       student_id: record.student_id,
       name: record.name,
       roll_no: record.roll_no,
-      status: record.status
+      status: record.status,
+      remarks: record.remarks || null
     });
   });
 
-  const groupedRecords = Object.entries(grouped).map(([date, students]) => ({
-    date,
-    students
-  }));
+  const groupedRecords = Object.entries(grouped).map(([date, students]) => {
+    const summary = { present: 0, absent: 0, late: 0, half_day: 0 };
+    for (const s of students) {
+      const key = s.status.toLowerCase();
+      if (key in summary) summary[key]++;
+    }
+    return { date, summary, students };
+  });
 
   return {
     success: true,
@@ -360,11 +381,11 @@ const getClassAttendanceReport = async ({ user, classId, month }) => {
   };
 };
 
-const updateAttendanceRecord = async ({ user, recordId, status }) => {
+const updateAttendanceRecord = async ({ user, recordId, status, remarks }) => {
   assertTeacherRole(user);
 
-  if (!status || typeof status !== 'string') {
-    const error = new Error('status is required and must be a string');
+  if (status === undefined && remarks === undefined) {
+    const error = new Error('At least one of status or remarks is required');
     error.statusCode = 400;
     error.code = 'VALIDATION_ERROR';
     throw error;
@@ -395,23 +416,32 @@ const updateAttendanceRecord = async ({ user, recordId, status }) => {
     throw error;
   }
 
-  const statusRows = await attendanceRepository.getActiveStatuses({
-    schoolId: user.school_id
-  });
-  const VALID_STATUSES = new Set(statusRows.map((s) => s.code));
-
-  const normalizedStatus = String(status).toUpperCase();
-  if (!VALID_STATUSES.has(normalizedStatus)) {
-    const error = new Error(`Invalid status: ${status}`);
-    error.statusCode = 400;
-    error.code = 'INVALID_STATUS';
-    throw error;
+  let normalizedStatus = record.status;
+  if (status !== undefined) {
+    if (!status || typeof status !== 'string') {
+      const error = new Error('status must be a non-empty string');
+      error.statusCode = 400;
+      error.code = 'VALIDATION_ERROR';
+      throw error;
+    }
+    const statusRows = await attendanceRepository.getActiveStatuses({ schoolId: user.school_id });
+    const VALID_STATUSES = new Set(statusRows.map((s) => s.code));
+    normalizedStatus = String(status).toUpperCase();
+    if (!VALID_STATUSES.has(normalizedStatus)) {
+      const error = new Error(`Invalid status: ${status}`);
+      error.statusCode = 400;
+      error.code = 'INVALID_STATUS';
+      throw error;
+    }
   }
 
-  const updated = await attendanceRepository.updateAttendanceStatus({
+  const updatedRemarks = remarks !== undefined ? remarks : record.remarks;
+
+  const updated = await attendanceRepository.updateAttendanceRecord({
     schoolId: user.school_id,
     recordId,
-    status: normalizedStatus
+    status: normalizedStatus,
+    remarks: updatedRemarks
   });
 
   return {
@@ -420,6 +450,7 @@ const updateAttendanceRecord = async ({ user, recordId, status }) => {
     record_id: updated.id,
     old_status: record.status,
     new_status: updated.status,
+    remarks: updated.remarks,
     updated_at: updated.updated_at
   };
 };
