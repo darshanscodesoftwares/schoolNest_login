@@ -1,8 +1,10 @@
 const express = require('express');
 const authMiddleware = require('./middleware/auth.middleware');
 const attendanceRoutes = require('./modules/teacher/attendance/teacher.attendance.routes');
+const teacherHomeworkRoutes = require('./modules/teacher/homework/teacher.homework.routes');
 const parentRoutes = require('./modules/parent/attendance/parent.attendance.routes');
 const parentTimetableRoutes = require('./modules/parent/timetable/parent.timetable.routes');
+const parentHomeworkRoutes = require('./modules/parent/homework/parent.homework.routes');
 
 const app = express();
 
@@ -13,8 +15,10 @@ app.get('/health', (_req, res) => {
 });
 
 app.use('/api/v1/academic', authMiddleware, attendanceRoutes);
+app.use('/api/v1/academic', authMiddleware, teacherHomeworkRoutes);
 app.use('/api/v1/academic', authMiddleware, parentTimetableRoutes);
 app.use('/api/v1/parent', authMiddleware, parentRoutes);
+app.use('/api/v1/parent', authMiddleware, parentHomeworkRoutes);
 
 app.use((req, res) => {
   res.status(404).json({
