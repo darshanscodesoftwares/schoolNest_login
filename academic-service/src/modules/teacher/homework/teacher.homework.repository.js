@@ -20,7 +20,7 @@ const createHomework = async ({ schoolId, classId, teacherId, subject, title, de
     text: `
       INSERT INTO homework (school_id, class_id, teacher_id, subject, title, description, due_date, attachment_url)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-      RETURNING id, school_id, class_id, teacher_id, subject, title, description, due_date, attachment_url, created_at
+      RETURNING id, school_id, class_id, teacher_id, subject, title, description, TO_CHAR(due_date, 'YYYY-MM-DD') AS due_date, attachment_url, created_at
     `,
     values: [schoolId, classId, teacherId, subject, title, description, dueDate, attachmentUrl || null]
   };
@@ -48,7 +48,7 @@ const getHomeworkByTab = async ({ schoolId, teacherId, tab }) => {
         h.subject,
         h.title,
         h.description,
-        h.due_date,
+        TO_CHAR(h.due_date, 'YYYY-MM-DD') AS due_date,
         h.attachment_url,
         h.created_at
       FROM homework h
@@ -75,7 +75,7 @@ const getHomeworkByClass = async ({ schoolId, classId, tab }) => {
 
   const query = {
     text: `
-      SELECT id, class_id, teacher_id, subject, title, description, due_date, attachment_url, created_at
+      SELECT id, class_id, teacher_id, subject, title, description, TO_CHAR(due_date, 'YYYY-MM-DD') AS due_date, attachment_url, created_at
       FROM homework
       WHERE school_id = $1
         AND class_id = $2
