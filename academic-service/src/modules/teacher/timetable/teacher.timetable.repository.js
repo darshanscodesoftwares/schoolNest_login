@@ -100,7 +100,7 @@ const getRecentActivity = async ({ schoolId, classId }) => {
 
   const homeworkQuery = {
     text: `
-      SELECT title, subject, due_date, created_at
+      SELECT title, subject, TO_CHAR(due_date, 'YYYY-MM-DD') AS due_date, created_at
       FROM homework
       WHERE school_id = $1 AND class_id = $2
       ORDER BY created_at DESC

@@ -1,10 +1,10 @@
 const timetableService = require('./teacher.timetable.service');
 
-const getTimetableByDay = async (req, res, next) => {
+const getTimetable = async (req, res, next) => {
   try {
     const { day } = req.query;
 
-    const result = await timetableService.getTimetableByDay({
+    const result = await timetableService.getTimetable({
       user: req.user,
       day
     });
@@ -15,20 +15,11 @@ const getTimetableByDay = async (req, res, next) => {
   }
 };
 
-const getNextClass = async (req, res, next) => {
-  try {
-    const result = await timetableService.getNextClass({ user: req.user });
-    return res.status(200).json(result);
-  } catch (error) {
-    return next(error);
-  }
-};
-
-const getClassSummary = async (req, res, next) => {
+const getClassDetail = async (req, res, next) => {
   try {
     const { classId } = req.params;
 
-    const result = await timetableService.getClassSummary({
+    const result = await timetableService.getClassDetail({
       user: req.user,
       classId
     });
@@ -39,24 +30,4 @@ const getClassSummary = async (req, res, next) => {
   }
 };
 
-const getRecentActivity = async (req, res, next) => {
-  try {
-    const { classId } = req.params;
-
-    const result = await timetableService.getRecentActivity({
-      user: req.user,
-      classId
-    });
-
-    return res.status(200).json(result);
-  } catch (error) {
-    return next(error);
-  }
-};
-
-module.exports = {
-  getTimetableByDay,
-  getNextClass,
-  getClassSummary,
-  getRecentActivity
-};
+module.exports = { getTimetable, getClassDetail };
