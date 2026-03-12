@@ -36,7 +36,5 @@ dist/
 build/
 
 # Test & Setup Files
-schema.sql
-seed.sql
 README.md
 .env.example
