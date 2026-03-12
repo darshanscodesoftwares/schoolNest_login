@@ -32,7 +32,7 @@ const getHomeworkForClass = async ({ schoolId, classId, tab }) => {
         h.subject,
         h.title,
         h.description,
-        h.due_date,
+        TO_CHAR(h.due_date, 'YYYY-MM-DD') AS due_date,
         h.attachment_url,
         h.created_at
       FROM homework h
