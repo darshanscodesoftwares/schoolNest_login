@@ -129,6 +129,79 @@ INSERT INTO leave_requests (id, school_id, student_id, from_date, to_date, reaso
 ('bb000001-0000-0000-0000-000000000006', 101, (SELECT id FROM students WHERE school_id=101 AND roll_no=4 AND class_id='88bbf5fd-7ac1-4e82-9cc0-b9cfdfde5f18'), '2026-02-10', '2026-02-11', 'Family Function', 'Wedding ceremony', 'PENDING', '2026-02-09 10:00:00')
 ON CONFLICT (id) DO NOTHING;
 
+-- Insert Exams (school_id=101)
+INSERT INTO exams (id, school_id, name, academic_year, start_date, end_date) VALUES
+('cc000001-0000-0000-0000-000000000001', 101, 'Mid-Term Exam', '2025-2026', '2026-01-20', '2026-02-05'),
+('cc000001-0000-0000-0000-000000000002', 101, 'Unit Test 3',   '2025-2026', '2026-02-01', '2026-02-10'),
+('cc000001-0000-0000-0000-000000000003', 101, 'Final Exam',    '2025-2026', '2026-03-20', '2026-03-30'),
+('cc000001-0000-0000-0000-000000000004', 101, 'Chapter Quiz',  '2025-2026', CURRENT_DATE, CURRENT_DATE)
+ON CONFLICT (id) DO NOTHING;
+
+-- Exam Classes (all exams apply to class 10A)
+INSERT INTO exam_classes (exam_id, class_id, school_id) VALUES
+('cc000001-0000-0000-0000-000000000001', '88bbf5fd-7ac1-4e82-9cc0-b9cfdfde5f18', 101),
+('cc000001-0000-0000-0000-000000000002', '88bbf5fd-7ac1-4e82-9cc0-b9cfdfde5f18', 101),
+('cc000001-0000-0000-0000-000000000003', '88bbf5fd-7ac1-4e82-9cc0-b9cfdfde5f18', 101),
+('cc000001-0000-0000-0000-000000000004', '88bbf5fd-7ac1-4e82-9cc0-b9cfdfde5f18', 101)
+ON CONFLICT DO NOTHING;
+
+-- Exam Subjects
+-- Mid-Term: 5 subjects, all SUBMITTED (total max = 450)
+INSERT INTO exam_subjects (id, exam_id, school_id, class_id, subject_name, exam_date, max_marks, pass_marks, teacher_id, result_status) VALUES
+('dd000001-0000-0000-0000-000000000001', 'cc000001-0000-0000-0000-000000000001', 101, '88bbf5fd-7ac1-4e82-9cc0-b9cfdfde5f18', 'Mathematics',    '2026-01-28', 100, 35, 'TCH001', 'SUBMITTED'),
+('dd000001-0000-0000-0000-000000000002', 'cc000001-0000-0000-0000-000000000001', 101, '88bbf5fd-7ac1-4e82-9cc0-b9cfdfde5f18', 'English',         '2026-01-29', 100, 35, 'TCH001', 'SUBMITTED'),
+('dd000001-0000-0000-0000-000000000003', 'cc000001-0000-0000-0000-000000000001', 101, '88bbf5fd-7ac1-4e82-9cc0-b9cfdfde5f18', 'Science',         '2026-01-30', 100, 35, 'TCH001', 'SUBMITTED'),
+('dd000001-0000-0000-0000-000000000004', 'cc000001-0000-0000-0000-000000000001', 101, '88bbf5fd-7ac1-4e82-9cc0-b9cfdfde5f18', 'Social Studies',  '2026-01-31', 100, 35, 'TCH001', 'SUBMITTED'),
+('dd000001-0000-0000-0000-000000000005', 'cc000001-0000-0000-0000-000000000001', 101, '88bbf5fd-7ac1-4e82-9cc0-b9cfdfde5f18', 'Hindi',           '2026-02-01',  50, 20, 'TCH001', 'SUBMITTED'),
+-- Unit Test 3: 1 subject, DRAFT → completed tab (exam_date in past), Enter Marks available
+('dd000001-0000-0000-0000-000000000006', 'cc000001-0000-0000-0000-000000000002', 101, '88bbf5fd-7ac1-4e82-9cc0-b9cfdfde5f18', 'Mathematics',    '2026-02-08',  50, 20, 'TCH001', 'DRAFT'),
+-- Final Exam: PENDING → upcoming tab
+('dd000001-0000-0000-0000-000000000007', 'cc000001-0000-0000-0000-000000000003', 101, '88bbf5fd-7ac1-4e82-9cc0-b9cfdfde5f18', 'Mathematics',    '2026-03-20', 100, 35, 'TCH001', 'PENDING'),
+-- Chapter Quiz: exam_date = today → ongoing tab
+('dd000001-0000-0000-0000-000000000008', 'cc000001-0000-0000-0000-000000000004', 101, '88bbf5fd-7ac1-4e82-9cc0-b9cfdfde5f18', 'Mathematics',    CURRENT_DATE,  25, 10, 'TCH001', 'PENDING')
+ON CONFLICT (id) DO NOTHING;
+
+-- Exam Results for Mid-Term (all 5 students, all 5 subjects)
+-- Rahul total: 92+95+88+86+64 = 425/450
+INSERT INTO exam_results (exam_subject_id, school_id, student_id, marks_obtained, is_absent) VALUES
+-- Mathematics (max 100)
+('dd000001-0000-0000-0000-000000000001', 101, 'f8f36a25-8bf8-4df8-be47-30a4f0a4e811', 92, false),
+('dd000001-0000-0000-0000-000000000001', 101, '0540f78d-8479-4d11-bd41-d3fd2b014db4', 78, false),
+('dd000001-0000-0000-0000-000000000001', 101, '1a2b3c4d-5e6f-7890-abcd-ef1234567891', 85, false),
+('dd000001-0000-0000-0000-000000000001', 101, '2b3c4d5e-6f78-9012-bcde-f12345678901', 70, false),
+('dd000001-0000-0000-0000-000000000001', 101, '3c4d5e6f-7890-1234-cdef-123456789012', NULL, true),
+-- English (max 100)
+('dd000001-0000-0000-0000-000000000002', 101, 'f8f36a25-8bf8-4df8-be47-30a4f0a4e811', 95, false),
+('dd000001-0000-0000-0000-000000000002', 101, '0540f78d-8479-4d11-bd41-d3fd2b014db4', 88, false),
+('dd000001-0000-0000-0000-000000000002', 101, '1a2b3c4d-5e6f-7890-abcd-ef1234567891', 72, false),
+('dd000001-0000-0000-0000-000000000002', 101, '2b3c4d5e-6f78-9012-bcde-f12345678901', 82, false),
+('dd000001-0000-0000-0000-000000000002', 101, '3c4d5e6f-7890-1234-cdef-123456789012', NULL, true),
+-- Science (max 100)
+('dd000001-0000-0000-0000-000000000003', 101, 'f8f36a25-8bf8-4df8-be47-30a4f0a4e811', 88, false),
+('dd000001-0000-0000-0000-000000000003', 101, '0540f78d-8479-4d11-bd41-d3fd2b014db4', 80, false),
+('dd000001-0000-0000-0000-000000000003', 101, '1a2b3c4d-5e6f-7890-abcd-ef1234567891', 76, false),
+('dd000001-0000-0000-0000-000000000003', 101, '2b3c4d5e-6f78-9012-bcde-f12345678901', 68, false),
+('dd000001-0000-0000-0000-000000000003', 101, '3c4d5e6f-7890-1234-cdef-123456789012', NULL, true),
+-- Social Studies (max 100)
+('dd000001-0000-0000-0000-000000000004', 101, 'f8f36a25-8bf8-4df8-be47-30a4f0a4e811', 86, false),
+('dd000001-0000-0000-0000-000000000004', 101, '0540f78d-8479-4d11-bd41-d3fd2b014db4', 74, false),
+('dd000001-0000-0000-0000-000000000004', 101, '1a2b3c4d-5e6f-7890-abcd-ef1234567891', 80, false),
+('dd000001-0000-0000-0000-000000000004', 101, '2b3c4d5e-6f78-9012-bcde-f12345678901', 78, false),
+('dd000001-0000-0000-0000-000000000004', 101, '3c4d5e6f-7890-1234-cdef-123456789012', NULL, true),
+-- Hindi (max 50)
+('dd000001-0000-0000-0000-000000000005', 101, 'f8f36a25-8bf8-4df8-be47-30a4f0a4e811', 64, false),
+('dd000001-0000-0000-0000-000000000005', 101, '0540f78d-8479-4d11-bd41-d3fd2b014db4', 40, false),
+('dd000001-0000-0000-0000-000000000005', 101, '1a2b3c4d-5e6f-7890-abcd-ef1234567891', 42, false),
+('dd000001-0000-0000-0000-000000000005', 101, '2b3c4d5e-6f78-9012-bcde-f12345678901', 38, false),
+('dd000001-0000-0000-0000-000000000005', 101, '3c4d5e6f-7890-1234-cdef-123456789012', NULL, true)
+ON CONFLICT (exam_subject_id, student_id) DO NOTHING;
+
+-- Draft results for Unit Test 3 (partial entry)
+INSERT INTO exam_results (exam_subject_id, school_id, student_id, marks_obtained, is_absent) VALUES
+('dd000001-0000-0000-0000-000000000006', 101, 'f8f36a25-8bf8-4df8-be47-30a4f0a4e811', 46, false),
+('dd000001-0000-0000-0000-000000000006', 101, '0540f78d-8479-4d11-bd41-d3fd2b014db4', NULL, true)
+ON CONFLICT (exam_subject_id, student_id) DO NOTHING;
+
 -- Verify inserts
 SELECT 'Classes' AS table_name, COUNT(*) as count FROM classes WHERE school_id = 101;
 SELECT 'Students' AS table_name, COUNT(*) as count FROM students WHERE school_id = 101;
@@ -136,3 +209,5 @@ SELECT 'Attendance' AS table_name, COUNT(*) as count FROM attendance WHERE schoo
 SELECT 'Homework' AS table_name, COUNT(*) as count FROM homework WHERE school_id = 101;
 SELECT 'Announcements' AS table_name, COUNT(*) as count FROM announcements WHERE school_id = 101;
 SELECT 'Leave Requests' AS table_name, COUNT(*) as count FROM leave_requests WHERE school_id = 101;
+SELECT 'Exams' AS table_name, COUNT(*) as count FROM exams WHERE school_id = 101;
+SELECT 'Exam Results' AS table_name, COUNT(*) as count FROM exam_results WHERE school_id = 101;
