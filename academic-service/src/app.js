@@ -1,17 +1,7 @@
 const express = require('express');
 const authMiddleware = require('./middleware/auth.middleware');
 const attendanceRoutes = require('./modules/teacher/attendance/teacher.attendance.routes');
-const teacherHomeworkRoutes = require('./modules/teacher/homework/teacher.homework.routes');
-const teacherTimetableRoutes = require('./modules/teacher/timetable/teacher.timetable.routes');
 const parentRoutes = require('./modules/parent/attendance/parent.attendance.routes');
-const parentTimetableRoutes = require('./modules/parent/timetable/parent.timetable.routes');
-const parentHomeworkRoutes = require('./modules/parent/homework/parent.homework.routes');
-const teacherAnnouncementRoutes = require('./modules/teacher/announcement/teacher.announcement.routes');
-const parentAnnouncementRoutes = require('./modules/parent/announcement/parent.announcement.routes');
-const teacherLeaveRoutes = require('./modules/teacher/leave/teacher.leave.routes');
-const parentLeaveRoutes = require('./modules/parent/leave/parent.leave.routes');
-const teacherExamRoutes = require('./modules/teacher/exam/teacher.exam.routes');
-const parentResultsRoutes = require('./modules/parent/results/parent.results.routes');
 
 const app = express();
 
@@ -22,17 +12,7 @@ app.get('/health', (_req, res) => {
 });
 
 app.use('/api/v1/academic', authMiddleware, attendanceRoutes);
-app.use('/api/v1/academic', authMiddleware, teacherHomeworkRoutes);
-app.use('/api/v1/academic', authMiddleware, teacherTimetableRoutes);
-app.use('/api/v1/academic', authMiddleware, parentTimetableRoutes);
 app.use('/api/v1/parent', authMiddleware, parentRoutes);
-app.use('/api/v1/parent', authMiddleware, parentHomeworkRoutes);
-app.use('/api/v1/academic', authMiddleware, teacherAnnouncementRoutes);
-app.use('/api/v1/parent', authMiddleware, parentAnnouncementRoutes);
-app.use('/api/v1/academic', authMiddleware, teacherLeaveRoutes);
-app.use('/api/v1/parent', authMiddleware, parentLeaveRoutes);
-app.use('/api/v1/academic', authMiddleware, teacherExamRoutes);
-app.use('/api/v1/parent', authMiddleware, parentResultsRoutes);
 
 app.use((req, res) => {
   res.status(404).json({
