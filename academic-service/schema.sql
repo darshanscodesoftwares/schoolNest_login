@@ -67,11 +67,15 @@ CREATE TABLE IF NOT EXISTS leave_requests (
   student_id UUID NOT NULL REFERENCES students(id) ON DELETE CASCADE,
   from_date DATE NOT NULL,
   to_date DATE NOT NULL,
-  status VARCHAR(20) NOT NULL CHECK (status IN ('PENDING', 'APPROVED', 'REJECTED'))
+  reason VARCHAR(50) NOT NULL CHECK (reason IN ('Sick', 'Family Function', 'Travel', 'Personal', 'Other')),
+  message TEXT,
+  status VARCHAR(20) NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING', 'APPROVED', 'REJECTED')),
+  created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX IF NOT EXISTS idx_leave_requests_school_id ON leave_requests (school_id);
 CREATE INDEX IF NOT EXISTS idx_leave_student_date_status ON leave_requests (school_id, student_id, from_date, to_date, status);
+CREATE INDEX IF NOT EXISTS idx_leave_class ON leave_requests (school_id, status);
 
 CREATE TABLE IF NOT EXISTS timetable (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

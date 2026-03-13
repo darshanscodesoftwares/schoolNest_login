@@ -111,9 +111,28 @@ INSERT INTO announcement_recipients (announcement_id, recipient_id, school_id, i
 ('aa000001-0000-0000-0000-000000000004', 'TCH001', 101, false),
 ('aa000001-0000-0000-0000-000000000004', 'TCH002', 101, false);
 
+-- Insert Leave Requests (school_id=101)
+-- Students in class 10A: Rahul(PAR001), Aisha(PAR001), Amit(PAR002), Pooja(PAR002), Ravi(PAR001)
+-- Students in class 10B: Priya(PAR001), Kiran(PAR002), Sneha(PAR001), Arjun(PAR002), Vikram(PAR001)
+INSERT INTO leave_requests (id, school_id, student_id, from_date, to_date, reason, message, status, created_at) VALUES
+-- PAR001's child Rahul - Approved
+('bb000001-0000-0000-0000-000000000001', 101, (SELECT id FROM students WHERE school_id=101 AND roll_no=1 AND class_id='88bbf5fd-7ac1-4e82-9cc0-b9cfdfde5f18'), '2026-02-03', '2026-02-04', 'Sick', 'Fever and cold', 'APPROVED', '2026-02-02 10:00:00'),
+-- PAR001's child Rahul - Approved
+('bb000001-0000-0000-0000-000000000002', 101, (SELECT id FROM students WHERE school_id=101 AND roll_no=1 AND class_id='88bbf5fd-7ac1-4e82-9cc0-b9cfdfde5f18'), '2026-01-28', '2026-01-28', 'Family Function', NULL, 'APPROVED', '2026-01-27 09:00:00'),
+-- PAR001's child Rahul - Pending
+('bb000001-0000-0000-0000-000000000003', 101, (SELECT id FROM students WHERE school_id=101 AND roll_no=1 AND class_id='88bbf5fd-7ac1-4e82-9cc0-b9cfdfde5f18'), '2026-02-08', '2026-02-09', 'Travel', 'Family trip', 'PENDING', '2026-02-07 08:30:00'),
+-- PAR001's child Rahul - Rejected
+('bb000001-0000-0000-0000-000000000004', 101, (SELECT id FROM students WHERE school_id=101 AND roll_no=1 AND class_id='88bbf5fd-7ac1-4e82-9cc0-b9cfdfde5f18'), '2026-01-15', '2026-01-16', 'Personal', NULL, 'REJECTED', '2026-01-14 11:00:00'),
+-- PAR002's child Amit - Pending
+('bb000001-0000-0000-0000-000000000005', 101, (SELECT id FROM students WHERE school_id=101 AND roll_no=3 AND class_id='88bbf5fd-7ac1-4e82-9cc0-b9cfdfde5f18'), '2026-02-08', '2026-02-08', 'Sick', 'High fever', 'PENDING', '2026-02-07 09:00:00'),
+-- PAR002's child Pooja - Pending
+('bb000001-0000-0000-0000-000000000006', 101, (SELECT id FROM students WHERE school_id=101 AND roll_no=4 AND class_id='88bbf5fd-7ac1-4e82-9cc0-b9cfdfde5f18'), '2026-02-10', '2026-02-11', 'Family Function', 'Wedding ceremony', 'PENDING', '2026-02-09 10:00:00')
+ON CONFLICT (id) DO NOTHING;
+
 -- Verify inserts
 SELECT 'Classes' AS table_name, COUNT(*) as count FROM classes WHERE school_id = 101;
 SELECT 'Students' AS table_name, COUNT(*) as count FROM students WHERE school_id = 101;
 SELECT 'Attendance' AS table_name, COUNT(*) as count FROM attendance WHERE school_id = 101;
 SELECT 'Homework' AS table_name, COUNT(*) as count FROM homework WHERE school_id = 101;
 SELECT 'Announcements' AS table_name, COUNT(*) as count FROM announcements WHERE school_id = 101;
+SELECT 'Leave Requests' AS table_name, COUNT(*) as count FROM leave_requests WHERE school_id = 101;
