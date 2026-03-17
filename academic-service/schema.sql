@@ -76,3 +76,38 @@ CREATE TABLE IF NOT EXISTS leave_requests (
 CREATE INDEX IF NOT EXISTS idx_leave_requests_school_id ON leave_requests (school_id);
 CREATE INDEX IF NOT EXISTS idx_leave_student_date_status ON leave_requests (school_id, student_id, from_date, to_date, status);
 CREATE INDEX IF NOT EXISTS idx_leave_class ON leave_requests (school_id, status);
+
+CREATE TABLE IF NOT EXISTS timetable (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  school_id INT NOT NULL,
+  class_id UUID NOT NULL REFERENCES classes(id) ON DELETE CASCADE,
+  day_of_week VARCHAR(10) NOT NULL,
+  period_number INT NOT NULL,
+  subject VARCHAR(100) NOT NULL,
+  teacher_id VARCHAR(50),
+  start_time TIME NOT NULL,
+  end_time TIME NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_timetable_class ON timetable (school_id, class_id);
+CREATE INDEX IF NOT EXISTS idx_timetable_day ON timetable (day_of_week);
+ALTER TABLE timetable ADD CONSTRAINT uq_timetable UNIQUE (school_id, class_id, day_of_week, period_number);
+
+CREATE TABLE IF NOT EXISTS homework (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  school_id INT NOT NULL,
+  class_id UUID NOT NULL REFERENCES classes(id) ON DELETE CASCADE,
+  teacher_id VARCHAR(50) NOT NULL,
+  subject VARCHAR(100) NOT NULL,
+  title VARCHAR(255) NOT NULL,
+  description TEXT NOT NULL,
+  due_date DATE NOT NULL,
+  attachment_url VARCHAR(500),
+  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_homework_school ON homework (school_id);
+CREATE INDEX IF NOT EXISTS idx_homework_class_due ON homework (school_id, class_id, due_date);
+CREATE INDEX IF NOT EXISTS idx_homework_teacher_due ON homework (school_id, teacher_id, due_date);

@@ -1,6 +1,8 @@
 const express = require('express');
 const authMiddleware = require('./middleware/auth.middleware');
 const attendanceRoutes = require('./modules/teacher/attendance/teacher.attendance.routes');
+const teacherHomeworkRoutes = require('./modules/teacher/homework/teacher.homework.routes');
+const teacherTimetableRoutes = require('./modules/teacher/timetable/teacher.timetable.routes');
 
 const app = express();
 
@@ -11,6 +13,8 @@ app.get('/health', (_req, res) => {
 });
 
 app.use('/api/v1/academic', authMiddleware, attendanceRoutes);
+app.use('/api/v1/academic', authMiddleware, teacherHomeworkRoutes);
+app.use('/api/v1/academic', authMiddleware, teacherTimetableRoutes);
 
 app.use((req, res) => {
   res.status(404).json({

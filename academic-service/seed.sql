@@ -41,7 +41,58 @@ INSERT INTO attendance (id, school_id, class_id, student_id, teacher_id, date, s
 ('e4e5e6e7-e8e9-eaea-ebec-edeeeeefefef', 101, '88bbf5fd-7ac1-4e82-9cc0-b9cfdfde5f18', '3c4d5e6f-7890-1234-cdef-123456789012', 'TCH001', '2026-03-03', 'HALF_DAY', NOW(), NOW())
 ON CONFLICT (school_id, class_id, student_id, date) DO NOTHING;
 
+-- Insert Timetable for Class 10A (TCH001, school_id=101)
+INSERT INTO timetable (school_id, class_id, day_of_week, period_number, subject, teacher_id, start_time, end_time) VALUES
+-- Monday
+(101, '88bbf5fd-7ac1-4e82-9cc0-b9cfdfde5f18', 'Monday', 1, 'Mathematics',        'TCH001', '08:00', '08:45'),
+(101, '88bbf5fd-7ac1-4e82-9cc0-b9cfdfde5f18', 'Monday', 2, 'English',            'TCH002', '08:45', '09:30'),
+(101, '88bbf5fd-7ac1-4e82-9cc0-b9cfdfde5f18', 'Monday', 3, 'Science',            NULL,     '09:30', '10:15'),
+(101, '88bbf5fd-7ac1-4e82-9cc0-b9cfdfde5f18', 'Monday', 4, 'Hindi',              NULL,     '10:45', '11:30'),
+(101, '88bbf5fd-7ac1-4e82-9cc0-b9cfdfde5f18', 'Monday', 5, 'Computer Science',   NULL,     '11:30', '12:15'),
+(101, '88bbf5fd-7ac1-4e82-9cc0-b9cfdfde5f18', 'Monday', 6, 'Physical Education', NULL,     '12:15', '13:00'),
+-- Tuesday
+(101, '88bbf5fd-7ac1-4e82-9cc0-b9cfdfde5f18', 'Tuesday', 1, 'English',           'TCH002', '08:00', '08:45'),
+(101, '88bbf5fd-7ac1-4e82-9cc0-b9cfdfde5f18', 'Tuesday', 2, 'Mathematics',       'TCH001', '08:45', '09:30'),
+(101, '88bbf5fd-7ac1-4e82-9cc0-b9cfdfde5f18', 'Tuesday', 3, 'Social Studies',    NULL,     '09:30', '10:15'),
+(101, '88bbf5fd-7ac1-4e82-9cc0-b9cfdfde5f18', 'Tuesday', 4, 'Science',           NULL,     '10:45', '11:30'),
+(101, '88bbf5fd-7ac1-4e82-9cc0-b9cfdfde5f18', 'Tuesday', 5, 'Hindi',             NULL,     '11:30', '12:15'),
+(101, '88bbf5fd-7ac1-4e82-9cc0-b9cfdfde5f18', 'Tuesday', 6, 'Computer Science',  NULL,     '12:15', '13:00'),
+(101, '88bbf5fd-7ac1-4e82-9cc0-b9cfdfde5f18', 'Tuesday', 7, 'Mathematics',       'TCH001', '13:00', '13:45'),
+-- Wednesday
+(101, '88bbf5fd-7ac1-4e82-9cc0-b9cfdfde5f18', 'Wednesday', 1, 'Science',           NULL,     '08:00', '08:45'),
+(101, '88bbf5fd-7ac1-4e82-9cc0-b9cfdfde5f18', 'Wednesday', 2, 'English',           'TCH002', '08:45', '09:30'),
+(101, '88bbf5fd-7ac1-4e82-9cc0-b9cfdfde5f18', 'Wednesday', 3, 'Mathematics',       'TCH001', '09:30', '10:15'),
+(101, '88bbf5fd-7ac1-4e82-9cc0-b9cfdfde5f18', 'Wednesday', 4, 'Computer Science',  NULL,     '10:45', '11:30'),
+(101, '88bbf5fd-7ac1-4e82-9cc0-b9cfdfde5f18', 'Wednesday', 5, 'Social Studies',    NULL,     '11:30', '12:15'),
+(101, '88bbf5fd-7ac1-4e82-9cc0-b9cfdfde5f18', 'Wednesday', 6, 'Physical Education',NULL,     '12:15', '13:00'),
+-- Thursday
+(101, '88bbf5fd-7ac1-4e82-9cc0-b9cfdfde5f18', 'Thursday', 1, 'Mathematics',       'TCH001', '08:00', '08:45'),
+(101, '88bbf5fd-7ac1-4e82-9cc0-b9cfdfde5f18', 'Thursday', 2, 'Hindi',             NULL,     '08:45', '09:30'),
+(101, '88bbf5fd-7ac1-4e82-9cc0-b9cfdfde5f18', 'Thursday', 3, 'Science',           NULL,     '09:30', '10:15'),
+(101, '88bbf5fd-7ac1-4e82-9cc0-b9cfdfde5f18', 'Thursday', 4, 'English',           'TCH002', '10:45', '11:30'),
+(101, '88bbf5fd-7ac1-4e82-9cc0-b9cfdfde5f18', 'Thursday', 5, 'Social Studies',    NULL,     '11:30', '12:15'),
+(101, '88bbf5fd-7ac1-4e82-9cc0-b9cfdfde5f18', 'Thursday', 6, 'Computer Science',  NULL,     '12:15', '13:00'),
+-- Friday
+(101, '88bbf5fd-7ac1-4e82-9cc0-b9cfdfde5f18', 'Friday', 1, 'Social Studies',    NULL,     '08:00', '08:45'),
+(101, '88bbf5fd-7ac1-4e82-9cc0-b9cfdfde5f18', 'Friday', 2, 'Mathematics',       'TCH001', '08:45', '09:30'),
+(101, '88bbf5fd-7ac1-4e82-9cc0-b9cfdfde5f18', 'Friday', 3, 'English',           'TCH002', '09:30', '10:15'),
+(101, '88bbf5fd-7ac1-4e82-9cc0-b9cfdfde5f18', 'Friday', 4, 'Science',           NULL,     '10:45', '11:30'),
+(101, '88bbf5fd-7ac1-4e82-9cc0-b9cfdfde5f18', 'Friday', 5, 'Hindi',             NULL,     '11:30', '12:15'),
+(101, '88bbf5fd-7ac1-4e82-9cc0-b9cfdfde5f18', 'Friday', 6, 'Physical Education',NULL,     '12:15', '13:00')
+ON CONFLICT (school_id, class_id, day_of_week, period_number) DO NOTHING;
+
+-- Insert Homework for Class 10A (TCH001, school_id=101)
+-- today=2026-03-17, upcoming=future, completed=past
+INSERT INTO homework (id, school_id, class_id, teacher_id, subject, title, description, due_date) VALUES
+('00000001-0000-0000-0000-000000000001', 101, '88bbf5fd-7ac1-4e82-9cc0-b9cfdfde5f18', 'TCH001', 'Mathematics', 'Solve Chapter 5 Exercise',       'Complete all questions from Exercise 5.2 and 5.3. Show all working steps.',       '2026-03-17'),
+('00000001-0000-0000-0000-000000000002', 101, '88bbf5fd-7ac1-4e82-9cc0-b9cfdfde5f18', 'TCH001', 'Mathematics', 'Practice Quadratic Equations',   'Solve worksheet problems 1–20. Focus on the factorization method.',              '2026-03-20'),
+('00000001-0000-0000-0000-000000000003', 101, '88bbf5fd-7ac1-4e82-9cc0-b9cfdfde5f18', 'TCH001', 'Mathematics', 'Trigonometry Basics',            'Learn and practice sin, cos, tan identities from Chapter 8.',                    '2026-03-24'),
+('00000001-0000-0000-0000-000000000004', 101, '88bbf5fd-7ac1-4e82-9cc0-b9cfdfde5f18', 'TCH001', 'Mathematics', 'Chapter 3 Revision',             'Revise all formulas from Chapter 3 and solve past paper questions.',              '2026-03-10')
+ON CONFLICT (id) DO NOTHING;
+
 -- Verify inserts
-SELECT 'Classes'  AS table_name, COUNT(*) AS count FROM classes  WHERE school_id = 101;
-SELECT 'Students' AS table_name, COUNT(*) AS count FROM students WHERE school_id = 101;
+SELECT 'Classes'    AS table_name, COUNT(*) AS count FROM classes    WHERE school_id = 101;
+SELECT 'Students'   AS table_name, COUNT(*) AS count FROM students   WHERE school_id = 101;
 SELECT 'Attendance' AS table_name, COUNT(*) AS count FROM attendance WHERE school_id = 101;
+SELECT 'Timetable'  AS table_name, COUNT(*) AS count FROM timetable  WHERE school_id = 101;
+SELECT 'Homework'   AS table_name, COUNT(*) AS count FROM homework   WHERE school_id = 101;
