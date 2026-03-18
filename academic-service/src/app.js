@@ -3,6 +3,9 @@ const authMiddleware = require('./middleware/auth.middleware');
 const attendanceRoutes = require('./modules/teacher/attendance/teacher.attendance.routes');
 const teacherHomeworkRoutes = require('./modules/teacher/homework/teacher.homework.routes');
 const teacherTimetableRoutes = require('./modules/teacher/timetable/teacher.timetable.routes');
+const teacherAnnouncementRoutes = require('./modules/teacher/announcement/teacher.announcement.routes');
+const teacherLeaveRoutes = require('./modules/teacher/leave/teacher.leave.routes');
+const teacherExamRoutes = require('./modules/teacher/exam/teacher.exam.routes');
 
 const app = express();
 
@@ -15,6 +18,9 @@ app.get('/health', (_req, res) => {
 app.use('/api/v1/academic', authMiddleware, attendanceRoutes);
 app.use('/api/v1/academic', authMiddleware, teacherHomeworkRoutes);
 app.use('/api/v1/academic', authMiddleware, teacherTimetableRoutes);
+app.use('/api/v1/academic', authMiddleware, teacherAnnouncementRoutes);
+app.use('/api/v1/academic', authMiddleware, teacherLeaveRoutes);
+app.use('/api/v1/academic', authMiddleware, teacherExamRoutes);
 
 app.use((req, res) => {
   res.status(404).json({
