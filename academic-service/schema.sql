@@ -142,3 +142,43 @@ CREATE TABLE IF NOT EXISTS announcement_recipients (
 
 CREATE INDEX IF NOT EXISTS idx_ann_recipients_recipient ON announcement_recipients (school_id, recipient_id);
 CREATE INDEX IF NOT EXISTS idx_ann_recipients_announcement ON announcement_recipients (announcement_id);
+
+CREATE TABLE IF NOT EXISTS exams (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  school_id INT NOT NULL,
+  name VARCHAR(255) NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_exams_school ON exams (school_id);
+
+CREATE TABLE IF NOT EXISTS exam_subjects (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  school_id INT NOT NULL,
+  exam_id UUID NOT NULL REFERENCES exams(id) ON DELETE CASCADE,
+  class_id UUID NOT NULL REFERENCES classes(id) ON DELETE CASCADE,
+  teacher_id VARCHAR(50) NOT NULL,
+  subject_name VARCHAR(100) NOT NULL,
+  exam_date DATE NOT NULL,
+  max_marks INT NOT NULL DEFAULT 100,
+  pass_marks INT NOT NULL DEFAULT 35,
+  result_status VARCHAR(20) NOT NULL DEFAULT 'PENDING' CHECK (result_status IN ('PENDING', 'DRAFT', 'SUBMITTED')),
+  created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_exam_subjects_school ON exam_subjects (school_id);
+CREATE INDEX IF NOT EXISTS idx_exam_subjects_teacher ON exam_subjects (school_id, teacher_id);
+CREATE INDEX IF NOT EXISTS idx_exam_subjects_date ON exam_subjects (school_id, exam_date);
+
+CREATE TABLE IF NOT EXISTS exam_results (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  exam_subject_id UUID NOT NULL REFERENCES exam_subjects(id) ON DELETE CASCADE,
+  school_id INT NOT NULL,
+  student_id UUID NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+  marks_obtained DECIMAL(5,2),
+  is_absent BOOLEAN NOT NULL DEFAULT false,
+  UNIQUE (exam_subject_id, student_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_exam_results_subject ON exam_results (exam_subject_id);
+CREATE INDEX IF NOT EXISTS idx_exam_results_student ON exam_results (school_id, student_id);

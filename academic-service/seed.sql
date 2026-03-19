@@ -532,6 +532,69 @@ INSERT INTO announcement_recipients (id, announcement_id, recipient_id, school_i
 ON CONFLICT (announcement_id, recipient_id) DO NOTHING;
 
 -- ============================================================
+-- EXAMS
+-- 3 exam sessions covering all 3 tabs:
+--   completed  → exam_date < today (2026-03-19)
+--   ongoing    → exam_date = today (2026-03-19)
+--   upcoming   → exam_date > today (2026-03-19)
+-- ============================================================
+INSERT INTO exams (id, school_id, name, created_at) VALUES
+('ee000001-0000-0000-0000-000000000001', 101, 'Unit Test 1',   '2026-03-01 08:00:00'),
+('ee000001-0000-0000-0000-000000000002', 101, 'Class Test',    '2026-03-18 08:00:00'),
+('ee000001-0000-0000-0000-000000000003', 101, 'Mid Term Exam', '2026-03-18 08:00:00')
+ON CONFLICT (id) DO NOTHING;
+
+-- ============================================================
+-- EXAM SUBJECTS
+-- Unit Test 1 (completed — both subjects done in early March)
+--   10A Math   → SUBMITTED (fully done, marks locked)
+--   10B English → DRAFT    (marks partially entered)
+-- Class Test (ongoing — exam happening today 2026-03-19)
+--   10A Math   → PENDING
+-- Mid Term (upcoming — April)
+--   10A Math   → PENDING
+--   10B English → PENDING
+-- ============================================================
+INSERT INTO exam_subjects (id, school_id, exam_id, class_id, teacher_id, subject_name, exam_date, max_marks, pass_marks, result_status) VALUES
+-- Unit Test 1
+('e5000001-0000-0000-0000-000000000001', 101, 'ee000001-0000-0000-0000-000000000001', '88bbf5fd-7ac1-4e82-9cc0-b9cfdfde5f18', 'TCH001', 'Mathematics', '2026-03-10', 50, 20, 'SUBMITTED'),
+('e5000001-0000-0000-0000-000000000002', 101, 'ee000001-0000-0000-0000-000000000001', '99ccaaee-8bd2-4f93-addd-c0deadbeef19', 'TCH001', 'English',      '2026-03-11', 50, 20, 'DRAFT'),
+-- Class Test (ongoing today)
+('e5000001-0000-0000-0000-000000000003', 101, 'ee000001-0000-0000-0000-000000000002', '88bbf5fd-7ac1-4e82-9cc0-b9cfdfde5f18', 'TCH001', 'Mathematics', '2026-03-19', 25, 10, 'PENDING'),
+-- Mid Term (upcoming)
+('e5000001-0000-0000-0000-000000000004', 101, 'ee000001-0000-0000-0000-000000000003', '88bbf5fd-7ac1-4e82-9cc0-b9cfdfde5f18', 'TCH001', 'Mathematics', '2026-04-05', 100, 35, 'PENDING'),
+('e5000001-0000-0000-0000-000000000005', 101, 'ee000001-0000-0000-0000-000000000003', '99ccaaee-8bd2-4f93-addd-c0deadbeef19', 'TCH001', 'English',      '2026-04-07', 100, 35, 'PENDING')
+ON CONFLICT (id) DO NOTHING;
+
+-- ============================================================
+-- EXAM RESULTS
+-- Only for Unit Test 1 (completed exams)
+--   10A Math (SUBMITTED) → all 8 students have marks
+--   10B English (DRAFT)  → 5 of 8 students have marks entered so far
+-- ============================================================
+
+-- Unit Test 1 — 10A Mathematics (SUBMITTED, max_marks=50)
+INSERT INTO exam_results (exam_subject_id, school_id, student_id, marks_obtained, is_absent) VALUES
+('e5000001-0000-0000-0000-000000000001', 101, 'f8f36a25-8bf8-4df8-be47-30a4f0a4e811', 45, false),  -- Rahul Sharma
+('e5000001-0000-0000-0000-000000000001', 101, '0540f78d-8479-4d11-bd41-d3fd2b014db4', 38, false),  -- Priya Singh
+('e5000001-0000-0000-0000-000000000001', 101, '1a2b3c4d-5e6f-7890-abcd-ef1234567891', 22, false),  -- Amit Kumar
+('e5000001-0000-0000-0000-000000000001', 101, '2b3c4d5e-6f78-9012-bcde-f12345678901', 47, false),  -- Sneha Patel
+('e5000001-0000-0000-0000-000000000001', 101, '3c4d5e6f-7890-1234-cdef-123456789012', NULL, true), -- Arjun Reddy (absent)
+('e5000001-0000-0000-0000-000000000001', 101, 'aa000001-0000-0000-0000-000000000001', 41, false),  -- Kavya Nair
+('e5000001-0000-0000-0000-000000000001', 101, 'aa000001-0000-0000-0000-000000000002', 33, false),  -- Rohan Mehta
+('e5000001-0000-0000-0000-000000000001', 101, 'aa000001-0000-0000-0000-000000000003', 49, false)   -- Ananya Gupta
+ON CONFLICT (exam_subject_id, student_id) DO NOTHING;
+
+-- Unit Test 1 — 10B English (DRAFT, max_marks=50) — 5 of 8 entered so far
+INSERT INTO exam_results (exam_subject_id, school_id, student_id, marks_obtained, is_absent) VALUES
+('e5000001-0000-0000-0000-000000000002', 101, '4d5e6f70-8901-2345-def0-234567890123', 40, false),  -- Aisha Khan
+('e5000001-0000-0000-0000-000000000002', 101, '5e6f7089-0123-4567-ef01-345678901234', 28, false),  -- Vikram Verma
+('e5000001-0000-0000-0000-000000000002', 101, '6f708901-2345-6789-f012-456789012345', 35, false),  -- Pooja Desai
+('e5000001-0000-0000-0000-000000000002', 101, '70890123-4567-8901-0123-567890123456', NULL, true), -- Nikhil Chopra (absent)
+('e5000001-0000-0000-0000-000000000002', 101, '81901234-5678-9012-1234-678901234567', 44, false)   -- Deepika Sharma
+ON CONFLICT (exam_subject_id, student_id) DO NOTHING;
+
+-- ============================================================
 -- VERIFY ALL INSERTS
 -- ============================================================
 SELECT 'Classes'              AS table_name, COUNT(*) AS count FROM classes              WHERE school_id = 101;
@@ -543,3 +606,6 @@ SELECT 'Timetable'            AS table_name, COUNT(*) AS count FROM timetable   
 SELECT 'Homework'             AS table_name, COUNT(*) AS count FROM homework             WHERE school_id = 101;
 SELECT 'Announcements'        AS table_name, COUNT(*) AS count FROM announcements        WHERE school_id = 101;
 SELECT 'Ann. Recipients'      AS table_name, COUNT(*) AS count FROM announcement_recipients WHERE school_id = 101;
+SELECT 'Exams'                AS table_name, COUNT(*) AS count FROM exams                WHERE school_id = 101;
+SELECT 'Exam Subjects'        AS table_name, COUNT(*) AS count FROM exam_subjects        WHERE school_id = 101;
+SELECT 'Exam Results'         AS table_name, COUNT(*) AS count FROM exam_results         WHERE school_id = 101;
