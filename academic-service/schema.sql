@@ -1,6 +1,5 @@
-CREATE DATABASE academic_db;
-
-\c academic_db;
+-- CREATE DATABASE academic_db;   -- Run manually or skip on Render (DB already exists)
+-- \c academic_db;                -- Skip on Render (already connected via external URL)
 
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
@@ -111,3 +110,35 @@ CREATE TABLE IF NOT EXISTS homework (
 CREATE INDEX IF NOT EXISTS idx_homework_school ON homework (school_id);
 CREATE INDEX IF NOT EXISTS idx_homework_class_due ON homework (school_id, class_id, due_date);
 CREATE INDEX IF NOT EXISTS idx_homework_teacher_due ON homework (school_id, teacher_id, due_date);
+
+CREATE TABLE IF NOT EXISTS announcements (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  school_id INT NOT NULL,
+  sender_id VARCHAR(50) NOT NULL,
+  sender_name VARCHAR(120) NOT NULL,
+  sender_role VARCHAR(20) NOT NULL,
+  class_id UUID REFERENCES classes(id) ON DELETE SET NULL,
+  audience_type VARCHAR(30) NOT NULL,
+  title VARCHAR(255),
+  message TEXT NOT NULL,
+  is_important BOOLEAN NOT NULL DEFAULT false,
+  recipient_count INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_announcements_school ON announcements (school_id);
+CREATE INDEX IF NOT EXISTS idx_announcements_sender ON announcements (school_id, sender_id);
+CREATE INDEX IF NOT EXISTS idx_announcements_created ON announcements (school_id, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS announcement_recipients (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  announcement_id UUID NOT NULL REFERENCES announcements(id) ON DELETE CASCADE,
+  recipient_id VARCHAR(50) NOT NULL,
+  school_id INT NOT NULL,
+  is_read BOOLEAN NOT NULL DEFAULT false,
+  read_at TIMESTAMP,
+  UNIQUE (announcement_id, recipient_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_ann_recipients_recipient ON announcement_recipients (school_id, recipient_id);
+CREATE INDEX IF NOT EXISTS idx_ann_recipients_announcement ON announcement_recipients (announcement_id);
