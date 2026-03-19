@@ -595,6 +595,73 @@ INSERT INTO exam_results (exam_subject_id, school_id, student_id, marks_obtained
 ON CONFLICT (exam_subject_id, student_id) DO NOTHING;
 
 -- ============================================================
+-- MORE EXAMS — Additional test data for frontend
+-- ============================================================
+
+-- 3 more exams
+INSERT INTO exams (id, school_id, name, created_at) VALUES
+('ee000001-0000-0000-0000-000000000004', 101, 'Weekly Quiz 1',    '2026-02-20 08:00:00'),
+('ee000001-0000-0000-0000-000000000005', 101, 'Unit Test 2',      '2026-03-15 08:00:00'),
+('ee000001-0000-0000-0000-000000000006', 101, 'Half Yearly Exam', '2026-03-18 08:00:00')
+ON CONFLICT (id) DO NOTHING;
+
+-- ============================================================
+-- MORE EXAM SUBJECTS
+-- Weekly Quiz 1 (completed — Feb 25, both subjects done)
+--   10A Math   → SUBMITTED (marks locked)
+--   10B English → PENDING  (marks not entered yet — good for testing fresh entry)
+-- Unit Test 2 (completed — Mar 14-15, both subjects)
+--   10A Math   → DRAFT    (partial marks entered)
+--   10B English → DRAFT   (partial marks entered)
+-- Half Yearly (upcoming — April 15-18)
+--   10A Math   → PENDING
+--   10B English → PENDING
+-- ============================================================
+INSERT INTO exam_subjects (id, school_id, exam_id, class_id, teacher_id, subject_name, exam_date, max_marks, pass_marks, result_status) VALUES
+-- Weekly Quiz 1
+('e5000001-0000-0000-0000-000000000006', 101, 'ee000001-0000-0000-0000-000000000004', '88bbf5fd-7ac1-4e82-9cc0-b9cfdfde5f18', 'TCH001', 'Mathematics', '2026-02-25', 25, 10, 'SUBMITTED'),
+('e5000001-0000-0000-0000-000000000007', 101, 'ee000001-0000-0000-0000-000000000004', '99ccaaee-8bd2-4f93-addd-c0deadbeef19', 'TCH001', 'English',      '2026-02-25', 25, 10, 'PENDING'),
+-- Unit Test 2
+('e5000001-0000-0000-0000-000000000008', 101, 'ee000001-0000-0000-0000-000000000005', '88bbf5fd-7ac1-4e82-9cc0-b9cfdfde5f18', 'TCH001', 'Mathematics', '2026-03-14', 50, 20, 'DRAFT'),
+('e5000001-0000-0000-0000-000000000009', 101, 'ee000001-0000-0000-0000-000000000005', '99ccaaee-8bd2-4f93-addd-c0deadbeef19', 'TCH001', 'English',      '2026-03-15', 50, 20, 'DRAFT'),
+-- Half Yearly
+('e5000001-0000-0000-0000-000000000010', 101, 'ee000001-0000-0000-0000-000000000006', '88bbf5fd-7ac1-4e82-9cc0-b9cfdfde5f18', 'TCH001', 'Mathematics', '2026-04-15', 100, 35, 'PENDING'),
+('e5000001-0000-0000-0000-000000000011', 101, 'ee000001-0000-0000-0000-000000000006', '99ccaaee-8bd2-4f93-addd-c0deadbeef19', 'TCH001', 'English',      '2026-04-18', 100, 35, 'PENDING')
+ON CONFLICT (id) DO NOTHING;
+
+-- ============================================================
+-- MORE EXAM RESULTS
+-- Weekly Quiz 1 — 10A Mathematics (SUBMITTED, max=25)
+-- ============================================================
+INSERT INTO exam_results (exam_subject_id, school_id, student_id, marks_obtained, is_absent) VALUES
+('e5000001-0000-0000-0000-000000000006', 101, 'f8f36a25-8bf8-4df8-be47-30a4f0a4e811', 22, false),   -- Rahul Sharma
+('e5000001-0000-0000-0000-000000000006', 101, '0540f78d-8479-4d11-bd41-d3fd2b014db4', 18, false),   -- Priya Singh
+('e5000001-0000-0000-0000-000000000006', 101, '1a2b3c4d-5e6f-7890-abcd-ef1234567891', 8, false),    -- Amit Kumar (FAIL)
+('e5000001-0000-0000-0000-000000000006', 101, '2b3c4d5e-6f78-9012-bcde-f12345678901', 25, false),   -- Sneha Patel (FULL MARKS)
+('e5000001-0000-0000-0000-000000000006', 101, '3c4d5e6f-7890-1234-cdef-123456789012', 15, false),   -- Arjun Reddy
+('e5000001-0000-0000-0000-000000000006', 101, 'aa000001-0000-0000-0000-000000000001', 20, false),    -- Kavya Nair
+('e5000001-0000-0000-0000-000000000006', 101, 'aa000001-0000-0000-0000-000000000002', NULL, true),   -- Rohan Mehta (ABSENT)
+('e5000001-0000-0000-0000-000000000006', 101, 'aa000001-0000-0000-0000-000000000003', 24, false)     -- Ananya Gupta
+ON CONFLICT (exam_subject_id, student_id) DO NOTHING;
+
+-- Unit Test 2 — 10A Mathematics (DRAFT, max=50) — 5 of 8 entered
+INSERT INTO exam_results (exam_subject_id, school_id, student_id, marks_obtained, is_absent) VALUES
+('e5000001-0000-0000-0000-000000000008', 101, 'f8f36a25-8bf8-4df8-be47-30a4f0a4e811', 42, false),   -- Rahul Sharma
+('e5000001-0000-0000-0000-000000000008', 101, '0540f78d-8479-4d11-bd41-d3fd2b014db4', 35, false),   -- Priya Singh
+('e5000001-0000-0000-0000-000000000008', 101, '1a2b3c4d-5e6f-7890-abcd-ef1234567891', 17, false),   -- Amit Kumar (FAIL)
+('e5000001-0000-0000-0000-000000000008', 101, '2b3c4d5e-6f78-9012-bcde-f12345678901', 48, false),   -- Sneha Patel
+('e5000001-0000-0000-0000-000000000008', 101, '3c4d5e6f-7890-1234-cdef-123456789012', NULL, true)    -- Arjun Reddy (ABSENT)
+ON CONFLICT (exam_subject_id, student_id) DO NOTHING;
+
+-- Unit Test 2 — 10B English (DRAFT, max=50) — 4 of 8 entered
+INSERT INTO exam_results (exam_subject_id, school_id, student_id, marks_obtained, is_absent) VALUES
+('e5000001-0000-0000-0000-000000000009', 101, '4d5e6f70-8901-2345-def0-234567890123', 43, false),   -- Aisha Khan
+('e5000001-0000-0000-0000-000000000009', 101, '5e6f7089-0123-4567-ef01-345678901234', 31, false),   -- Vikram Verma
+('e5000001-0000-0000-0000-000000000009', 101, '6f708901-2345-6789-f012-456789012345', NULL, true),  -- Pooja Desai (ABSENT)
+('e5000001-0000-0000-0000-000000000009', 101, '70890123-4567-8901-0123-567890123456', 39, false)    -- Nikhil Chopra
+ON CONFLICT (exam_subject_id, student_id) DO NOTHING;
+
+-- ============================================================
 -- VERIFY ALL INSERTS
 -- ============================================================
 SELECT 'Classes'              AS table_name, COUNT(*) AS count FROM classes              WHERE school_id = 101;
