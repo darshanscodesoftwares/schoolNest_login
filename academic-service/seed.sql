@@ -211,3 +211,10 @@ SELECT 'Announcements' AS table_name, COUNT(*) as count FROM announcements WHERE
 SELECT 'Leave Requests' AS table_name, COUNT(*) as count FROM leave_requests WHERE school_id = 101;
 SELECT 'Exams' AS table_name, COUNT(*) as count FROM exams WHERE school_id = 101;
 SELECT 'Exam Results' AS table_name, COUNT(*) as count FROM exam_results WHERE school_id = 101;
+
+-- School config for school_id = 101
+INSERT INTO school_config (school_id, campus_latitude, campus_longitude, campus_radius_meters, checkin_time)
+VALUES (101, 12.9716, 77.5946, 200, '09:30:00')
+ON CONFLICT (school_id) DO NOTHING;
+
+SELECT 'School Config' AS table_name, COUNT(*) as count FROM school_config WHERE school_id = 101;
