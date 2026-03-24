@@ -33,4 +33,21 @@ const login = async (req, res, next) => {
   }
 };
 
-module.exports = { login };
+/**
+ * Handle logout request
+ * POST /api/v1/auth/logout
+ * Requires: Authorization: Bearer <token>
+ */
+const logout = async (req, res, next) => {
+  try {
+    await authService.logout(req.user);
+    return res.status(200).json({
+      success: true,
+      message: 'Logged out successfully'
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+module.exports = { login, logout };

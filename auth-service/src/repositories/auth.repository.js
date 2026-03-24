@@ -32,4 +32,44 @@ const findUserByEmail = async (email) => {
   }
 };
 
-module.exports = { findUserByEmail };
+/**
+ * Insert a token into the blacklist (idempotent — double-logout is safe).
+ * @param {string} userId
+ * @param {number} issuedAt  - JWT iat claim (Unix epoch seconds)
+ * @param {Date}   expiresAt - JS Date derived from JWT exp claim
+ */
+const blacklistToken = async (userId, issuedAt, expiresAt) => {
+  const query = {
+    text: `
+      INSERT INTO token_blacklist (user_id, issued_at, expires_at)
+      VALUES ($1, $2, $3)
+      ON CONFLICT (user_id, issued_at) DO NOTHING
+    `,
+    values: [userId, issuedAt, expiresAt]
+  };
+  try {
+    await pool.query(query);
+  } catch (error) {
+    console.error('Database error in blacklistToken:', error.message);
+    throw error;
+  }
+};
+
+/**
+ * Delete all blacklist entries whose token has already naturally expired.
+ * Called as fire-and-forget on each logout to keep the table small.
+ * @returns {number} count of deleted rows
+ */
+const cleanupExpiredTokens = async () => {
+  try {
+    const result = await pool.query(
+      `DELETE FROM token_blacklist WHERE expires_at < NOW()`
+    );
+    return result.rowCount;
+  } catch (error) {
+    console.error('Database error in cleanupExpiredTokens:', error.message);
+    throw error;
+  }
+};
+
+module.exports = { findUserByEmail, blacklistToken, cleanupExpiredTokens };
