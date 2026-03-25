@@ -3,10 +3,10 @@ const resultsController = require('./parent.results.controller');
 
 const router = express.Router();
 
-// List all exams for child's class (dropdown)
-router.get('/results/exams', resultsController.getExamsList);
+// List all exams for selected student's class (dropdown)
+router.get('/students/:studentId/results/exams', resultsController.getExamsList);
 
-// Get result detail for selected exam
-router.get('/results/:examId', resultsController.getResultDetail);
+// Get result detail for selected exam and student
+router.get('/students/:studentId/results/:examId', resultsController.getResultDetail);
 
 module.exports = router;

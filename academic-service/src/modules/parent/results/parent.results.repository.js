@@ -1,16 +1,15 @@
 const pool = require('../../../config/db');
 
-// Get student info for this parent
-const getStudentByParent = async ({ schoolId, parentId }) => {
+// Verify student belongs to parent and return student info
+const verifyStudentOwnership = async ({ studentId, parentId, schoolId }) => {
   const { rows } = await pool.query({
     text: `
       SELECT s.id AS student_id, s.name, s.class_id, c.name AS class_name, c.section
       FROM students s
       JOIN classes c ON c.id = s.class_id
-      WHERE s.school_id = $1 AND s.parent_id = $2
-      LIMIT 1
+      WHERE s.id = $1 AND s.parent_id = $2 AND s.school_id = $3
     `,
-    values: [schoolId, parentId]
+    values: [studentId, parentId, schoolId]
   });
   return rows[0] || null;
 };
@@ -70,7 +69,7 @@ const getResultDetail = async ({ schoolId, examId, classId, studentId }) => {
 };
 
 module.exports = {
-  getStudentByParent,
+  verifyStudentOwnership,
   getExamsForClass,
   getResultDetail
 };
