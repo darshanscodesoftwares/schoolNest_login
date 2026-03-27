@@ -14,7 +14,8 @@ const authDbPool = new Pool({
   database: process.env.AUTH_DB_NAME     || 'auth_db',
   max: 5,
   idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 5000
+  connectionTimeoutMillis: 5000,
+  ssl: (process.env.AUTH_DB_HOST || process.env.DB_HOST) !== 'localhost' ? { rejectUnauthorized: false } : false
 });
 
 authDbPool.on('error', (err) => {
