@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
+const authDbPool = require('../config/authDb');
 
-const authMiddleware = (req, res, next) => {
+const authMiddleware = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
 
@@ -8,13 +9,29 @@ const authMiddleware = (req, res, next) => {
       return res.status(401).json({ message: 'Unauthorized: Missing or invalid token format' });
     }
 
-    const token = authHeader.split(' ')[1];
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    // Step 1: Verify JWT signature and expiry
+    let decoded;
+    try {
+      decoded = jwt.verify(authHeader.split(' ')[1], process.env.JWT_SECRET);
+    } catch (err) {
+      return res.status(401).json({ message: 'Unauthorized: Invalid or expired token' });
+    }
+
+    // Step 2: Check if this token has been blacklisted (user logged out)
+    const check = await authDbPool.query(
+      `SELECT 1 FROM token_blacklist WHERE user_id = $1 AND issued_at = $2 LIMIT 1`,
+      [decoded.user_id, decoded.iat]
+    );
+
+    if (check.rowCount > 0) {
+      return res.status(401).json({ message: 'Unauthorized: Token has been revoked' });
+    }
 
     req.user = decoded;
     return next();
   } catch (error) {
-    return res.status(401).json({ message: 'Unauthorized: Invalid or expired token' });
+    console.error('auth.middleware error:', error.message);
+    return res.status(503).json({ message: 'Service temporarily unavailable' });
   }
 };
 

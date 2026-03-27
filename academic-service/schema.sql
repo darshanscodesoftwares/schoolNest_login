@@ -182,3 +182,29 @@ CREATE TABLE IF NOT EXISTS exam_results (
 
 CREATE INDEX IF NOT EXISTS idx_exam_results_subject ON exam_results (exam_subject_id);
 CREATE INDEX IF NOT EXISTS idx_exam_results_student ON exam_results (school_id, student_id);
+
+-- School config: campus location, geofence radius, check-in time
+CREATE TABLE IF NOT EXISTS school_config (
+  school_id            INT          PRIMARY KEY,
+  campus_latitude      DECIMAL(10, 7),
+  campus_longitude     DECIMAL(10, 7),
+  campus_radius_meters INT          DEFAULT 200,
+  checkin_time         TIME         DEFAULT '09:30:00'
+);
+
+-- Teacher self check-in records
+CREATE TABLE IF NOT EXISTS teacher_checkins (
+  id            UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+  school_id     INT          NOT NULL,
+  teacher_id    VARCHAR(50)  NOT NULL,
+  check_in_time TIMESTAMPTZ  NOT NULL,
+  latitude      DECIMAL(10, 7) NOT NULL,
+  longitude     DECIMAL(10, 7) NOT NULL,
+  status        VARCHAR(10)  NOT NULL CHECK (status IN ('ON_TIME', 'LATE')),
+  date          DATE         NOT NULL,
+  created_at    TIMESTAMP    NOT NULL DEFAULT NOW(),
+  UNIQUE (school_id, teacher_id, date)
+);
+
+CREATE INDEX IF NOT EXISTS idx_teacher_checkins_school ON teacher_checkins (school_id);
+CREATE INDEX IF NOT EXISTS idx_teacher_checkins_teacher_date ON teacher_checkins (school_id, teacher_id, date);

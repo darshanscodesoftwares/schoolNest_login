@@ -661,6 +661,11 @@ INSERT INTO exam_results (exam_subject_id, school_id, student_id, marks_obtained
 ('e5000001-0000-0000-0000-000000000009', 101, '70890123-4567-8901-0123-567890123456', 39, false)    -- Nikhil Chopra
 ON CONFLICT (exam_subject_id, student_id) DO NOTHING;
 
+-- School config for school_id = 101
+INSERT INTO school_config (school_id, campus_latitude, campus_longitude, campus_radius_meters, checkin_time)
+VALUES (101, 12.9716, 77.5946, 200, '09:30:00')
+ON CONFLICT (school_id) DO NOTHING;
+
 -- ============================================================
 -- VERIFY ALL INSERTS
 -- ============================================================
@@ -676,3 +681,4 @@ SELECT 'Ann. Recipients'      AS table_name, COUNT(*) AS count FROM announcement
 SELECT 'Exams'                AS table_name, COUNT(*) AS count FROM exams                WHERE school_id = 101;
 SELECT 'Exam Subjects'        AS table_name, COUNT(*) AS count FROM exam_subjects        WHERE school_id = 101;
 SELECT 'Exam Results'         AS table_name, COUNT(*) AS count FROM exam_results         WHERE school_id = 101;
+SELECT 'School Config'        AS table_name, COUNT(*) AS count FROM school_config        WHERE school_id = 101;
