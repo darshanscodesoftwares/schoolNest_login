@@ -18,3 +18,15 @@ CREATE TABLE IF NOT EXISTS users (
 -- Indexes for query performance
 CREATE INDEX IF NOT EXISTS idx_users_email     ON users (email);
 CREATE INDEX IF NOT EXISTS idx_users_school_id ON users (school_id);
+
+-- Token blacklist for logout/revocation
+CREATE TABLE IF NOT EXISTS token_blacklist (
+  id         BIGSERIAL    PRIMARY KEY,
+  user_id    VARCHAR(20)  NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  issued_at  BIGINT       NOT NULL,
+  expires_at TIMESTAMPTZ  NOT NULL,
+  created_at TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_token_blacklist_user_iat ON token_blacklist (user_id, issued_at);
+CREATE INDEX IF NOT EXISTS idx_token_blacklist_expires ON token_blacklist (expires_at);

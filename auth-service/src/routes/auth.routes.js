@@ -1,5 +1,6 @@
 const express = require('express');
-const { login } = require('../controllers/auth.controller');
+const { login, logout } = require('../controllers/auth.controller');
+const authMiddleware = require('../middleware/auth.middleware');
 
 const router = express.Router();
 
@@ -9,5 +10,11 @@ const router = express.Router();
  * Returns JWT token with user details
  */
 router.post('/login', login);
+
+/**
+ * POST /api/v1/auth/logout
+ * Invalidate the current JWT token (requires valid Bearer token)
+ */
+router.post('/logout', authMiddleware, logout);
 
 module.exports = router;

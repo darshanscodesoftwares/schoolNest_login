@@ -40,17 +40,21 @@ const getPerformanceMessages = (subjects, overallPercentage) => {
   return messages;
 };
 
-const getExamsList = async ({ user }) => {
+const getExamsList = async ({ user, params }) => {
   if (user.role !== 'PARENT') {
     const err = new Error('Access denied: PARENT role required');
     err.statusCode = 403; err.code = 'FORBIDDEN'; throw err;
   }
 
-  const student = await resultsRepository.getStudentByParent({ schoolId: user.school_id, parentId: user.user_id });
+  const student = await resultsRepository.verifyStudentOwnership({
+    studentId: params.studentId,
+    parentId: user.user_id,
+    schoolId: user.school_id
+  });
 
   if (!student) {
-    const err = new Error('No student found for this parent');
-    err.statusCode = 404; err.code = 'STUDENT_NOT_FOUND'; throw err;
+    const err = new Error('Student not found or access denied');
+    err.statusCode = 403; err.code = 'FORBIDDEN'; throw err;
   }
 
   const exams = await resultsRepository.getExamsForClass({ schoolId: user.school_id, classId: student.class_id });
@@ -67,11 +71,15 @@ const getResultDetail = async ({ user, params }) => {
     err.statusCode = 403; err.code = 'FORBIDDEN'; throw err;
   }
 
-  const student = await resultsRepository.getStudentByParent({ schoolId: user.school_id, parentId: user.user_id });
+  const student = await resultsRepository.verifyStudentOwnership({
+    studentId: params.studentId,
+    parentId: user.user_id,
+    schoolId: user.school_id
+  });
 
   if (!student) {
-    const err = new Error('No student found for this parent');
-    err.statusCode = 404; err.code = 'STUDENT_NOT_FOUND'; throw err;
+    const err = new Error('Student not found or access denied');
+    err.statusCode = 403; err.code = 'FORBIDDEN'; throw err;
   }
 
   const data = await resultsRepository.getResultDetail({

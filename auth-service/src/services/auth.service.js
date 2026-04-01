@@ -2,6 +2,7 @@ const bcrypt = require('bcrypt');
 const authRepository = require('../repositories/auth.repository');
 const { generateToken } = require('../utils/jwt');
 
+
 /**
  * Authenticate user with email and password
  * @param {string} email - User email
@@ -47,4 +48,17 @@ const login = async ({ email, password }) => {
   };
 };
 
-module.exports = { login };
+/**
+ * Invalidate a JWT by inserting it into the token_blacklist.
+ * @param {Object} decoded - JWT payload from req.user (must have user_id, iat, exp)
+ */
+const logout = async (decoded) => {
+  const { user_id, iat, exp } = decoded;
+  await authRepository.blacklistToken(user_id, iat, new Date(exp * 1000));
+  // fire-and-forget cleanup of already-expired rows
+  authRepository.cleanupExpiredTokens().catch((err) =>
+    console.error('Non-critical cleanup error during logout:', err.message)
+  );
+};
+
+module.exports = { login, logout };
