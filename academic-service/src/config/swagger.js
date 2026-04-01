@@ -9,8 +9,8 @@ const options = {
       description: 'API documentation for the SchoolNest Academic Service — Teacher & Parent modules'
     },
     servers: [
-      { url: 'http://localhost:4002', description: 'Local' },
-      { url: 'https://schoolnest-login-1.onrender.com', description: 'Production (Render)' }
+      { url: 'https://schoolnest-login-1.onrender.com', description: 'Production (Render)' },
+      { url: 'http://localhost:4002', description: 'Local' }
     ],
     components: {
       securitySchemes: {
@@ -30,11 +30,7 @@ const options = {
       { name: 'Teacher - Leave', description: 'Review and approve leave requests' },
       { name: 'Teacher - Exams', description: 'Manage exams and enter marks' },
       { name: 'Teacher - Check-in', description: 'Self check-in with geofence' },
-      { name: 'Parent - Attendance', description: 'View child attendance' },
-      { name: 'Parent - Homework', description: 'View child homework' },
-      { name: 'Parent - Timetable', description: 'View child timetable' },
-      { name: 'Parent - Announcements', description: 'View school announcements' },
-      { name: 'Parent - Leave', description: 'Apply and track leave' }
+      { name: 'Parent - Attendance', description: 'View child attendance' }
     ]
   },
   apis: ['./src/docs/*.js']
