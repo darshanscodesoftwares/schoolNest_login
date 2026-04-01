@@ -1,4 +1,5 @@
 const express = require('express');
+const cors = require('cors');
 const authMiddleware = require('./middleware/auth.middleware');
 const attendanceRoutes = require('./modules/teacher/attendance/teacher.attendance.routes');
 const teacherHomeworkRoutes = require('./modules/teacher/homework/teacher.homework.routes');
@@ -19,6 +20,7 @@ const swaggerSpec = require('./config/swagger');
 
 const app = express();
 
+app.use(cors());
 app.use(express.json({ limit: '1mb' }));
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
