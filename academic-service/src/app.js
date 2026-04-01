@@ -14,9 +14,14 @@ const teacherExamRoutes = require('./modules/teacher/exam/teacher.exam.routes');
 const parentResultsRoutes = require('./modules/parent/results/parent.results.routes');
 const teacherCheckinRoutes = require('./modules/teacher/checkin/teacher.checkin.routes');
 
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = require('./config/swagger');
+
 const app = express();
 
 app.use(express.json({ limit: '1mb' }));
+
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.get('/health', (_req, res) => {
   res.status(200).json({ status: 'ok', service: 'academic-service' });
