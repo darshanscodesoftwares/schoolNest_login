@@ -12,6 +12,10 @@ const teacherExamRoutes = require('./modules/teacher/exam/teacher.exam.routes');
 const teacherCheckinRoutes = require('./modules/teacher/checkin/teacher.checkin.routes');
 const parentResultsRoutes = require('./modules/parent/results/parent.results.routes');
 const parentAttendanceRoutes = require('./modules/parent/attendance/parent.attendance.routes');
+const parentTimetableRoutes = require('./modules/parent/timetable/parent.timetable.routes');
+const parentHomeworkRoutes = require('./modules/parent/homework/parent.homework.routes');
+const parentAnnouncementRoutes = require('./modules/parent/announcement/parent.announcement.routes');
+const parentLeaveRoutes = require('./modules/parent/leave/parent.leave.routes');
 
 const app = express();
 
@@ -33,6 +37,10 @@ app.use('/api/v1/academic', authMiddleware, teacherExamRoutes);
 app.use('/api/v1/academic', authMiddleware, teacherCheckinRoutes);
 app.use('/api/v1/parent', authMiddleware, parentResultsRoutes);
 app.use('/api/v1/parent', authMiddleware, parentAttendanceRoutes);
+app.use('/api/v1/parent', authMiddleware, parentTimetableRoutes);
+app.use('/api/v1/parent', authMiddleware, parentHomeworkRoutes);
+app.use('/api/v1/parent', authMiddleware, parentAnnouncementRoutes);
+app.use('/api/v1/parent', authMiddleware, parentLeaveRoutes);
 
 app.use((req, res) => {
   res.status(404).json({
