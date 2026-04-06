@@ -72,3 +72,25 @@
  *       200:
  *         description: Recent attendance records
  */
+
+// ============================================================
+// PARENT - TIMETABLE
+// ============================================================
+
+/**
+ * @swagger
+ * /api/v1/parent/students/{studentId}/timetable:
+ *   get:
+ *     tags: [Parent - Timetable]
+ *     summary: Get child's timetable
+ *     parameters:
+ *       - in: path
+ *         name: studentId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Weekly class schedule
+ */

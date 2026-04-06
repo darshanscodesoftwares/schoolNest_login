@@ -30,7 +30,8 @@ const options = {
       { name: 'Teacher - Leave', description: 'Review and approve leave requests' },
       { name: 'Teacher - Exams', description: 'Manage exams and enter marks' },
       { name: 'Teacher - Check-in', description: 'Self check-in with geofence' },
-      { name: 'Parent - Attendance', description: 'View child attendance' }
+      { name: 'Parent - Attendance', description: 'View child attendance' },
+      { name: 'Parent - Timetable', description: 'View child timetable/class schedule' }
     ]
   },
   apis: ['./src/docs/*.js']
