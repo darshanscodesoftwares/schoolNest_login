@@ -4,7 +4,7 @@ const timetableController = require('./parent.timetable.controller');
 const router = express.Router();
 
 router.get(
-  '/parent/students/:studentId/timetable',
+  '/students/:studentId/timetable',
   timetableController.getStudentTimetable
 );
 
