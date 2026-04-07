@@ -9,6 +9,7 @@ const options = {
       description: 'API documentation for the SchoolNest Authentication Service'
     },
     servers: [
+      { url: '/', description: 'Current Host (auto)' },
       { url: 'http://localhost:3000', description: 'Local' },
       { url: 'https://schoolnest-login-1.onrender.com', description: 'Production (Render)' }
     ],
