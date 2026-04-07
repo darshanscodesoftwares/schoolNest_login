@@ -34,17 +34,6 @@ const getMarksEntry = async ({ user, params }) => {
     err.statusCode = 404; err.code = 'NOT_FOUND'; throw err;
   }
 
-  const today = new Date().toISOString().split('T')[0];
-  if (result.subject.exam_date >= today) {
-    const err = new Error('Marks can only be entered after the exam is completed');
-    err.statusCode = 400; err.code = 'EXAM_NOT_COMPLETED'; throw err;
-  }
-
-  if (result.subject.result_status === 'SUBMITTED') {
-    const err = new Error('Marks already submitted for this exam');
-    err.statusCode = 400; err.code = 'ALREADY_SUBMITTED'; throw err;
-  }
-
   return result;
 };
 
