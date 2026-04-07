@@ -217,3 +217,49 @@ CREATE TABLE IF NOT EXISTS teacher_checkins (
 
 CREATE INDEX IF NOT EXISTS idx_teacher_checkins_school ON teacher_checkins (school_id);
 CREATE INDEX IF NOT EXISTS idx_teacher_checkins_teacher_date ON teacher_checkins (school_id, teacher_id, date);
+
+-- Fee categories (Tuition Fee, Transport Fee, Exam Fee, etc.)
+CREATE TABLE IF NOT EXISTS fee_categories (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  school_id INT NOT NULL,
+  name VARCHAR(100) NOT NULL,
+  icon VARCHAR(50),
+  created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_fee_categories_school ON fee_categories (school_id);
+
+-- Student fees (individual fee assignment per student)
+CREATE TABLE IF NOT EXISTS student_fees (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  school_id INT NOT NULL,
+  student_id UUID NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+  fee_category_id UUID NOT NULL REFERENCES fee_categories(id) ON DELETE CASCADE,
+  amount DECIMAL(10, 2) NOT NULL,
+  due_date DATE NOT NULL,
+  status VARCHAR(20) NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING', 'PAID', 'OVERDUE')),
+  paid_at TIMESTAMP,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_student_fees_school ON student_fees (school_id);
+CREATE INDEX IF NOT EXISTS idx_student_fees_student ON student_fees (school_id, student_id);
+CREATE INDEX IF NOT EXISTS idx_student_fees_category ON student_fees (fee_category_id);
+
+-- Payment history (tracks every payment attempt)
+CREATE TABLE IF NOT EXISTS payments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  school_id INT NOT NULL,
+  student_id UUID NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+  student_fee_id UUID NOT NULL REFERENCES student_fees(id) ON DELETE CASCADE,
+  amount DECIMAL(10, 2) NOT NULL,
+  method VARCHAR(30) NOT NULL CHECK (method IN ('UPI', 'CARD', 'NET_BANKING', 'CASH')),
+  transaction_id VARCHAR(100),
+  status VARCHAR(20) NOT NULL CHECK (status IN ('PAID', 'FAILED')),
+  paid_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_payments_school ON payments (school_id);
+CREATE INDEX IF NOT EXISTS idx_payments_student ON payments (school_id, student_id);
+CREATE INDEX IF NOT EXISTS idx_payments_fee ON payments (student_fee_id);

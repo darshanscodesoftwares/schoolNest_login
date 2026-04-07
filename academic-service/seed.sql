@@ -218,3 +218,50 @@ VALUES (101, 12.9716, 77.5946, 200, '09:30:00')
 ON CONFLICT (school_id) DO NOTHING;
 
 SELECT 'School Config' AS table_name, COUNT(*) as count FROM school_config WHERE school_id = 101;
+
+-- Fee Categories (school_id=101)
+INSERT INTO fee_categories (id, school_id, name, icon) VALUES
+('ff000001-0000-0000-0000-000000000001', 101, 'Tuition Fee', 'tuition'),
+('ff000001-0000-0000-0000-000000000002', 101, 'Transport Fee', 'transport'),
+('ff000001-0000-0000-0000-000000000003', 101, 'Exam Fee', 'exam')
+ON CONFLICT (id) DO NOTHING;
+
+-- Student Fees for Rahul Sharma (PAR001's child) — matches UI mockup
+INSERT INTO student_fees (id, school_id, student_id, fee_category_id, amount, due_date, status, paid_at) VALUES
+-- Tuition Fee: ₹15,000 Pending
+('ee000001-0000-0000-0000-000000000001', 101, 'f8f36a25-8bf8-4df8-be47-30a4f0a4e811', 'ff000001-0000-0000-0000-000000000001', 15000.00, '2026-07-10', 'PENDING', NULL),
+-- Transport Fee: ₹3,000 Pending
+('ee000001-0000-0000-0000-000000000002', 101, 'f8f36a25-8bf8-4df8-be47-30a4f0a4e811', 'ff000001-0000-0000-0000-000000000002', 3000.00, '2026-07-10', 'PENDING', NULL),
+-- Exam Fee: ₹2,000 Paid
+('ee000001-0000-0000-0000-000000000003', 101, 'f8f36a25-8bf8-4df8-be47-30a4f0a4e811', 'ff000001-0000-0000-0000-000000000003', 2000.00, '2026-07-15', 'PAID', '2026-03-20 14:30:00')
+ON CONFLICT (id) DO NOTHING;
+
+-- Student Fees for Priya Singh (PAR001's child)
+INSERT INTO student_fees (id, school_id, student_id, fee_category_id, amount, due_date, status, paid_at) VALUES
+('ee000001-0000-0000-0000-000000000004', 101, '0540f78d-8479-4d11-bd41-d3fd2b014db4', 'ff000001-0000-0000-0000-000000000001', 15000.00, '2026-07-10', 'PENDING', NULL),
+('ee000001-0000-0000-0000-000000000005', 101, '0540f78d-8479-4d11-bd41-d3fd2b014db4', 'ff000001-0000-0000-0000-000000000002', 3000.00, '2026-07-10', 'PAID', '2026-03-18 10:00:00'),
+('ee000001-0000-0000-0000-000000000006', 101, '0540f78d-8479-4d11-bd41-d3fd2b014db4', 'ff000001-0000-0000-0000-000000000003', 2000.00, '2026-07-15', 'PAID', '2026-03-18 10:05:00')
+ON CONFLICT (id) DO NOTHING;
+
+-- Student Fees for Amit Kumar (PAR002's child)
+INSERT INTO student_fees (id, school_id, student_id, fee_category_id, amount, due_date, status, paid_at) VALUES
+('ee000001-0000-0000-0000-000000000007', 101, '1a2b3c4d-5e6f-7890-abcd-ef1234567891', 'ff000001-0000-0000-0000-000000000001', 15000.00, '2026-07-10', 'PENDING', NULL),
+('ee000001-0000-0000-0000-000000000008', 101, '1a2b3c4d-5e6f-7890-abcd-ef1234567891', 'ff000001-0000-0000-0000-000000000002', 3000.00, '2026-07-10', 'PENDING', NULL),
+('ee000001-0000-0000-0000-000000000009', 101, '1a2b3c4d-5e6f-7890-abcd-ef1234567891', 'ff000001-0000-0000-0000-000000000003', 2000.00, '2026-07-15', 'PENDING', NULL)
+ON CONFLICT (id) DO NOTHING;
+
+-- Payment History (successful + failed attempts)
+INSERT INTO payments (id, school_id, student_id, student_fee_id, amount, method, transaction_id, status, paid_at) VALUES
+-- Rahul's Exam Fee: paid via UPI
+('pp000001-0000-0000-0000-000000000001', 101, 'f8f36a25-8bf8-4df8-be47-30a4f0a4e811', 'ee000001-0000-0000-0000-000000000003', 2000.00, 'UPI', 'TXN20260320143012', 'PAID', '2026-03-20 14:30:00'),
+-- Rahul's Tuition Fee: failed attempt via CARD
+('pp000001-0000-0000-0000-000000000002', 101, 'f8f36a25-8bf8-4df8-be47-30a4f0a4e811', 'ee000001-0000-0000-0000-000000000001', 15000.00, 'CARD', 'TXN20260315091500', 'FAILED', '2026-03-15 09:15:00'),
+-- Priya's Transport Fee: paid via UPI
+('pp000001-0000-0000-0000-000000000003', 101, '0540f78d-8479-4d11-bd41-d3fd2b014db4', 'ee000001-0000-0000-0000-000000000005', 3000.00, 'UPI', 'TXN20260318100030', 'PAID', '2026-03-18 10:00:00'),
+-- Priya's Exam Fee: paid via NET_BANKING
+('pp000001-0000-0000-0000-000000000004', 101, '0540f78d-8479-4d11-bd41-d3fd2b014db4', 'ee000001-0000-0000-0000-000000000006', 2000.00, 'NET_BANKING', 'TXN20260318100530', 'PAID', '2026-03-18 10:05:00')
+ON CONFLICT (id) DO NOTHING;
+
+SELECT 'Fee Categories' AS table_name, COUNT(*) as count FROM fee_categories WHERE school_id = 101;
+SELECT 'Student Fees' AS table_name, COUNT(*) as count FROM student_fees WHERE school_id = 101;
+SELECT 'Payments' AS table_name, COUNT(*) as count FROM payments WHERE school_id = 101;

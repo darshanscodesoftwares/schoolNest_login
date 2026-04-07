@@ -13,6 +13,7 @@ const teacherLeaveRoutes = require('./modules/teacher/leave/teacher.leave.routes
 const parentLeaveRoutes = require('./modules/parent/leave/parent.leave.routes');
 const teacherExamRoutes = require('./modules/teacher/exam/teacher.exam.routes');
 const parentResultsRoutes = require('./modules/parent/results/parent.results.routes');
+const parentFeesRoutes = require('./modules/parent/fees/parent.fees.routes');
 const teacherCheckinRoutes = require('./modules/teacher/checkin/teacher.checkin.routes');
 
 const swaggerUi = require('swagger-ui-express');
@@ -41,6 +42,7 @@ app.use('/api/v1/academic', authMiddleware, teacherLeaveRoutes);
 app.use('/api/v1/parent', authMiddleware, parentLeaveRoutes);
 app.use('/api/v1/academic', authMiddleware, teacherExamRoutes);
 app.use('/api/v1/parent', authMiddleware, parentResultsRoutes);
+app.use('/api/v1/parent', authMiddleware, parentFeesRoutes);
 app.use('/api/v1/academic', authMiddleware, teacherCheckinRoutes);
 
 app.use((req, res) => {
