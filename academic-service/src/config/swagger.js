@@ -34,8 +34,7 @@ const options = {
       { name: 'Parent - Attendance', description: 'View child attendance' },
       { name: 'Parent - Timetable', description: 'View child timetable/class schedule' },
       { name: 'Parent - Homework', description: 'View child homework assignments' },
-      { name: 'Parent - Results', description: 'View child exam results and performance' },
-      { name: 'Parent - Fees', description: 'View fees summary and payment history' }
+      { name: 'Parent - Results', description: 'View child exam results and performance' }
     ]
   },
   apis: ['./src/docs/*.js']
