@@ -268,3 +268,43 @@
  *       200:
  *         description: Subject-wise marks with pass/fail status
  */
+
+// ============================================================
+// PARENT - FEES
+// ============================================================
+
+/**
+ * @swagger
+ * /api/v1/parent/students/{studentId}/fees:
+ *   get:
+ *     tags: [Parent - Fees]
+ *     summary: Get child's fees summary and breakdown
+ *     parameters:
+ *       - in: path
+ *         name: studentId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Fee summary (total, paid, remaining) + individual fee details
+ */
+
+/**
+ * @swagger
+ * /api/v1/parent/students/{studentId}/fees/history:
+ *   get:
+ *     tags: [Parent - Fees]
+ *     summary: Get child's payment history
+ *     parameters:
+ *       - in: path
+ *         name: studentId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: List of all payment attempts (successful and failed)
+ */
