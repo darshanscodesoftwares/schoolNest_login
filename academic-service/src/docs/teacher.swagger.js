@@ -557,3 +557,141 @@
  *       400:
  *         description: Outside campus geofence
  */
+
+// ============================================================
+// TEACHER - WORK DETAILS & PROFILE
+// ============================================================
+
+/**
+ * @swagger
+ * /api/v1/academic/teacher/my-work-details:
+ *   get:
+ *     tags: [Teacher - Work Details]
+ *     summary: Get logged-in teacher's profile and work summary
+ *     description: Returns personal info, assigned classes, and student counts for the authenticated teacher.
+ *     responses:
+ *       200:
+ *         description: Teacher profile with work summary
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     teacher:
+ *                       type: object
+ *                       properties:
+ *                         id:
+ *                           type: string
+ *                           format: uuid
+ *                         name:
+ *                           type: string
+ *                         designation:
+ *                           type: string
+ *                         email:
+ *                           type: string
+ *                         phone:
+ *                           type: string
+ *                         date_of_joining:
+ *                           type: string
+ *                           format: date
+ *                     work_summary:
+ *                       type: object
+ *                       properties:
+ *                         total_classes:
+ *                           type: integer
+ *                         total_students:
+ *                           type: integer
+ *                     assigned_classes:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: string
+ *                           name:
+ *                             type: string
+ *                           section:
+ *                             type: string
+ *                           student_count:
+ *                             type: integer
+ */
+
+// ============================================================
+// TEACHER - EDIT REQUESTS
+// ============================================================
+
+/**
+ * @swagger
+ * /api/v1/academic/teacher/edit-requests:
+ *   get:
+ *     tags: [Teacher - Edit Requests]
+ *     summary: Get my profile edit requests
+ *     parameters:
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [PENDING, APPROVED, REJECTED]
+ *     responses:
+ *       200:
+ *         description: List of edit requests
+ *   post:
+ *     tags: [Teacher - Edit Requests]
+ *     summary: Request a profile field change (requires admin approval)
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [changed_fields]
+ *             properties:
+ *               changed_fields:
+ *                 type: object
+ *                 description: Key-value pairs of fields to change
+ *                 example:
+ *                   primary_phone: "9876543210"
+ *                   primary_email: "newemail@school.com"
+ *               reason:
+ *                 type: string
+ *                 example: Updated contact details
+ *     responses:
+ *       201:
+ *         description: Edit request submitted — pending admin approval
+ */
+
+/**
+ * @swagger
+ * /api/v1/academic/teacher/edit-requests/{requestId}:
+ *   get:
+ *     tags: [Teacher - Edit Requests]
+ *     summary: Get a specific edit request
+ *     parameters:
+ *       - in: path
+ *         name: requestId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Edit request details
+ *   delete:
+ *     tags: [Teacher - Edit Requests]
+ *     summary: Cancel a pending edit request
+ *     parameters:
+ *       - in: path
+ *         name: requestId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Cancelled
+ */
