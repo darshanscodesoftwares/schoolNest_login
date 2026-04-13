@@ -11,7 +11,7 @@ const options = {
     servers: [
       { url: '/', description: 'Current Host (auto)' },
       { url: 'http://localhost:3000', description: 'Local' },
-      { url: 'https://schoolnest-login-1.onrender.com', description: 'Production (Render)' }
+      { url: 'https://schoolnest-auth.onrender.com', description: 'Production (Render)' }
     ],
     components: {
       securitySchemes: {
