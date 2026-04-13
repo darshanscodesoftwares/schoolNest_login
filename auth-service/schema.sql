@@ -5,8 +5,9 @@ CREATE TABLE IF NOT EXISTS roles (
 );
 
 -- Create users table with multi-tenant structure
+-- id is VARCHAR(50) to support both short IDs (ADM001, PAR001) and UUIDs (for teachers)
 CREATE TABLE IF NOT EXISTS users (
-  id            VARCHAR(20)  PRIMARY KEY,
+  id            VARCHAR(50)  PRIMARY KEY,
   school_id     INT          NOT NULL,
   role_id       INT          NOT NULL REFERENCES roles(id),
   name          VARCHAR(120) NOT NULL,
@@ -22,7 +23,7 @@ CREATE INDEX IF NOT EXISTS idx_users_school_id ON users (school_id);
 -- Token blacklist for logout/revocation
 CREATE TABLE IF NOT EXISTS token_blacklist (
   id         BIGSERIAL    PRIMARY KEY,
-  user_id    VARCHAR(20)  NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  user_id    VARCHAR(50)  NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   issued_at  BIGINT       NOT NULL,
   expires_at TIMESTAMPTZ  NOT NULL,
   created_at TIMESTAMPTZ  NOT NULL DEFAULT NOW()

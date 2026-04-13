@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const academicPool = require('../config/academic-db');
 
 /**
  * Find user by email and join with roles table
@@ -72,4 +73,70 @@ const cleanupExpiredTokens = async () => {
   }
 };
 
-module.exports = { findUserByEmail, blacklistToken, cleanupExpiredTokens };
+/**
+ * Find teacher by primary phone (across all schools)
+ * Queries academic_db teacher_records table for school auto-discovery
+ *
+ * @param {string} primary_phone - Teacher's phone number
+ * @returns {Array} Array of teacher records from all schools
+ */
+const findTeachersByPhone = async (primary_phone) => {
+  const query = {
+    text: `
+      SELECT
+        id,
+        school_id,
+        first_name,
+        primary_phone,
+        primary_email
+      FROM teacher_records
+      WHERE primary_phone = $1
+    `,
+    values: [primary_phone]
+  };
+
+  try {
+    const result = await academicPool.query(query);
+    return result.rows || [];
+  } catch (error) {
+    console.error('Database error in findTeachersByPhone:', error.message);
+    throw error;
+  }
+};
+
+/**
+ * Find teacher by ID and school_id
+ * Queries academic_db teacher_records table
+ *
+ * @param {string} teacher_id - Teacher UUID (from teacher_records.id)
+ * @param {number} school_id - School ID for tenant isolation
+ * @returns {Object|null} Teacher object or null if not found
+ */
+const findTeacherById = async (teacher_id, school_id) => {
+  const query = {
+    text: `
+      SELECT
+        id,
+        school_id,
+        first_name,
+        primary_phone,
+        primary_email,
+        gender,
+        date_of_birth
+      FROM teacher_records
+      WHERE id = $1 AND school_id = $2
+      LIMIT 1
+    `,
+    values: [teacher_id, school_id]
+  };
+
+  try {
+    const result = await academicPool.query(query);
+    return result.rows[0] || null;
+  } catch (error) {
+    console.error('Database error in findTeacherById:', error.message);
+    throw error;
+  }
+};
+
+module.exports = { findUserByEmail, blacklistToken, cleanupExpiredTokens, findTeachersByPhone, findTeacherById };
