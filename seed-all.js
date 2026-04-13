@@ -22,6 +22,9 @@ const { Pool } = require('./auth-service/node_modules/pg');
 const SCHOOL_ID = 101;
 const SALT_ROUNDS = 10;
 
+const isRemote = process.env.DB_HOST && process.env.DB_HOST !== 'localhost';
+const sslConfig = isRemote ? { rejectUnauthorized: false } : false;
+
 // ─── Auth DB pool ──────────────────────────────────────────────────────────────
 const authPool = new Pool({
   host:     process.env.DB_HOST     || 'localhost',
@@ -29,15 +32,18 @@ const authPool = new Pool({
   user:     process.env.DB_USER     || 'postgres',
   password: process.env.DB_PASSWORD || '',
   database: process.env.DB_NAME     || 'auth_db',
+  ssl:      sslConfig,
 });
 
 // ─── Academic DB pool ──────────────────────────────────────────────────────────
+const academicIsRemote = process.env.ACADEMIC_DB_HOST && process.env.ACADEMIC_DB_HOST !== 'localhost';
 const academicPool = new Pool({
   host:     process.env.ACADEMIC_DB_HOST     || process.env.DB_HOST     || 'localhost',
   port:     parseInt(process.env.ACADEMIC_DB_PORT || process.env.DB_PORT || '5432', 10),
   user:     process.env.ACADEMIC_DB_USER     || process.env.DB_USER     || 'postgres',
   password: process.env.ACADEMIC_DB_PASSWORD || process.env.DB_PASSWORD || '',
   database: process.env.ACADEMIC_DB_NAME     || 'academic_db',
+  ssl:      academicIsRemote ? { rejectUnauthorized: false } : false,
 });
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
