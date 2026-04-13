@@ -35,4 +35,15 @@ const authMiddleware = async (req, res, next) => {
   }
 };
 
+// Named export for admin-only routes
+const validateAdminRole = async (req, res, next) => {
+  await authMiddleware(req, res, async () => {
+    if (!req.user || req.user.role !== 'ADMIN') {
+      return res.status(403).json({ success: false, message: 'Forbidden: Admins only' });
+    }
+    return next();
+  });
+};
+
 module.exports = authMiddleware;
+module.exports.validateAdminRole = validateAdminRole;
