@@ -136,7 +136,7 @@ CREATE TABLE IF NOT EXISTS announcement_recipients (
   announcement_id UUID NOT NULL REFERENCES announcements(id) ON DELETE CASCADE,
   recipient_type VARCHAR(50) NOT NULL,
   recipient_id VARCHAR(255),
-  teacher_id VARCHAR(50),
+  teacher_id UUID,
   parent_id UUID,
   class_id UUID,
   read_at TIMESTAMP,

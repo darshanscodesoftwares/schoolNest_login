@@ -14,8 +14,10 @@
  *   PUT  /api/v1/academic/admin/admissions/:id/approve → Bridge 2 auto-creates parent
  */
 
-// Load from auth-service .env (3 levels up: common_apis/src/modules -> /academic-service -> /)
-require('dotenv').config({ path: '../../../../../auth-service/.env' });
+// Load from auth-service .env (from current directory: academic-service/src/modules/common_apis/)
+// Go up 4 levels to project root, then into auth-service
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '../../../../auth-service/.env') });
 
 const bcrypt = require('bcrypt');
 const { Pool } = require('pg');
@@ -209,9 +211,15 @@ async function seedAcademicDb() {
   for (const subjectName of subjectNames) {
     await academicPool.query(
       `INSERT INTO subjects (school_id, subject_name)
-       VALUES ($1, $2) ON CONFLICT (school_id, subject_name) DO NOTHING`,
+       VALUES ($1, $2)
+       ON CONFLICT DO NOTHING`,
       [SCHOOL_ID, subjectName]
-    ).catch(e => err(`subject ${subjectName}`, e));
+    ).catch(e => {
+      // Silently catch subject conflicts (likely due to unique constraint or previous seed)
+      if (e.code !== '23505' && e.code !== '23409') {
+        err(`subject ${subjectName}`, e);
+      }
+    });
   }
   ok(`subjects: ${subjectNames.length} subjects`);
 

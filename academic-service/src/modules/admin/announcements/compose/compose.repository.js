@@ -167,6 +167,7 @@ const composeRepository = {
   },
 
   // Get specific teachers by teacher_ids array for "Teachers, Specific Users" scope
+  // Accepts both teacher record UUIDs and auth_user_id values
   getSpecificTeachers: async (school_id, teacher_ids) => {
     // Validate input
     if (!Array.isArray(teacher_ids) || teacher_ids.length === 0) {
@@ -174,9 +175,9 @@ const composeRepository = {
     }
 
     const query = {
-      text: `SELECT auth_user_id AS teacher_id FROM teacher_records
+      text: `SELECT id AS teacher_id FROM teacher_records
               WHERE school_id = $1
-              AND auth_user_id = ANY($2::text[])
+              AND (id = ANY($2::uuid[]) OR auth_user_id = ANY($2::text[]))
               AND employment_status = 'Active'
               ORDER BY first_name ASC`,
       values: [school_id, teacher_ids],
@@ -292,7 +293,7 @@ const composeRepository = {
               ), NULL) AS parent_names
             FROM announcements a
             LEFT JOIN announcement_recipients ar ON a.id = ar.announcement_id
-            LEFT JOIN teacher_records tr ON ar.teacher_id = tr.auth_user_id AND ar.school_id = tr.school_id
+            LEFT JOIN teacher_records tr ON ar.teacher_id = tr.id AND ar.school_id = tr.school_id
             WHERE a.school_id = $1
             GROUP BY a.id, a.school_id, a.title, a.message, a.is_important, a.status, a.audience_type, a.scope, a.class_id, a.created_at
             ORDER BY a.created_at DESC`,
@@ -439,7 +440,7 @@ const composeRepository = {
                 ELSE NULL
               END AS recipient_name
             FROM announcement_recipients ar
-            LEFT JOIN teacher_records tr ON ar.teacher_id = tr.auth_user_id AND ar.school_id = tr.school_id
+            LEFT JOIN teacher_records tr ON ar.teacher_id = tr.id AND ar.school_id = tr.school_id
             LEFT JOIN parent_guardian_information pgi ON ar.parent_id = pgi.id
             WHERE ar.announcement_id = $1 AND ar.school_id = $2
             ORDER BY ar.created_at DESC`,
