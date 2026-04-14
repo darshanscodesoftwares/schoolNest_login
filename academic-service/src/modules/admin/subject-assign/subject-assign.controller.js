@@ -14,22 +14,22 @@ const getClassName = async (classId) => {
   }
 };
 
-// Helper function to fetch all classes with their order from common API
-const getAllClassesWithOrder = async () => {
+// Helper function to fetch all classes with their order from database
+const getAllClassesWithOrder = async (school_id) => {
   try {
-    const response = await commonApiGet(`/api/v1/classes`, null);
-    if (response && response.success && Array.isArray(response.data)) {
-      // Create a map of class_id to order_number for sorting
-      const classOrderMap = {};
-      response.data.forEach((cls, index) => {
-        classOrderMap[cls.id] = {
-          order_number: cls.order_number || index,
-          class_name: cls.class_name,
-        };
-      });
-      return classOrderMap;
-    }
-    return {};
+    const pool = require('../../../config/db');
+    const result = await pool.query(
+      `SELECT id, class_name, order_number FROM school_classes WHERE school_id = $1 ORDER BY order_number ASC`,
+      [school_id]
+    );
+    const classOrderMap = {};
+    result.rows.forEach((cls) => {
+      classOrderMap[cls.id] = {
+        order_number: cls.order_number,
+        class_name: cls.class_name,
+      };
+    });
+    return classOrderMap;
   } catch (error) {
     return {};
   }
@@ -428,7 +428,7 @@ const subjectAssignController = {
       );
 
       // Fetch all class names and order information
-      const classOrderMap = await getAllClassesWithOrder();
+      const classOrderMap = await getAllClassesWithOrder(school_id);
 
       // Group by class, then by subject
       const classMap = {};

@@ -14,10 +14,11 @@
  *   PUT  /api/v1/academic/admin/admissions/:id/approve → Bridge 2 auto-creates parent
  */
 
-require('./auth-service/node_modules/dotenv').config({ path: './auth-service/.env' });
+// Load from auth-service .env (3 levels up: common_apis/src/modules -> /academic-service -> /)
+require('dotenv').config({ path: '../../../../../auth-service/.env' });
 
-const bcrypt = require('./auth-service/node_modules/bcrypt');
-const { Pool } = require('./auth-service/node_modules/pg');
+const bcrypt = require('bcrypt');
+const { Pool } = require('pg');
 
 const SCHOOL_ID = 101;
 const SALT_ROUNDS = 10;
@@ -277,6 +278,272 @@ async function seedAcademicDb() {
     ]
   ).catch(e => err('school_admin_profile', e));
   ok('school_admin_profile: SchoolNest Academy (school_id=101)');
+
+  // ─── SAMPLE DATA ───────────────────────────────────────────────────────────
+  log('academic_db — sample admission data');
+
+  // Get real class_id from Class 10
+  const classRes = await academicPool.query(
+    `SELECT id FROM school_classes WHERE school_id = $1 AND class_name = 'Class 10' LIMIT 1`,
+    [SCHOOL_ID]
+  );
+  const classId = classRes.rows[0]?.id;
+
+  // Get blood group id for O+ (used by both admission and teacher)
+  const bgRes = await academicPool.query(
+    `SELECT id FROM blood_groups WHERE blood_group = 'O+' LIMIT 1`
+  );
+  const bloodGroupId = bgRes.rows[0]?.id;
+
+  if (!classId) {
+    err('Class 10 not found', { message: 'Cannot seed sample admission without Class 10' });
+  } else {
+
+    // 1. Create admission record
+    const admissionRes = await academicPool.query(
+      `INSERT INTO students_admission (school_id, admission_status, created_at, updated_at)
+       VALUES ($1, $2, NOW(), NOW())
+       RETURNING id`,
+      [SCHOOL_ID, 'Draft']
+    );
+    const admissionId = admissionRes.rows[0].id;
+
+    // 2. Personal information
+    await academicPool.query(
+      `INSERT INTO personal_information
+       (school_id, student_id, first_name, last_name, date_of_birth, gender,
+        blood_group_id, nationality, religion, category, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())`,
+      [
+        SCHOOL_ID,
+        admissionId,
+        'Aarav',
+        'Sharma',
+        '2012-03-15',
+        'Male',
+        bloodGroupId,
+        'Indian',
+        'Hindu',
+        'General',
+      ]
+    ).catch(e => err('personal_information', e));
+
+    // 3. Academic information
+    await academicPool.query(
+      `INSERT INTO academic_information
+       (school_id, student_id, admission_number, admission_date, class_id,
+        section, roll_number, previous_school, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())`,
+      [
+        SCHOOL_ID,
+        admissionId,
+        null,
+        '2026-04-01',
+        classId,
+        'A',
+        '001',
+        'ABC Public School',
+      ]
+    ).catch(e => err('academic_information', e));
+
+    // 4. Contact information
+    await academicPool.query(
+      `INSERT INTO contact_information
+       (school_id, student_id, student_phone, student_email, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, NOW(), NOW())`,
+      [
+        SCHOOL_ID,
+        admissionId,
+        '9876543210',
+        'aarav.sharma@example.com',
+      ]
+    ).catch(e => err('contact_information', e));
+
+    // 5. Address information
+    await academicPool.query(
+      `INSERT INTO address_information
+       (school_id, student_id, current_street, current_city, current_state, current_pincode,
+        is_permanent_same, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())`,
+      [
+        SCHOOL_ID,
+        admissionId,
+        '123 Main Street',
+        'New Delhi',
+        'Delhi',
+        '110001',
+        true,
+      ]
+    ).catch(e => err('address_information', e));
+
+    // 6. Parent/guardian information
+    await academicPool.query(
+      `INSERT INTO parent_guardian_information
+       (school_id, student_id, father_full_name, father_occupation, father_phone, father_email,
+        father_annual_income, mother_full_name, mother_occupation, mother_phone, mother_email,
+        mother_annual_income, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), NOW())`,
+      [
+        SCHOOL_ID,
+        admissionId,
+        'Rajesh Sharma',
+        'Engineer',
+        '9876543211',
+        'rajesh.sharma@example.com',
+        '1200000.00',
+        'Priya Sharma',
+        'Doctor',
+        '9876543212',
+        'priya.sharma@example.com',
+        '1500000.00',
+      ]
+    ).catch(e => err('parent_guardian_information', e));
+
+    // 7. Emergency contact
+    await academicPool.query(
+      `INSERT INTO emergency_contact
+       (school_id, student_id, contact_name, relation, phone, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, NOW(), NOW())`,
+      [
+        SCHOOL_ID,
+        admissionId,
+        'Uncle Amit Sharma',
+        'Uncle',
+        '9876543213',
+      ]
+    ).catch(e => err('emergency_contact', e));
+
+    // 8. Medical information
+    await academicPool.query(
+      `INSERT INTO medical_information
+       (school_id, student_id, allergies, medical_conditions, medications,
+        family_doctor_name, doctor_phone, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())`,
+      [
+        SCHOOL_ID,
+        admissionId,
+        'Peanut allergy',
+        'None',
+        'None',
+        'Dr. Vikram Singh',
+        '9876543214',
+      ]
+    ).catch(e => err('medical_information', e));
+
+    // 9. Student documents
+    await academicPool.query(
+      `INSERT INTO student_documents
+       (school_id, student_id, birth_certificate_status, aadhaar_card_status,
+        transfer_certificate_status, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, NOW(), NOW())`,
+      [
+        SCHOOL_ID,
+        admissionId,
+        'Pending',
+        'Pending',
+        'Optional',
+      ]
+    ).catch(e => err('student_documents', e));
+
+    ok(`Sample admission: ${admissionId} (Aarav Sharma, Class 10-A)`);
+  }
+
+  // ─── SAMPLE ENQUIRY ────────────────────────────────────────────────────────
+  log('academic_db — sample student enquiry');
+
+  // Get enquiry source
+  const sourceRes = await academicPool.query(
+    `SELECT id FROM enquiry_sources WHERE school_id = $1 AND source_name = 'Referral / Word of Mouth' LIMIT 1`,
+    [SCHOOL_ID]
+  );
+  const sourceId = sourceRes.rows[0]?.id;
+
+  if (sourceId) {
+    await academicPool.query(
+      `INSERT INTO student_enquiries
+       (school_id, student_name, father_name, contact_number, email, class_id, academic_year,
+        preferred_medium, current_school_name, residential_area, source_id, transport_required,
+        siblings_in_school, religion, community_category, remarks, enquiry_status, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, NOW(), NOW())`,
+      [
+        SCHOOL_ID,
+        'Priya Desai',
+        'Vikram Desai',
+        '9999888877',
+        'priya.desai@example.com',
+        classId,
+        '2026-27',
+        'English',
+        'Delhi Public School',
+        'Bangalore',
+        sourceId,
+        true,
+        false,
+        'Hindu',
+        'General',
+        'Very interested in science stream',
+        'Active',
+      ]
+    ).catch(e => err('student_enquiries', e));
+    ok('Sample enquiry: Priya Desai');
+  }
+
+  // ─── SAMPLE TEACHER (auth + academic) ──────────────────────────────────────
+  log('academic_db — sample teacher');
+
+  // Get science department
+  const deptRes = await academicPool.query(
+    `SELECT id FROM departments WHERE school_id = $1 AND department_name = 'Science' LIMIT 1`,
+    [SCHOOL_ID]
+  );
+  const deptId = deptRes.rows[0]?.id;
+
+  // First, seed teacher in auth_db
+  const teacherRoleRes = await authPool.query(`SELECT id FROM roles WHERE name = 'TEACHER' LIMIT 1`);
+  if (teacherRoleRes.rows.length > 0) {
+    const teacherRoleId = teacherRoleRes.rows[0].id;
+    const teacherHash = await bcrypt.hash('Teacher@123', SALT_ROUNDS);
+
+    await authPool.query(
+      `INSERT INTO users (id, school_id, role_id, name, email, password_hash)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       ON CONFLICT (id) DO NOTHING`,
+      ['TCH001', SCHOOL_ID, teacherRoleId, 'John Teacher', 'john@schoolnest.com', teacherHash]
+    ).catch(e => err('auth teacher user', e));
+
+    // Now insert teacher record in academic_db
+    if (deptId) {
+      await academicPool.query(
+        `INSERT INTO teacher_records
+         (school_id, auth_user_id, first_name, date_of_birth, gender,
+          blood_group_id, nationality, religion, primary_phone, primary_email,
+          current_city, current_state, employee_id, designation, teacher_type,
+          department_id, date_of_joining, employment_status)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)`,
+        [
+          SCHOOL_ID,
+          'TCH001',
+          'John Teacher',
+          '1990-05-20',
+          'Male',
+          bloodGroupId,
+          'Indian',
+          'Christian',
+          '9876543220',
+          'john@schoolnest.com',
+          'New Delhi',
+          'Delhi',
+          'EMP001',
+          'Science Teacher',
+          'Permanent',
+          deptId,
+          '2020-06-01',
+          'Active',
+        ]
+      ).catch(e => err('teacher_records', e));
+      ok('Sample teacher: TCH001 (John Teacher, Science Dept)');
+    }
+  }
 }
 
 // ─── Main ──────────────────────────────────────────────────────────────────────
@@ -288,13 +555,17 @@ async function main() {
 
     console.log('\n✅ Seed complete!\n');
     console.log('  Admin login: admin@schoolnest.com  /  Admin@123');
-    console.log('  Teachers and parents are created via Admin API (not seeded).');
+    console.log('  Teacher login: john@schoolnest.com  /  Teacher@123 (TCH001)');
+    console.log('\n  Seeded sample data:');
+    console.log('    • Admission: Aarav Sharma (Class 10-A, Draft status)');
+    console.log('    • Enquiry: Priya Desai (interested in Class 10)');
+    console.log('    • Teacher: John Teacher (Science, TCH001)');
     console.log('\n  Quick start:');
     console.log('    1. cd auth-service     && npm run dev   (port 3000)');
     console.log('    2. cd academic-service && npm run dev   (port 4002)');
     console.log('    3. POST /api/v1/auth/login  { email, password }  → JWT');
-    console.log('    4. POST /api/v1/academic/admin/teacher-records   → creates teacher + auth user');
-    console.log('    5. PUT  /api/v1/academic/admin/admissions/:id/approve → creates student + parent\n');
+    console.log('    4. GET /api/v1/academic/admin/admissions          → see sample admission');
+    console.log('    5. GET /api/v1/academic/admin/teacher-records     → see TCH001\n');
   } catch (e) {
     console.error('\n❌ Seed failed:', e.message);
     process.exit(1);

@@ -44,6 +44,8 @@ const examsRoutes                = require('./modules/admin/Exams&Results/exams.
 const announcementsRoutes        = require('./modules/admin/announcements/announcements.routes');
 const schoolProfileRoutes        = require('./modules/admin/setting-management/school-profile.routes');
 const adminTeacherEditRequestsRoutes = require('./modules/admin/teacher-edit-requests/admin.teacher-edit-requests.routes');
+const lookupRoutes               = require('./modules/admin/lookup/lookup.routes');
+const lookupAdminRoutes          = require('./modules/admin/lookup/lookup.admin.routes');
 
 // ─────────────────────────────────────────────────────────────────────────────
 const app = express();
@@ -104,6 +106,8 @@ app.use('/api/v1/academic/admin', authMiddleware, examsRoutes);
 app.use('/api/v1/academic/admin/announcements', authMiddleware, announcementsRoutes);
 app.use('/api/v1/academic/admin/settings', authMiddleware, schoolProfileRoutes);
 app.use('/api/v1/academic/admin', authMiddleware, adminTeacherEditRequestsRoutes);
+app.use('/api/v1', lookupRoutes);
+app.use('/api/v1/admin/lookup', lookupAdminRoutes);
 
 // ── 404 ───────────────────────────────────────────────────────────────────────
 app.use((_req, res) => {

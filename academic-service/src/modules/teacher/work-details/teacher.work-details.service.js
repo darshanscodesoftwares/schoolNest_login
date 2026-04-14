@@ -1,7 +1,7 @@
 const workDetailsRepository = require('./teacher.work-details.repository');
 const commonPool = require('../../../config/common-db');
 
-const ACADEMIC_SERVICE_BASE_URL = process.env.ACADEMIC_SERVICE_URL || 'http://localhost:4000';
+const ACADEMIC_SERVICE_BASE_URL = process.env.UPLOAD_BASE_URL || process.env.ACADEMIC_SERVICE_URL || 'http://localhost:4002';
 
 /**
  * Get teacher's complete work details

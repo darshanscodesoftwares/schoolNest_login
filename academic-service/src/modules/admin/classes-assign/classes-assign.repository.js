@@ -44,13 +44,8 @@ const classesAssignRepository = {
   // Get all assignments for a school
   getAllAssignments: async (school_id) => {
     const query = {
-      text: `SELECT ca.*,
-             tr.first_name as teacher_name,
-             NULL as class_name,
-             s.id as section_id
+      text: `SELECT ca.id, ca.school_id, ca.class_id, ca.teacher_id, ca.section_name, ca.created_at, ca.updated_at
              FROM classes_assign ca
-             LEFT JOIN teacher_records tr ON ca.teacher_id = tr.auth_user_id
-             LEFT JOIN sections s ON ca.section_name = s.section_name
              WHERE ca.school_id = $1
              ORDER BY ca.created_at DESC`,
       values: [school_id],
@@ -67,8 +62,8 @@ const classesAssignRepository = {
              NULL as class_name,
              s.id as section_id
              FROM classes_assign ca
-             LEFT JOIN teacher_records tr ON ca.teacher_id = tr.auth_user_id
-             LEFT JOIN sections s ON ca.section_name = s.section_name
+             LEFT JOIN teacher_records tr ON ca.teacher_id = tr.auth_user_id AND ca.school_id = tr.school_id
+             LEFT JOIN sections s ON ca.section_name = s.section_name AND ca.school_id = s.school_id
              WHERE ca.school_id = $1 AND ca.class_id = $2
              ORDER BY ca.section_name`,
       values: [school_id, class_id],
@@ -85,8 +80,8 @@ const classesAssignRepository = {
              NULL as class_name,
              s.id as section_id
              FROM classes_assign ca
-             LEFT JOIN teacher_records tr ON ca.teacher_id = tr.auth_user_id
-             LEFT JOIN sections s ON ca.section_name = s.section_name
+             LEFT JOIN teacher_records tr ON ca.teacher_id = tr.auth_user_id AND ca.school_id = tr.school_id
+             LEFT JOIN sections s ON ca.section_name = s.section_name AND ca.school_id = s.school_id
              WHERE ca.school_id = $1 AND ca.id = $2`,
       values: [school_id, assignment_id],
     };
@@ -182,8 +177,7 @@ const classesAssignRepository = {
   // Get all active teachers for a school
   getTeachersList: async (school_id) => {
     const query = {
-      text: `SELECT auth_user_id AS teacher_id,
-             id,
+      text: `SELECT id AS teacher_id,
              first_name,
              designation,
              employment_status
@@ -223,7 +217,7 @@ const classesAssignRepository = {
       text: `SELECT DISTINCT ca.section_name,
              s.id as section_id
              FROM classes_assign ca
-             LEFT JOIN sections s ON ca.section_name = s.section_name
+             LEFT JOIN sections s ON ca.section_name = s.section_name AND ca.school_id = s.school_id
              WHERE ca.school_id = $1
              ORDER BY ca.section_name ASC`,
       values: [school_id],

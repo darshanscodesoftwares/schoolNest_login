@@ -176,7 +176,7 @@ const getAllAdmissionsWithDraft = async ({ schoolId, limit, offset, status }) =>
   const result = await pool.query(query);
 
   // Format the response with full image URLs
-  const baseURL = process.env.BASE_URL || 'http://localhost:4000';
+  const baseURL = process.env.UPLOAD_BASE_URL || process.env.BASE_URL || 'http://localhost:4002';
 
   const formattedAdmissions = result.rows.map(admission => ({
     ...admission,

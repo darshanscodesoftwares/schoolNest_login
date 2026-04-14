@@ -229,7 +229,7 @@ const uploadBirthCertificate = async (req, res, next) => {
       data: {
         document_type: 'birth_certificate',
         file_path: filePath,
-        file_url: `http://localhost:4000${filePath}`,
+        file_url: `${process.env.UPLOAD_BASE_URL || process.env.BASE_URL || 'http://localhost:4002'}${filePath}`,
         status: 'Verified'
       },
       message: 'Birth certificate uploaded successfully'
@@ -265,7 +265,7 @@ const uploadAadhaarCard = async (req, res, next) => {
       data: {
         document_type: 'aadhaar_card',
         file_path: filePath,
-        file_url: `http://localhost:4000${filePath}`,
+        file_url: `${process.env.UPLOAD_BASE_URL || process.env.BASE_URL || 'http://localhost:4002'}${filePath}`,
         status: 'Verified'
       },
       message: 'Aadhaar card uploaded successfully'
@@ -301,7 +301,7 @@ const uploadTransferCertificate = async (req, res, next) => {
       data: {
         document_type: 'transfer_certificate',
         file_path: filePath,
-        file_url: `http://localhost:4000${filePath}`,
+        file_url: `${process.env.UPLOAD_BASE_URL || process.env.BASE_URL || 'http://localhost:4002'}${filePath}`,
         status: 'Optional'
       },
       message: 'Transfer certificate uploaded successfully'

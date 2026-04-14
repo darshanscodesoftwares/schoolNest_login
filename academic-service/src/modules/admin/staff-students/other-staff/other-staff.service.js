@@ -45,7 +45,7 @@ const convertPathsToUrls = async (staff) => {
     'education_certificate'
   ];
 
-  const baseUrl = process.env.BASE_URL || 'http://localhost:4000';
+  const baseUrl = process.env.UPLOAD_BASE_URL || process.env.BASE_URL || 'http://localhost:4002';
   const converted = { ...staff };
 
   fileFields.forEach(field => {

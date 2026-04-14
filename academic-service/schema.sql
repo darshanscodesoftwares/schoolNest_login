@@ -132,16 +132,35 @@ CREATE INDEX IF NOT EXISTS idx_announcements_sender ON announcements (school_id,
 
 CREATE TABLE IF NOT EXISTS announcement_recipients (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  announcement_id UUID NOT NULL REFERENCES announcements(id) ON DELETE CASCADE,
-  recipient_id VARCHAR(50) NOT NULL,
   school_id INT NOT NULL,
-  is_read BOOLEAN NOT NULL DEFAULT false,
+  announcement_id UUID NOT NULL REFERENCES announcements(id) ON DELETE CASCADE,
+  recipient_type VARCHAR(50) NOT NULL,
+  recipient_id VARCHAR(255),
+  teacher_id VARCHAR(50),
+  parent_id UUID,
+  class_id UUID,
   read_at TIMESTAMP,
-  UNIQUE (announcement_id, recipient_id)
+  is_deleted BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE (announcement_id, recipient_type, recipient_id)
 );
 
 CREATE INDEX IF NOT EXISTS idx_ann_recipients_recipient ON announcement_recipients (school_id, recipient_id);
 CREATE INDEX IF NOT EXISTS idx_ann_recipients_announcement ON announcement_recipients (announcement_id);
+CREATE INDEX IF NOT EXISTS idx_ann_recipients_type ON announcement_recipients (school_id, recipient_type);
+
+-- Announcement history for audit trail
+CREATE TABLE IF NOT EXISTS announcement_history (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  school_id INT NOT NULL,
+  announcement_id UUID NOT NULL REFERENCES announcements(id) ON DELETE CASCADE,
+  total_recipients INT NOT NULL DEFAULT 0,
+  status VARCHAR(50) DEFAULT 'Sent',
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_announcement_history_announcement ON announcement_history(announcement_id);
+CREATE INDEX IF NOT EXISTS idx_announcement_history_school ON announcement_history(school_id);
 
 -- Exams
 CREATE TABLE IF NOT EXISTS exams (
@@ -263,3 +282,5 @@ CREATE TABLE IF NOT EXISTS payments (
 CREATE INDEX IF NOT EXISTS idx_payments_school ON payments (school_id);
 CREATE INDEX IF NOT EXISTS idx_payments_student ON payments (school_id, student_id);
 CREATE INDEX IF NOT EXISTS idx_payments_fee ON payments (student_fee_id);
+
+
