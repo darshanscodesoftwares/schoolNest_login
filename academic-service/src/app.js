@@ -44,6 +44,7 @@ const examsRoutes                = require('./modules/admin/Exams&Results/exams.
 const announcementsRoutes        = require('./modules/admin/announcements/announcements.routes');
 const schoolProfileRoutes        = require('./modules/admin/setting-management/school-profile.routes');
 const adminTeacherEditRequestsRoutes = require('./modules/admin/teacher-edit-requests/admin.teacher-edit-requests.routes');
+const masterDataRoutes               = require('./modules/admin/master-data/master-data.routes');
 
 // ─────────────────────────────────────────────────────────────────────────────
 const app = express();
@@ -62,8 +63,10 @@ app.use((req, res, next) => {
   express.json({ limit: '1mb' })(req, res, next);
 });
 
-// Swagger docs
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+// Swagger docs — persistAuthorization keeps tokens across reloads
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  swaggerOptions: { persistAuthorization: true },
+}));
 
 // Health check
 app.get('/health', (_req, res) => {
@@ -104,6 +107,7 @@ app.use('/api/v1/academic/admin', authMiddleware, examsRoutes);
 app.use('/api/v1/academic/admin/announcements', authMiddleware, announcementsRoutes);
 app.use('/api/v1/academic/admin/settings', authMiddleware, schoolProfileRoutes);
 app.use('/api/v1/academic/admin', authMiddleware, adminTeacherEditRequestsRoutes);
+app.use('/api/v1/academic', masterDataRoutes);
 
 // ── 404 ───────────────────────────────────────────────────────────────────────
 app.use((_req, res) => {

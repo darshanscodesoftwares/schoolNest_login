@@ -69,29 +69,22 @@
  *             type: object
  *             required: [student_name, contact_number]
  *             properties:
- *               student_name:
- *                 type: string
- *                 example: Ravi Kumar
- *               father_name:
- *                 type: string
- *                 example: Suresh Kumar
- *               contact_number:
- *                 type: string
- *                 example: "9876543210"
- *               email:
- *                 type: string
- *                 example: ravi@example.com
- *               class_id:
- *                 type: string
- *                 format: uuid
- *               academic_year:
- *                 type: string
- *                 example: "2025-26"
- *               source_id:
- *                 type: string
- *                 format: uuid
- *               remarks:
- *                 type: string
+ *               student_name:        { type: string, example: Ravi Kumar }
+ *               father_name:         { type: string, example: Suresh Kumar }
+ *               contact_number:      { type: string, example: "9876543210" }
+ *               email:               { type: string, format: email, example: ravi@example.com }
+ *               class_id:            { type: string, format: uuid, description: "FK → school_classes.id" }
+ *               academic_year:       { type: string, example: "2025-26" }
+ *               preferred_medium:    { type: string, enum: [English, Hindi, Kannada, Tamil, Telugu, Other] }
+ *               current_school_name: { type: string, example: "ABC Public School" }
+ *               residential_area:    { type: string, example: "Whitefield, Bengaluru" }
+ *               source_id:           { type: string, format: uuid, description: "FK → enquiry_sources.id" }
+ *               transport_required:  { type: boolean, default: false }
+ *               siblings_in_school:  { type: boolean, default: false }
+ *               religion:            { type: string, example: Hindu }
+ *               community_category:  { type: string, enum: [General, OBC, SC, ST, Other] }
+ *               remarks:             { type: string }
+ *               enquiry_status:      { type: string, enum: [New, Follow-up, Converted, Closed], default: New }
  *     responses:
  *       201:
  *         description: Enquiry created
@@ -196,10 +189,33 @@
  * /api/v1/academic/admin/admissions:
  *   post:
  *     tags: [Admin - Admissions]
- *     summary: Create admission draft
+ *     summary: "[Advanced] Create EMPTY admission shell (no body)"
+ *     description: |
+ *       **Most users should NOT use this endpoint.** It exists only for the
+ *       multi-step UI wizard where each tab saves separately.
+ *
+ *       **For normal use, prefer one of these one-shot endpoints instead:**
+ *         - `POST /admissions/save-draft`    — create with full data, status = Draft
+ *         - `POST /admissions/complete-save` — create with full data, status = Under Verification
+ *
+ *       This endpoint takes no input — creates an empty admission shell with
+ *       school_id from the JWT and returns the new admission UUID, which you
+ *       then populate via the section-specific endpoints.
  *     responses:
  *       201:
- *         description: Draft created with admission ID
+ *         description: Empty draft created — response contains the new admission `id`
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success: { type: boolean, example: true }
+ *                 message: { type: string, example: "Admission draft created" }
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     id: { type: string, format: uuid, example: "550e8400-e29b-41d4-a716-446655440000" }
+ *                     admission_status: { type: string, example: "Draft" }
  *   get:
  *     tags: [Admin - Admissions]
  *     summary: Get admissions by status
@@ -311,55 +327,125 @@
 
 /**
  * @swagger
+ * /api/v1/academic/admin/admissions/complete-save:
+ *   post:
+ *     tags: [Admin - Admissions]
+ *     summary: "[Recommended] Create + submit admission in one call (status=Under Verification)"
+ *     description: |
+ *       Single-call endpoint to create a complete admission and immediately
+ *       advance it to **Under Verification** status (skips Draft).
+ *
+ *       Accepts the SAME fields as `/save-draft` (see that endpoint for the
+ *       full field list), plus the same 4 file uploads:
+ *       student_photo, birth_certificate, aadhaar_card, transfer_certificate.
+ *
+ *       After this returns, you only need `POST /admissions/{id}/approve` to
+ *       finalise (which triggers Bridge 2 — student row + parent auth user).
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             description: Same shape as /save-draft. See that endpoint for all 50+ fields.
+ *             properties:
+ *               first_name:        { type: string, example: Aarav }
+ *               last_name:         { type: string, example: Sharma }
+ *               date_of_birth:     { type: string, format: date }
+ *               gender:            { type: string, enum: [Male, Female, Other] }
+ *               class_id:          { type: string, format: uuid }
+ *               section:           { type: string, example: A }
+ *               admission_date:    { type: string, format: date }
+ *               father_full_name:  { type: string }
+ *               father_phone:      { type: string }
+ *               father_email:      { type: string, format: email }
+ *               student_photo:        { type: string, format: binary }
+ *               birth_certificate:    { type: string, format: binary }
+ *               aadhaar_card:         { type: string, format: binary }
+ *               transfer_certificate: { type: string, format: binary }
+ *     responses:
+ *       201:
+ *         description: Admission created and moved to Under Verification
+ */
+
+/**
+ * @swagger
  * /api/v1/academic/admin/admissions/save-draft:
  *   post:
  *     tags: [Admin - Admissions]
- *     summary: Save draft with all sections in one call (multipart/form-data)
+ *     summary: Create a Draft admission with all sections in one call
  *     requestBody:
  *       content:
  *         multipart/form-data:
  *           schema:
  *             type: object
+ *             description: |
+ *               Saves admission as a draft. Spans 8 child tables (personal,
+ *               academic, contact, address, parent/guardian, emergency,
+ *               medical, documents). All fields optional at the draft stage —
+ *               validation runs on submit/approve.
  *             properties:
- *               first_name:
- *                 type: string
- *               last_name:
- *                 type: string
- *               date_of_birth:
- *                 type: string
- *                 format: date
- *               gender:
- *                 type: string
- *                 enum: [Male, Female, Other]
- *               nationality:
- *                 type: string
- *               class_id:
- *                 type: string
- *                 format: uuid
- *               section:
- *                 type: string
- *               admission_date:
- *                 type: string
- *                 format: date
- *               father_full_name:
- *                 type: string
- *               father_phone:
- *                 type: string
- *               father_email:
- *                 type: string
- *               mother_full_name:
- *                 type: string
- *               mother_phone:
- *                 type: string
- *               student_photo:
- *                 type: string
- *                 format: binary
- *               birth_certificate:
- *                 type: string
- *                 format: binary
- *               aadhaar_card:
- *                 type: string
- *                 format: binary
+ *               # ── personal_information ─────────────────────────────────
+ *               first_name:        { type: string, example: Aarav }
+ *               last_name:         { type: string, example: Sharma }
+ *               date_of_birth:     { type: string, format: date, example: "2015-04-12" }
+ *               gender:            { type: string, enum: [Male, Female, Other] }
+ *               blood_group_id:    { type: string, format: uuid, description: "FK → blood_groups.id" }
+ *               nationality:       { type: string, example: Indian }
+ *               religion:          { type: string }
+ *               category:          { type: string, enum: [General, OBC, SC, ST, Other] }
+ *               # ── academic_information ─────────────────────────────────
+ *               admission_number:  { type: string, example: "ADM-2026-001" }
+ *               admission_date:    { type: string, format: date, example: "2026-04-15" }
+ *               class_id:          { type: string, format: uuid, description: "FK → school_classes.id" }
+ *               section:           { type: string, example: A }
+ *               roll_number:       { type: string, example: "5" }
+ *               previous_school:   { type: string }
+ *               # ── contact_information ──────────────────────────────────
+ *               student_phone:     { type: string }
+ *               student_email:     { type: string, format: email }
+ *               # ── address_information (current) ────────────────────────
+ *               current_street:    { type: string }
+ *               current_city:      { type: string }
+ *               current_state:     { type: string }
+ *               current_pincode:   { type: string }
+ *               # ── address_information (permanent) ──────────────────────
+ *               is_permanent_same: { type: boolean, default: false }
+ *               permanent_street:  { type: string }
+ *               permanent_city:    { type: string }
+ *               permanent_state:   { type: string }
+ *               permanent_pincode: { type: string }
+ *               # ── parent_guardian_information ──────────────────────────
+ *               father_full_name:     { type: string }
+ *               father_occupation:    { type: string }
+ *               father_phone:         { type: string }
+ *               father_email:         { type: string, format: email }
+ *               father_annual_income: { type: number }
+ *               mother_full_name:     { type: string }
+ *               mother_occupation:    { type: string }
+ *               mother_phone:         { type: string }
+ *               mother_email:         { type: string, format: email }
+ *               mother_annual_income: { type: number }
+ *               guardian_full_name:    { type: string }
+ *               guardian_relation:     { type: string }
+ *               guardian_phone:        { type: string }
+ *               guardian_email:        { type: string, format: email }
+ *               guardian_annual_income: { type: number }
+ *               # ── emergency_contact ────────────────────────────────────
+ *               emergency_contact_name: { type: string }
+ *               emergency_relation:     { type: string }
+ *               emergency_phone:        { type: string }
+ *               # ── medical_information ──────────────────────────────────
+ *               allergies:           { type: string }
+ *               medical_conditions:  { type: string }
+ *               medications:         { type: string }
+ *               family_doctor_name:  { type: string }
+ *               doctor_phone:        { type: string }
+ *               # ── student_documents (file uploads) ─────────────────────
+ *               student_photo:        { type: string, format: binary }
+ *               birth_certificate:    { type: string, format: binary }
+ *               aadhaar_card:         { type: string, format: binary }
+ *               transfer_certificate: { type: string, format: binary }
  *     responses:
  *       201:
  *         description: Draft saved
@@ -496,6 +582,7 @@
  *     description: |
  *       Triggers Bridge 1: auto-creates login credentials in auth_db.
  *       Teacher can then login with email / Teacher@123 (or via OTP).
+ *       FK fields (blood_group_id, department_id, class_ids) come from reference tables seeded by seed-all.js.
  *     requestBody:
  *       required: true
  *       content:
@@ -504,41 +591,71 @@
  *             type: object
  *             required: [first_name, date_of_birth, gender, nationality, date_of_joining]
  *             properties:
- *               first_name:
- *                 type: string
- *                 example: Priya
- *               last_name:
- *                 type: string
- *                 example: Sharma
- *               date_of_birth:
- *                 type: string
- *                 format: date
- *                 example: "1990-05-15"
- *               gender:
- *                 type: string
- *                 enum: [Male, Female, Other]
- *               nationality:
- *                 type: string
- *                 example: Indian
- *               date_of_joining:
- *                 type: string
- *                 format: date
- *                 example: "2024-06-01"
- *               primary_email:
- *                 type: string
- *                 example: priya.sharma@school.com
- *               primary_phone:
- *                 type: string
- *                 example: "9876543210"
- *               designation:
- *                 type: string
- *                 example: Senior Teacher
- *               monthly_salary:
- *                 type: number
- *                 example: 35000
- *               teacher_photo:
- *                 type: string
- *                 format: binary
+ *               # ── Personal ─────────────────────────────────────────────
+ *               first_name:           { type: string, example: Priya }
+ *               date_of_birth:        { type: string, format: date, example: "1990-05-15" }
+ *               gender:               { type: string, enum: [Male, Female, Other] }
+ *               blood_group_id:       { type: string, format: uuid, description: "FK → blood_groups.id" }
+ *               nationality:          { type: string, example: Indian }
+ *               religion:             { type: string, example: Hindu }
+ *               marital_status:       { type: string, enum: [Single, Married, Divorced, Widowed] }
+ *               teacher_photo:        { type: string, format: binary }
+ *               # ── Contact ──────────────────────────────────────────────
+ *               primary_phone:        { type: string, example: "9876543210" }
+ *               primary_email:        { type: string, format: email, example: priya.sharma@school.com }
+ *               alternate_phone:      { type: string }
+ *               alternate_email:      { type: string, format: email }
+ *               # ── Address: current ─────────────────────────────────────
+ *               current_street:       { type: string, example: "12 Park Street" }
+ *               current_city:         { type: string, example: Bengaluru }
+ *               current_state:        { type: string, example: Karnataka }
+ *               current_pincode:      { type: string, example: "560001" }
+ *               # ── Address: permanent ───────────────────────────────────
+ *               is_permanent_same:    { type: boolean, default: false }
+ *               permanent_street:     { type: string }
+ *               permanent_city:       { type: string }
+ *               permanent_state:      { type: string }
+ *               permanent_pincode:    { type: string }
+ *               # ── Employment ───────────────────────────────────────────
+ *               employee_id:          { type: string, example: EMP001 }
+ *               designation:          { type: string, example: Senior Teacher }
+ *               teacher_type:         { type: string, enum: [Full-time, Part-time, Contract, Visiting] }
+ *               department_id:        { type: string, format: uuid, description: "FK → departments.id" }
+ *               specialization:       { type: string, example: "Algebra & Geometry" }
+ *               date_of_joining:      { type: string, format: date, example: "2024-06-01" }
+ *               class_ids:
+ *                 type: array
+ *                 items: { type: string, format: uuid }
+ *                 description: "FKs → school_classes.id (classes the teacher handles)"
+ *               employment_status:    { type: string, enum: [Active, Inactive, On Leave], default: Active }
+ *               # ── Qualification ────────────────────────────────────────
+ *               highest_qualification: { type: string, example: "M.Sc Mathematics" }
+ *               university:           { type: string, example: "Bangalore University" }
+ *               year_of_passing:      { type: integer, example: 2008 }
+ *               percentage_cgpa:      { type: string, example: "8.5" }
+ *               additional_certifications: { type: string }
+ *               # ── Experience ───────────────────────────────────────────
+ *               total_experience_years:        { type: integer, example: 12 }
+ *               previous_school_institution:   { type: string, example: "ABC Public School" }
+ *               previous_designation:          { type: string, example: Teacher }
+ *               experience_at_previous_school: { type: integer, example: 5 }
+ *               # ── Salary & Banking ─────────────────────────────────────
+ *               monthly_salary:       { type: number, example: 45000 }
+ *               bank_name:            { type: string, example: "HDFC Bank" }
+ *               account_number:       { type: string, example: "5012345678" }
+ *               ifsc_code:            { type: string, example: "HDFC0001234" }
+ *               pan_number:           { type: string, example: "ABCDE1234F" }
+ *               aadhar_number:        { type: string, example: "123412341234" }
+ *               # ── Emergency Contact ────────────────────────────────────
+ *               emergency_contact_name: { type: string, example: "Mary Teacher" }
+ *               emergency_relation:     { type: string, example: Spouse }
+ *               emergency_phone:        { type: string, example: "+91-9000000011" }
+ *               # ── Documents (file uploads) ─────────────────────────────
+ *               resume_cv:                  { type: string, format: binary }
+ *               qualification_certificates: { type: string, format: binary }
+ *               experience_certificates:    { type: string, format: binary }
+ *               aadhar_card:                { type: string, format: binary }
+ *               pan_card:                   { type: string, format: binary }
  *     responses:
  *       201:
  *         description: Teacher created + auth user auto-created (Bridge 1)
@@ -628,29 +745,63 @@
  *             type: object
  *             required: [first_name, date_of_birth, gender, assign_date]
  *             properties:
- *               first_name:
- *                 type: string
- *               last_name:
- *                 type: string
- *               date_of_birth:
- *                 type: string
- *                 format: date
- *               gender:
- *                 type: string
- *                 enum: [Male, Female, Other]
- *               assign_date:
- *                 type: string
- *                 format: date
- *               license_number:
- *                 type: string
- *               primary_phone:
- *                 type: string
- *               employment_type:
- *                 type: string
- *                 enum: [Permanent, Contractual, Temporary]
- *               driver_photo:
- *                 type: string
- *                 format: binary
+ *               # ── Personal ─────────────────────────────────────────────
+ *               first_name:           { type: string, example: Ramesh }
+ *               last_name:            { type: string, example: Kumar }
+ *               date_of_birth:        { type: string, format: date, example: "1985-03-12" }
+ *               gender:               { type: string, enum: [Male, Female, Other] }
+ *               blood_group_id:       { type: string, format: uuid, description: "FK → blood_groups.id" }
+ *               nationality:          { type: string, example: Indian }
+ *               driver_photo:         { type: string, format: binary }
+ *               # ── Contact ──────────────────────────────────────────────
+ *               primary_phone:        { type: string, example: "9876500001" }
+ *               primary_email:        { type: string, format: email }
+ *               alternate_phone:      { type: string }
+ *               alternate_email:      { type: string, format: email }
+ *               # ── Address: current ─────────────────────────────────────
+ *               current_street:       { type: string }
+ *               current_city:         { type: string }
+ *               current_state:        { type: string }
+ *               current_pincode:      { type: string }
+ *               # ── Address: permanent ───────────────────────────────────
+ *               is_permanent_same:    { type: boolean, default: false }
+ *               permanent_street:     { type: string }
+ *               permanent_city:       { type: string }
+ *               permanent_state:      { type: string }
+ *               permanent_pincode:    { type: string }
+ *               # ── License ──────────────────────────────────────────────
+ *               license_number:       { type: string, example: "KA0120240001234" }
+ *               license_expiry:       { type: string, format: date, example: "2030-03-12" }
+ *               license_class:        { type: string, example: "LMV - Light Motor Vehicle" }
+ *               commercial_license:   { type: boolean, default: false }
+ *               dL_verified:          { type: boolean, default: false }
+ *               # ── Assignment ───────────────────────────────────────────
+ *               bus_number:           { type: string, example: "KA-01-AB-1234" }
+ *               routes:               { type: string, example: "Whitefield → Indiranagar → School" }
+ *               assign_date:          { type: string, format: date, example: "2024-06-01" }
+ *               # ── Experience ───────────────────────────────────────────
+ *               total_experience_years: { type: integer, example: 8 }
+ *               previous_employer:      { type: string }
+ *               previous_route:         { type: string }
+ *               # ── Employment ───────────────────────────────────────────
+ *               employment_type:      { type: string, enum: [Permanent, Contractual, Temporary] }
+ *               monthly_salary:       { type: number, example: 22000 }
+ *               employment_status:    { type: string, enum: [Active, Inactive, On Leave], default: Active }
+ *               # ── Identity ─────────────────────────────────────────────
+ *               aadhar_number:        { type: string }
+ *               pan_number:           { type: string }
+ *               # ── Banking ──────────────────────────────────────────────
+ *               bank_name:            { type: string }
+ *               account_number:       { type: string }
+ *               ifsc_code:            { type: string }
+ *               # ── Emergency Contact ────────────────────────────────────
+ *               emergency_contact_name: { type: string }
+ *               emergency_relation:     { type: string }
+ *               emergency_phone:        { type: string }
+ *               # ── Documents (file uploads) ─────────────────────────────
+ *               license_document:     { type: string, format: binary }
+ *               aadhar_card:          { type: string, format: binary }
+ *               police_clearance:     { type: string, format: binary }
  *     responses:
  *       201:
  *         description: Driver created
@@ -726,6 +877,10 @@
  *   post:
  *     tags: [Admin - Other Staff]
  *     summary: Create other staff record
+ *     description: |
+ *       Non-teaching staff (accountant, librarian, security, etc.).
+ *       FK fields (staff_role_id, staff_dept_id, position_level_id) come from the
+ *       reference tables seeded by seed-all.js.
  *     requestBody:
  *       required: true
  *       content:
@@ -734,23 +889,54 @@
  *             type: object
  *             required: [first_name]
  *             properties:
- *               first_name:
- *                 type: string
- *               last_name:
- *                 type: string
- *               gender:
- *                 type: string
- *                 enum: [Male, Female, Other]
- *               primary_email:
- *                 type: string
- *               primary_phone:
- *                 type: string
- *               employment_type:
- *                 type: string
- *                 enum: [Permanent, Contractual, Temporary]
- *               staff_photo:
- *                 type: string
- *                 format: binary
+ *               # ── Personal ─────────────────────────────────────────────
+ *               first_name:           { type: string, example: Suresh }
+ *               last_name:            { type: string, example: Reddy }
+ *               date_of_birth:        { type: string, format: date, example: "1980-11-20" }
+ *               gender:               { type: string, enum: [Male, Female, Other] }
+ *               blood_group_id:       { type: string, format: uuid, description: "FK → blood_groups.id" }
+ *               nationality:          { type: string, example: Indian }
+ *               staff_photo:          { type: string, format: binary }
+ *               # ── Contact ──────────────────────────────────────────────
+ *               primary_phone:        { type: string }
+ *               primary_email:        { type: string, format: email }
+ *               alternate_phone:      { type: string }
+ *               alternate_email:      { type: string, format: email }
+ *               # ── Address: current ─────────────────────────────────────
+ *               current_street:       { type: string }
+ *               current_city:         { type: string }
+ *               current_state:        { type: string }
+ *               current_pincode:      { type: string }
+ *               # ── Address: permanent ───────────────────────────────────
+ *               is_permanent_same:    { type: boolean, default: false }
+ *               permanent_street:     { type: string }
+ *               permanent_city:       { type: string }
+ *               permanent_state:      { type: string }
+ *               permanent_pincode:    { type: string }
+ *               # ── Role & Position ──────────────────────────────────────
+ *               staff_role_id:        { type: string, format: uuid, description: "FK → staff_roles.id" }
+ *               staff_dept_id:        { type: string, format: uuid, description: "FK → staff_departments.id" }
+ *               position_level_id:    { type: string, format: uuid, description: "FK → staff_positions.id" }
+ *               # ── Employment ───────────────────────────────────────────
+ *               employment_type:      { type: string, enum: [Permanent, Contractual, Temporary] }
+ *               monthly_salary:       { type: number, example: 18000 }
+ *               join_date:            { type: string, format: date, example: "2023-04-01" }
+ *               other_staff_employment_status: { type: string, enum: [Active, Inactive, On Leave], default: Active }
+ *               # ── Identity ─────────────────────────────────────────────
+ *               aadhar_number:        { type: string }
+ *               pan_number:           { type: string }
+ *               # ── Banking ──────────────────────────────────────────────
+ *               bank_name:            { type: string }
+ *               account_number:       { type: string }
+ *               ifsc_code:            { type: string }
+ *               # ── Emergency Contact ────────────────────────────────────
+ *               emergency_contact_name: { type: string }
+ *               emergency_relation:     { type: string }
+ *               emergency_phone:        { type: string }
+ *               # ── Documents (file uploads) ─────────────────────────────
+ *               adhar_document:       { type: string, format: binary }
+ *               pan_card:             { type: string, format: binary }
+ *               education_certificate: { type: string, format: binary }
  *     responses:
  *       201:
  *         description: Created
@@ -1096,18 +1282,15 @@
  *             type: object
  *             required: [exam_name, academic_year, start_date, end_date]
  *             properties:
- *               exam_name:
+ *               exam_name:     { type: string, example: "Mid-Term 2026" }
+ *               academic_year: { type: string, example: "2025-26" }
+ *               start_date:    { type: string, format: date, example: "2026-09-01" }
+ *               end_date:      { type: string, format: date, example: "2026-09-15" }
+ *               status:
  *                 type: string
- *                 example: Mid-Term 2026
- *               academic_year:
- *                 type: string
- *                 example: "2025-26"
- *               start_date:
- *                 type: string
- *                 format: date
- *               end_date:
- *                 type: string
- *                 format: date
+ *                 enum: [UPCOMING, ONGOING, COMPLETED, PUBLISHED]
+ *                 default: UPCOMING
+ *                 description: Lifecycle status — defaults to UPCOMING if omitted
  *     responses:
  *       201:
  *         description: Exam created
@@ -1286,24 +1469,43 @@
  *   post:
  *     tags: [Admin - Announcements]
  *     summary: Send an announcement
+ *     description: |
+ *       Sender info (sender_id, sender_name, sender_role) and recipient_count
+ *       are auto-populated from the JWT and the resolved audience.
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
- *             required: [title, message]
+ *             required: [title, message, audience_type]
  *             properties:
  *               title:
  *                 type: string
- *                 example: School Closed Tomorrow
+ *                 example: "School Closed Tomorrow"
  *               message:
  *                 type: string
- *                 example: School will remain closed on 14th April due to public holiday.
+ *                 example: "School will remain closed on 14th April due to public holiday."
+ *               audience_type:
+ *                 type: string
+ *                 enum: [full_class, specific_students, all_teachers]
+ *                 description: Required — drives recipient resolution
+ *               class_id:
+ *                 type: string
+ *                 format: uuid
+ *                 description: Required if audience_type=full_class or specific_students
+ *               recipient_ids:
+ *                 type: array
+ *                 items: { type: string, format: uuid }
+ *                 description: Required if audience_type=specific_students
+ *               is_important:
+ *                 type: boolean
+ *                 default: false
  *               scope:
  *                 type: string
  *                 enum: [Whole School, By Class, Specific Users]
  *                 default: Whole School
+ *                 description: Display label only — actual targeting uses audience_type
  *     responses:
  *       201:
  *         description: Announcement sent
@@ -1644,4 +1846,228 @@
  *     responses:
  *       200:
  *         description: Rejected
+ */
+
+// ============================================================
+// ADMIN - MASTER DATA (Lookups for FE dropdowns)
+// ============================================================
+// Generic CRUD over reference tables. The {resource} path param picks
+// the table:
+//   blood-groups, license-types, school-classes, departments,
+//   enquiry-sources, sections, subjects, staff-roles,
+//   staff-departments, staff-positions
+//
+// All routes require ADMIN role. Tenant-scoped resources (everything
+// except blood-groups and license-types) are filtered by school_id
+// taken from the JWT.
+
+/**
+ * @swagger
+ * /api/v1/academic/admin/lookups/all:
+ *   get:
+ *     tags: [Admin - Master Data]
+ *     summary: "[One-shot] Fetch every lookup resource in a single call"
+ *     description: |
+ *       Returns every reference table (blood groups, classes, departments,
+ *       sections, subjects, staff roles/depts/positions, license types,
+ *       enquiry sources) in one response — normalised to `{id, name, order_number}`.
+ *
+ *       Use this to populate all FE dropdowns in one bootstrap call, or to
+ *       grab every UUID you need while testing endpoints in Swagger. Keep
+ *       the response open in another tab and copy-paste IDs from it.
+ *     responses:
+ *       200:
+ *         description: Every lookup table keyed by slug
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success: { type: boolean, example: true }
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     blood-groups:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:           { type: string, format: uuid }
+ *                           name:         { type: string, example: "A+" }
+ *                           order_number: { type: integer, example: 3 }
+ *                     school-classes:       { type: array, items: { type: object } }
+ *                     departments:          { type: array, items: { type: object } }
+ *                     enquiry-sources:      { type: array, items: { type: object } }
+ *                     sections:             { type: array, items: { type: object } }
+ *                     subjects:             { type: array, items: { type: object } }
+ *                     staff-roles:          { type: array, items: { type: object } }
+ *                     staff-departments:    { type: array, items: { type: object } }
+ *                     staff-positions:      { type: array, items: { type: object } }
+ *                     license-types:        { type: array, items: { type: object } }
+ */
+
+/**
+ * @swagger
+ * /api/v1/academic/admin/lookups/{resource}:
+ *   get:
+ *     tags: [Admin - Master Data]
+ *     summary: List all entries for a lookup resource
+ *     description: |
+ *       Returns every row of the given reference table, ordered by
+ *       order_number (or by name if the table doesn't track order).
+ *
+ *       Use this in FE dropdowns to fetch options like blood groups,
+ *       departments, classes, subjects, etc. — and use the returned `id`
+ *       as the FK value in admission/teacher/staff create endpoints.
+ *     parameters:
+ *       - in: path
+ *         name: resource
+ *         required: true
+ *         description: Lookup resource slug
+ *         schema:
+ *           type: string
+ *           enum:
+ *             - blood-groups
+ *             - license-types
+ *             - school-classes
+ *             - departments
+ *             - enquiry-sources
+ *             - sections
+ *             - subjects
+ *             - staff-roles
+ *             - staff-departments
+ *             - staff-positions
+ *     responses:
+ *       200:
+ *         description: Array of lookup rows
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success: { type: boolean, example: true }
+ *                 count:   { type: integer, example: 8 }
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:           { type: string, format: uuid }
+ *                       blood_group:  { type: string, example: "A+" }
+ *                       order_number: { type: integer, example: 3 }
+ *       404:
+ *         description: Unknown resource slug
+ *   post:
+ *     tags: [Admin - Master Data]
+ *     summary: Create a new entry in a lookup resource
+ *     description: |
+ *       The `name` field maps to the resource's name column automatically:
+ *         - blood-groups → blood_group
+ *         - school-classes → class_name
+ *         - departments → department_name
+ *         - enquiry-sources → source_name
+ *         - sections → section_name
+ *         - subjects → subject_name
+ *         - staff-roles → role_name
+ *         - staff-departments → department_name
+ *         - staff-positions → position_name
+ *         - license-types → license_name
+ *
+ *       You can pass either `name` or the actual column name in the body —
+ *       both work.
+ *     parameters:
+ *       - in: path
+ *         name: resource
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [name]
+ *             properties:
+ *               name:         { type: string, example: "Computer Science" }
+ *               order_number: { type: integer, example: 11 }
+ *     responses:
+ *       201:
+ *         description: Created
+ *       400:
+ *         description: Validation error (missing name)
+ *       409:
+ *         description: Duplicate (name already exists for this school)
+ */
+
+/**
+ * @swagger
+ * /api/v1/academic/admin/lookups/{resource}/{id}:
+ *   get:
+ *     tags: [Admin - Master Data]
+ *     summary: Get a single lookup row by ID
+ *     parameters:
+ *       - in: path
+ *         name: resource
+ *         required: true
+ *         schema: { type: string }
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string, format: uuid }
+ *     responses:
+ *       200:
+ *         description: The lookup row
+ *       404:
+ *         description: Not found
+ *   put:
+ *     tags: [Admin - Master Data]
+ *     summary: Update a lookup row
+ *     parameters:
+ *       - in: path
+ *         name: resource
+ *         required: true
+ *         schema: { type: string }
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string, format: uuid }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:         { type: string, example: "Updated Name" }
+ *               order_number: { type: integer, example: 5 }
+ *     responses:
+ *       200:
+ *         description: Updated
+ *       404:
+ *         description: Not found
+ *       409:
+ *         description: Duplicate name
+ *   delete:
+ *     tags: [Admin - Master Data]
+ *     summary: Delete a lookup row
+ *     description: |
+ *       Returns 409 if the row is referenced by a foreign key (e.g. trying
+ *       to delete a department that's already assigned to teachers).
+ *     parameters:
+ *       - in: path
+ *         name: resource
+ *         required: true
+ *         schema: { type: string }
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string, format: uuid }
+ *     responses:
+ *       200:
+ *         description: Deleted
+ *       404:
+ *         description: Not found
+ *       409:
+ *         description: In use — cannot delete
  */

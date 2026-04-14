@@ -15,14 +15,26 @@ const options = {
     ],
     components: {
       securitySchemes: {
-        bearerAuth: {
+        adminAuth: {
           type: 'http',
           scheme: 'bearer',
-          bearerFormat: 'JWT'
-        }
-      }
+          bearerFormat: 'JWT',
+          description: 'Paste an Admin JWT here. Only applies to Admin-tagged endpoints.',
+        },
+        teacherAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+          description: 'Paste a Teacher JWT here. Only applies to Teacher-tagged endpoints.',
+        },
+        parentAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+          description: 'Paste a Parent JWT here. Only applies to Parent-tagged endpoints.',
+        },
+      },
     },
-    security: [{ bearerAuth: [] }],
     tags: [
       // Admin
       { name: 'Admin - Auth',                 description: 'Login (Admin / Teacher / Parent) — served by auth-service on port 3000' },
@@ -38,6 +50,7 @@ const options = {
       { name: 'Admin - Announcements',         description: 'Compose and send school announcements + templates' },
       { name: 'Admin - Settings',              description: 'School profile settings' },
       { name: 'Admin - Teacher Edit Requests', description: 'Review and approve/reject teacher profile change requests' },
+      { name: 'Admin - Master Data',           description: 'CRUD over reference/lookup tables (blood groups, classes, departments, sections, subjects, staff roles/depts/positions, license types, enquiry sources)' },
       // Teacher
       { name: 'Teacher - Attendance', description: 'Mark, view, edit, delete student attendance' },
       { name: 'Teacher - Homework', description: 'Create and manage homework assignments' },
@@ -61,4 +74,30 @@ const options = {
   apis: ['./src/docs/*.js']
 };
 
-module.exports = swaggerJsdoc(options);
+const spec = swaggerJsdoc(options);
+
+// ─── Per-tag security: assign the right auth scheme based on tag prefix ──
+// Admin endpoints require adminAuth, Teacher endpoints require teacherAuth,
+// Parent endpoints require parentAuth. Paste separate tokens in each locker
+// and only the relevant one is used per request.
+function schemeForTag(tag) {
+  if (!tag) return null;
+  if (tag.startsWith('Admin'))   return 'adminAuth';
+  if (tag.startsWith('Teacher')) return 'teacherAuth';
+  if (tag.startsWith('Parent'))  return 'parentAuth';
+  return null;
+}
+
+for (const pathKey of Object.keys(spec.paths || {})) {
+  for (const method of Object.keys(spec.paths[pathKey])) {
+    const op = spec.paths[pathKey][method];
+    if (!op || typeof op !== 'object') continue;
+    const primaryTag = Array.isArray(op.tags) ? op.tags[0] : null;
+    const scheme = schemeForTag(primaryTag);
+    if (scheme) {
+      op.security = [{ [scheme]: [] }];
+    }
+  }
+}
+
+module.exports = spec;
