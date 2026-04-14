@@ -58,6 +58,15 @@ const CLASS_2_ID   = 'bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb';
 const PARENT_1_ID  = 'PAR101';
 const PARENT_2_ID  = 'PAR102';
 
+// Lookup helper: fetch an ID by name from a reference table
+async function lookupId(table, nameColumn, value) {
+  const res = await academicPool.query(
+    `SELECT id FROM ${table} WHERE ${nameColumn} = $1 LIMIT 1`,
+    [value]
+  );
+  return (res.rows[0] && res.rows[0].id) || null;
+}
+
 async function seedTeachers() {
   log('teachers — teacher_records + auth_db.users (Bridge 1 replica)');
 
@@ -66,17 +75,126 @@ async function seedTeachers() {
   const teacherRoleId = roleRes.rows[0].id;
   const pwdHash = await bcrypt.hash('Teacher@123', SALT_ROUNDS);
 
+  // Resolve FK IDs from reference tables (seeded by seed-all.js)
+  const bgAPos       = await lookupId('blood_groups',    'blood_group',     'A+');
+  const bgBPos       = await lookupId('blood_groups',    'blood_group',     'B+');
+  const deptMath     = await lookupId('departments',     'department_name', 'Mathematics');
+  const deptEnglish  = await lookupId('departments',     'department_name', 'English');
+  const class10      = await lookupId('school_classes',  'class_name',      'Class 10');
+  const class9       = await lookupId('school_classes',  'class_name',      'Class 9');
+
   const teachers = [
-    { id: TEACHER_1_ID, name: 'John Teacher',  email: 'teacher1@schoolnest.com', phone: '+91-9000000001' },
-    { id: TEACHER_2_ID, name: 'Jane Teacher',  email: 'teacher2@schoolnest.com', phone: '+91-9000000002' },
+    {
+      id: TEACHER_1_ID, name: 'John Teacher', email: 'teacher1@schoolnest.com', phone: '+91-9000000001',
+      dob: '1985-06-15', gender: 'Male', nationality: 'Indian', religion: 'Hindu', marital_status: 'Married',
+      blood_group_id: bgAPos, department_id: deptMath, class_ids: [class10, class9].filter(Boolean),
+      current_street: '12 Park Street', current_city: 'Bengaluru', current_state: 'Karnataka', current_pincode: '560001',
+      is_permanent_same: true,
+      employee_id: 'EMP001', designation: 'Senior Teacher', teacher_type: 'Full-time',
+      specialization: 'Algebra & Geometry', date_of_joining: '2020-06-01',
+      highest_qualification: 'M.Sc Mathematics', university: 'Bangalore University', year_of_passing: 2008, percentage_cgpa: '8.5',
+      total_experience_years: 12, previous_school_institution: 'ABC Public School', previous_designation: 'Teacher', experience_at_previous_school: 5,
+      monthly_salary: 45000.00, bank_name: 'HDFC Bank', account_number: '5012345678', ifsc_code: 'HDFC0001234',
+      pan_number: 'ABCDE1234F', aadhar_number: '123412341234',
+      emergency_contact_name: 'Mary Teacher', emergency_relation: 'Spouse', emergency_phone: '+91-9000000011',
+    },
+    {
+      id: TEACHER_2_ID, name: 'Jane Teacher', email: 'teacher2@schoolnest.com', phone: '+91-9000000002',
+      dob: '1990-09-22', gender: 'Female', nationality: 'Indian', religion: 'Christian', marital_status: 'Single',
+      blood_group_id: bgBPos, department_id: deptEnglish, class_ids: [class10].filter(Boolean),
+      current_street: '45 MG Road', current_city: 'Bengaluru', current_state: 'Karnataka', current_pincode: '560002',
+      is_permanent_same: false,
+      permanent_street: 'Village Kothamangalam', permanent_city: 'Ernakulam', permanent_state: 'Kerala', permanent_pincode: '686691',
+      employee_id: 'EMP002', designation: 'Teacher', teacher_type: 'Full-time',
+      specialization: 'English Literature', date_of_joining: '2022-04-10',
+      highest_qualification: 'M.A English', university: 'MG University', year_of_passing: 2013, percentage_cgpa: '8.1',
+      total_experience_years: 6, previous_school_institution: 'XYZ School', previous_designation: 'Junior Teacher', experience_at_previous_school: 3,
+      monthly_salary: 38000.00, bank_name: 'ICICI Bank', account_number: '6123456789', ifsc_code: 'ICIC0005678',
+      pan_number: 'FGHIJ5678K', aadhar_number: '567856785678',
+      emergency_contact_name: 'Thomas Teacher', emergency_relation: 'Father', emergency_phone: '+91-9000000022',
+    },
   ];
 
   for (const t of teachers) {
     await academicPool.query(
-      `INSERT INTO teacher_records (id, auth_user_id, school_id, first_name, primary_email, primary_phone, designation, employment_status)
-       VALUES ($1::uuid, $2::varchar, $3, $4, $5, $6, 'Teacher', 'Active')
-       ON CONFLICT (id) DO NOTHING`,
-      [t.id, t.id, SCHOOL_ID, t.name, t.email, t.phone]
+      `INSERT INTO teacher_records (
+         id, auth_user_id, school_id,
+         first_name, date_of_birth, gender, blood_group_id, nationality, religion, marital_status,
+         primary_phone, primary_email,
+         current_street, current_city, current_state, current_pincode,
+         is_permanent_same, permanent_street, permanent_city, permanent_state, permanent_pincode,
+         employee_id, designation, teacher_type, department_id, specialization, date_of_joining, class_ids, employment_status,
+         highest_qualification, university, year_of_passing, percentage_cgpa,
+         total_experience_years, previous_school_institution, previous_designation, experience_at_previous_school,
+         monthly_salary, bank_name, account_number, ifsc_code, pan_number, aadhar_number,
+         emergency_contact_name, emergency_relation, emergency_phone
+       )
+       VALUES (
+         $1::uuid, $2::varchar, $3,
+         $4, $5, $6, $7, $8, $9, $10,
+         $11, $12,
+         $13, $14, $15, $16,
+         $17, $18, $19, $20, $21,
+         $22, $23, $24, $25, $26, $27, $28, 'Active',
+         $29, $30, $31, $32,
+         $33, $34, $35, $36,
+         $37, $38, $39, $40, $41, $42,
+         $43, $44, $45
+       )
+       ON CONFLICT (id) DO UPDATE SET
+         first_name = EXCLUDED.first_name,
+         date_of_birth = EXCLUDED.date_of_birth,
+         gender = EXCLUDED.gender,
+         blood_group_id = EXCLUDED.blood_group_id,
+         nationality = EXCLUDED.nationality,
+         religion = EXCLUDED.religion,
+         marital_status = EXCLUDED.marital_status,
+         current_street = EXCLUDED.current_street,
+         current_city = EXCLUDED.current_city,
+         current_state = EXCLUDED.current_state,
+         current_pincode = EXCLUDED.current_pincode,
+         is_permanent_same = EXCLUDED.is_permanent_same,
+         permanent_street = EXCLUDED.permanent_street,
+         permanent_city = EXCLUDED.permanent_city,
+         permanent_state = EXCLUDED.permanent_state,
+         permanent_pincode = EXCLUDED.permanent_pincode,
+         employee_id = EXCLUDED.employee_id,
+         designation = EXCLUDED.designation,
+         teacher_type = EXCLUDED.teacher_type,
+         department_id = EXCLUDED.department_id,
+         specialization = EXCLUDED.specialization,
+         date_of_joining = EXCLUDED.date_of_joining,
+         class_ids = EXCLUDED.class_ids,
+         highest_qualification = EXCLUDED.highest_qualification,
+         university = EXCLUDED.university,
+         year_of_passing = EXCLUDED.year_of_passing,
+         percentage_cgpa = EXCLUDED.percentage_cgpa,
+         total_experience_years = EXCLUDED.total_experience_years,
+         previous_school_institution = EXCLUDED.previous_school_institution,
+         previous_designation = EXCLUDED.previous_designation,
+         experience_at_previous_school = EXCLUDED.experience_at_previous_school,
+         monthly_salary = EXCLUDED.monthly_salary,
+         bank_name = EXCLUDED.bank_name,
+         account_number = EXCLUDED.account_number,
+         ifsc_code = EXCLUDED.ifsc_code,
+         pan_number = EXCLUDED.pan_number,
+         aadhar_number = EXCLUDED.aadhar_number,
+         emergency_contact_name = EXCLUDED.emergency_contact_name,
+         emergency_relation = EXCLUDED.emergency_relation,
+         emergency_phone = EXCLUDED.emergency_phone,
+         updated_at = CURRENT_TIMESTAMP`,
+      [
+        t.id, t.id, SCHOOL_ID,
+        t.name, t.dob, t.gender, t.blood_group_id, t.nationality, t.religion, t.marital_status,
+        t.phone, t.email,
+        t.current_street, t.current_city, t.current_state, t.current_pincode,
+        t.is_permanent_same, t.permanent_street || null, t.permanent_city || null, t.permanent_state || null, t.permanent_pincode || null,
+        t.employee_id, t.designation, t.teacher_type, t.department_id, t.specialization, t.date_of_joining, t.class_ids,
+        t.highest_qualification, t.university, t.year_of_passing, t.percentage_cgpa,
+        t.total_experience_years, t.previous_school_institution, t.previous_designation, t.experience_at_previous_school,
+        t.monthly_salary, t.bank_name, t.account_number, t.ifsc_code, t.pan_number, t.aadhar_number,
+        t.emergency_contact_name, t.emergency_relation, t.emergency_phone,
+      ]
     );
 
     await authPool.query(
@@ -86,7 +204,7 @@ async function seedTeachers() {
       [t.id, SCHOOL_ID, teacherRoleId, t.name, t.email, pwdHash]
     );
 
-    ok(`teacher ${t.name} — ${t.email}`);
+    ok(`teacher ${t.name} — ${t.email} (dept: ${t.department_id ? 'ok' : 'MISSING'}, bg: ${t.blood_group_id ? 'ok' : 'MISSING'}, classes: ${t.class_ids.length})`);
   }
 }
 
