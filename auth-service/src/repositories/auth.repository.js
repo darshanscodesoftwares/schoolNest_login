@@ -76,8 +76,9 @@ const cleanupExpiredTokens = async () => {
 /**
  * Find teacher by primary phone (across all schools)
  * Queries academic_db teacher_records table for school auto-discovery
+ * Normalizes both stored and input phone numbers for flexible matching
  *
- * @param {string} primary_phone - Teacher's phone number
+ * @param {string} primary_phone - Teacher's phone number (normalized, 10 digits)
  * @returns {Array} Array of teacher records from all schools
  */
 const findTeachersByPhone = async (primary_phone) => {
@@ -90,7 +91,12 @@ const findTeachersByPhone = async (primary_phone) => {
         primary_phone,
         primary_email
       FROM teacher_records
-      WHERE primary_phone = $1
+      WHERE
+        -- Match exact normalized phone (remove +91, spaces, hyphens)
+        REGEXP_REPLACE(primary_phone, '[^0-9]', '', 'g') LIKE '%' || $1 || '%'
+        OR
+        -- Also try direct match in case already normalized
+        primary_phone = $1
     `,
     values: [primary_phone]
   };

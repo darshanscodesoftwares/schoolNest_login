@@ -14,6 +14,25 @@ const generateOTP = () => {
 };
 
 /**
+ * Normalize phone number by removing spaces, hyphens, country code
+ * Examples: "+91 6384582060" → "6384582060", "91-6384582060" → "6384582060"
+ * @param {string} phone - Phone number to normalize
+ * @returns {string} Normalized phone number (10 digits)
+ */
+const normalizePhone = (phone) => {
+  if (!phone) return '';
+  // Remove spaces, hyphens, parentheses
+  let normalized = phone.replace(/[\s\-()]/g, '');
+  // Remove country code if present (assumes India +91)
+  if (normalized.startsWith('+91')) {
+    normalized = normalized.slice(3);
+  } else if (normalized.startsWith('91') && normalized.length > 10) {
+    normalized = normalized.slice(2);
+  }
+  return normalized;
+};
+
+/**
  * Mask phone number for display (e.g., 9876543210 → 987****3210)
  * @param {string} phone - Full phone number
  * @returns {string} Masked phone number
@@ -35,8 +54,18 @@ const maskPhone = (phone) => {
  */
 const sendOTP = async ({ primary_phone }) => {
   try {
+    // Step 0: Normalize phone number (remove spaces, country code, etc.)
+    const normalized_phone = normalizePhone(primary_phone);
+
+    if (!normalized_phone || normalized_phone.length !== 10) {
+      const error = new Error('Invalid phone number. Please provide a valid 10-digit phone number');
+      error.statusCode = 400;
+      error.code = 'INVALID_PHONE_FORMAT';
+      throw error;
+    }
+
     // Step 1: Find teacher by phone (auto-discover school)
-    const teachers = await authRepository.findTeachersByPhone(primary_phone);
+    const teachers = await authRepository.findTeachersByPhone(normalized_phone);
 
     if (!teachers || teachers.length === 0) {
       const error = new Error('Phone number not registered. Please contact school admin');
@@ -57,7 +86,7 @@ const sendOTP = async ({ primary_phone }) => {
     // Step 3: Store OTP session in memory
     otpStore.set(otp_session_id, {
       otp,
-      primary_phone,
+      primary_phone: normalized_phone,
       school_id,
       teacher_id: teacher.id,
       expires_at
@@ -176,12 +205,22 @@ const verifyOTP = async ({ otp_session_id, otp_code }) => {
  */
 const resendOTP = async ({ primary_phone }) => {
   try {
+    // Step 0: Normalize phone number
+    const normalized_phone = normalizePhone(primary_phone);
+
+    if (!normalized_phone || normalized_phone.length !== 10) {
+      const error = new Error('Invalid phone number. Please provide a valid 10-digit phone number');
+      error.statusCode = 400;
+      error.code = 'INVALID_PHONE_FORMAT';
+      throw error;
+    }
+
     // Look for existing active session for this phone
     let existingSessionId = null;
     let existingOtpData = null;
 
     for (const [sessionId, otpData] of otpStore.entries()) {
-      if (otpData.primary_phone === primary_phone) {
+      if (otpData.primary_phone === normalized_phone) {
         if (Date.now() <= otpData.expires_at) {
           existingSessionId = sessionId;
           existingOtpData = otpData;
@@ -194,7 +233,7 @@ const resendOTP = async ({ primary_phone }) => {
 
     // No active session — create new (same as sendOTP)
     if (!existingSessionId) {
-      return await sendOTP({ primary_phone });
+      return sendOTP({ primary_phone });
     }
 
     // Active session found — generate new OTP, keep same session ID and expiry
