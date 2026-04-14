@@ -3,6 +3,7 @@ const { validateClassExists } = require('../../../../utils/common-api.client');
 const pool = require('../../../../config/db');
 const authPool = require('../../../../config/auth-db');
 const bcrypt = require('bcrypt');
+const crypto = require('crypto');
 
 // ─── Bridge 2: admission approved → create parent auth user + student record ──
 const runBridge2 = async (schoolId, admissionId) => {
@@ -54,16 +55,17 @@ const runBridge2 = async (schoolId, admissionId) => {
       if (roleRes.rows.length > 0) {
         const roleId = roleRes.rows[0].id;
         const tempPwd = await bcrypt.hash('Parent@123', 10);
+        const newParentId = crypto.randomUUID();
 
         const insertRes = await authPool.query(
-          `INSERT INTO users (school_id, role_id, name, email, password_hash)
-           VALUES ($1, $2, $3, $4, $5)
+          `INSERT INTO users (id, school_id, role_id, name, email, password_hash)
+           VALUES ($1, $2, $3, $4, $5, $6)
            ON CONFLICT (email) DO UPDATE SET name = EXCLUDED.name
            RETURNING id`,
-          [schoolId, roleId, parentName, parentEmail, tempPwd]
+          [newParentId, schoolId, roleId, parentName, parentEmail, tempPwd]
         );
         parentAuthId = (insertRes.rows[0] && insertRes.rows[0].id) || null;
-        console.log(`Bridge 2: parent auth user created for ${parentEmail}`);
+        console.log(`Bridge 2: parent auth user created for ${parentEmail} (id: ${parentAuthId})`);
       }
     }
 
