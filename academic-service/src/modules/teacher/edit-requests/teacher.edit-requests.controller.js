@@ -62,6 +62,7 @@ const createEditRequest = async (req, res, next) => {
       throw error;
     }
 
+    // teacher_id is already the teacher_records.id from JWT token
     // Call service layer
     const result = await editRequestsService.createEditRequest({
       school_id,
