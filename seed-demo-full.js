@@ -82,6 +82,8 @@ const EXAM_IDS = [
   '99999999-9999-4999-a999-000000000001', // UPCOMING
   '99999999-9999-4999-a999-000000000002', // UPCOMING
   '99999999-9999-4999-a999-000000000003', // COMPLETED
+  '99999999-9999-4999-a999-000000000004', // ONGOING
+  '99999999-9999-4999-a999-000000000005', // PUBLISHED
 ];
 // Parent auth IDs for approved admissions
 const APPROVED_PARENT_IDS = ['PAR201', 'PAR202', 'PAR203', 'PAR204'];
@@ -400,10 +402,16 @@ async function seedClassAssignments() {
 async function seedAdminExams() {
   log('Section 1: create_exams (3 rows) + exam_details (15 rows)');
 
+  const today = new Date();
+  const daysAgo = (n) => { const d = new Date(today); d.setDate(d.getDate() - n); return d.toISOString().slice(0, 10); };
+  const daysAhead = (n) => { const d = new Date(today); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); };
+
   const exams = [
-    { id: EXAM_IDS[0], name: 'Mid-Term 2026', start: '2026-09-01', end: '2026-09-15', status: 'UPCOMING' },
-    { id: EXAM_IDS[1], name: 'Final Term 2026', start: '2026-12-01', end: '2026-12-15', status: 'UPCOMING' },
-    { id: EXAM_IDS[2], name: 'Quarterly 2025', start: '2025-07-01', end: '2025-07-10', status: 'COMPLETED' },
+    { id: EXAM_IDS[0], name: 'Mid-Term 2026',        start: daysAhead(45), end: daysAhead(60), status: 'UPCOMING'  },
+    { id: EXAM_IDS[1], name: 'Final Term 2026',      start: daysAhead(120), end: daysAhead(135), status: 'UPCOMING'  },
+    { id: EXAM_IDS[2], name: 'Quarterly 2025',       start: daysAgo(300),  end: daysAgo(290),  status: 'COMPLETED' },
+    { id: EXAM_IDS[3], name: 'Unit Test March 2026', start: daysAgo(2),    end: daysAhead(4),  status: 'ONGOING'   },
+    { id: EXAM_IDS[4], name: 'Annual Exam 2025',     start: daysAgo(120),  end: daysAgo(110),  status: 'PUBLISHED' },
   ];
   for (const e of exams) {
     await academicPool.query(
@@ -434,7 +442,10 @@ async function seedAdminExams() {
          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
          ON CONFLICT (school_id, exam_id, class_id, section_id, subject_id) DO NOTHING`,
         [SCHOOL_ID, exam.id, c.classId, c.sectionId, c.subjectId, examDate.toISOString().slice(0, 10),
-         100, 35, c.teacher, exam.status === 'COMPLETED' ? 'Published' : 'Not Started']
+         100, 35, c.teacher,
+         (exam.status === 'COMPLETED' || exam.status === 'PUBLISHED') ? 'Published'
+           : exam.status === 'ONGOING'   ? 'Marks Pending'
+           : 'Not Started']
       ).catch((e) => warn('exam_details', e));
       detailCount++;
     }
@@ -545,11 +556,16 @@ async function seedHomework() {
   log('Section 2: homework (5 rows)');
   const today = new Date();
   const homeworks = [
+    // Upcoming
     { classId: CLASS_1_ID, teacher: TEACHER_1_ID, subject: 'Mathematics', title: 'Quadratic Equations — Exercise 4.3', desc: 'Solve all problems from exercise 4.3 in the textbook.', due: +3 },
     { classId: CLASS_1_ID, teacher: TEACHER_1_ID, subject: 'Mathematics', title: 'Trigonometry Worksheet',             desc: 'Attempt the worksheet on identities and submit by due date.', due: +7 },
     { classId: CLASS_2_ID, teacher: TEACHER_2_ID, subject: 'English',     title: 'Essay — Life in 2050',               desc: 'Write a 500-word essay on how you imagine life in the year 2050.', due: +5 },
+    // Due today (ongoing)
+    { classId: CLASS_1_ID, teacher: TEACHER_1_ID, subject: 'Mathematics', title: 'Algebra Quick Quiz',                 desc: 'In-class quiz today — review chapters 1-2 beforehand.', due: 0 },
+    // Overdue / completed window
     { classId: CLASS_2_ID, teacher: TEACHER_2_ID, subject: 'English',     title: 'Book Report — Animal Farm',          desc: 'Read chapters 1-3 and write a short summary.', due: -2 },
     { classId: CLASS_1_ID, teacher: TEACHER_1_ID, subject: 'Mathematics', title: 'Practice Test',                       desc: 'Practice test covering chapters 1-3.', due: -5 },
+    { classId: CLASS_2_ID, teacher: TEACHER_2_ID, subject: 'English',     title: 'Grammar Worksheet — Completed',      desc: 'Past-tense exercise — collected and graded.', due: -10 },
   ];
   for (const h of homeworks) {
     const dueDate = new Date(today);
@@ -666,23 +682,36 @@ async function seedFees() {
   );
   const studentIds = studentsRes.rows.map((r) => r.id);
 
+  // Reset fees for these 3 students so rerunning stays idempotent (student_fees has no unique key besides id)
+  if (studentIds.length > 0) {
+    await academicPool.query(
+      `DELETE FROM student_fees WHERE school_id=$1 AND student_id = ANY($2)`,
+      [SCHOOL_ID, studentIds]
+    ).catch((e) => warn('reset student_fees', e));
+  }
+
   let feeCount = 0;
   let paymentCount = 0;
+  // Rotate status across (student, category) pairs so every student sees PAID + PENDING + OVERDUE
+  const statusCycle = ['PAID', 'PENDING', 'OVERDUE'];
+  let pairIdx = 0;
   for (const studentId of studentIds) {
     for (const cat of feeCats) {
-      const isPaid = Math.random() > 0.5;
+      const status = statusCycle[pairIdx++ % statusCycle.length];
       const amount = cat.name === 'Tuition Fee' ? 15000 : (cat.name === 'Transport Fee' ? 3000 : 1500);
-      const dueDate = new Date(); dueDate.setDate(dueDate.getDate() + 30);
+      // OVERDUE → due date in past; PENDING → future; PAID → future (recently paid)
+      const dueDate = new Date();
+      dueDate.setDate(dueDate.getDate() + (status === 'OVERDUE' ? -10 : 30));
 
       const feeRes = await academicPool.query(
         `INSERT INTO student_fees (school_id, student_id, fee_category_id, amount, due_date, status, paid_at)
          VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id`,
         [SCHOOL_ID, studentId, cat.id, amount, dueDate.toISOString().slice(0, 10),
-         isPaid ? 'PAID' : 'PENDING', isPaid ? new Date().toISOString() : null]
+         status, status === 'PAID' ? new Date().toISOString() : null]
       ).catch((e) => { warn('student_fee', e); return { rows: [] }; });
       feeCount++;
 
-      if (isPaid && feeRes.rows[0]) {
+      if (status === 'PAID' && feeRes.rows[0]) {
         await academicPool.query(
           `INSERT INTO payments (school_id, student_id, student_fee_id, amount, method, transaction_id, status)
            VALUES ($1,$2,$3,$4,$5,$6,$7)`,
