@@ -127,6 +127,7 @@ const approveEditRequest = async (req, res, next) => {
   try {
     const { school_id } = req.user;
     const { requestId } = req.params;
+    const { admin_notes } = req.body;
 
     // Validate input
     if (!requestId) {
@@ -140,7 +141,8 @@ const approveEditRequest = async (req, res, next) => {
     const result = await adminService.approveEditRequest({
       user: req.user,
       school_id,
-      request_id: requestId
+      request_id: requestId,
+      admin_notes
     });
 
     return res.status(200).json({
@@ -157,6 +159,7 @@ const approveEditRequest = async (req, res, next) => {
         },
         changed_fields: parseChangedFields(result.changed_fields),
         status: mapStatusDisplay(result.status),
+        admin_notes: result.admin_notes,
         approved_at: new Date().toISOString()
       }
     });
@@ -173,6 +176,7 @@ const rejectEditRequest = async (req, res, next) => {
   try {
     const { school_id } = req.user;
     const { requestId } = req.params;
+    const { rejection_reason } = req.body;
 
     // Validate input
     if (!requestId) {
@@ -182,11 +186,19 @@ const rejectEditRequest = async (req, res, next) => {
       throw error;
     }
 
+    if (!rejection_reason) {
+      const error = new Error('Rejection reason is required');
+      error.statusCode = 400;
+      error.code = 'VALIDATION_ERROR';
+      throw error;
+    }
+
     // Call service layer
     const result = await adminService.rejectEditRequest({
       user: req.user,
       school_id,
-      request_id: requestId
+      request_id: requestId,
+      rejection_reason
     });
 
     return res.status(200).json({
@@ -196,6 +208,7 @@ const rejectEditRequest = async (req, res, next) => {
         id: result.id,
         school_id: result.school_id,
         teacher_id: result.teacher_id,
+        rejection_reason: result.rejection_reason,
         rejected_at: new Date().toISOString()
       }
     });

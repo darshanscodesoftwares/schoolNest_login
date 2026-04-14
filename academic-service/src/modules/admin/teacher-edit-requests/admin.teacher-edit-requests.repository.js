@@ -101,7 +101,7 @@ const getEditRequestById = async ({ school_id, request_id }) => {
  * Approve edit request
  * When admin clicks approve: 1) Get the request, 2) Apply changes to teacher_records, 3) Update status to APPROVED
  */
-const approveEditRequest = async ({ school_id, request_id }) => {
+const approveEditRequest = async ({ school_id, request_id, admin_notes }) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -145,15 +145,15 @@ const approveEditRequest = async ({ school_id, request_id }) => {
       await client.query(updateTeacherQuery);
     }
 
-    // 3. Update edit request status to APPROVED
+    // 3. Update edit request status to APPROVED with admin_notes
     const updateRequestQuery = {
       text: `
         UPDATE teacher_edit_requests
-        SET status = 'APPROVED', updated_at = NOW()
+        SET status = 'APPROVED', admin_notes = $3, updated_at = NOW()
         WHERE id = $1 AND school_id = $2
-        RETURNING id, school_id, teacher_id, changed_fields, status, created_at, updated_at
+        RETURNING id, school_id, teacher_id, changed_fields, status, admin_notes, created_at, updated_at
       `,
-      values: [request_id, school_id]
+      values: [request_id, school_id, admin_notes]
     };
 
     const approveResult = await client.query(updateRequestQuery);
@@ -184,23 +184,24 @@ const approveEditRequest = async ({ school_id, request_id }) => {
 
 /**
  * Reject edit request (update status to REJECTED)
- * When admin clicks reject, the status is updated to REJECTED
+ * When admin clicks reject, the status is updated to REJECTED with rejection_reason
  */
-const rejectEditRequest = async ({ school_id, request_id }) => {
+const rejectEditRequest = async ({ school_id, request_id, rejection_reason }) => {
   const query = {
     text: `
       UPDATE teacher_edit_requests
-      SET status = 'REJECTED', updated_at = NOW()
+      SET status = 'REJECTED', rejection_reason = $3, updated_at = NOW()
       WHERE id = $1 AND school_id = $2
       RETURNING
         id,
         school_id,
         teacher_id,
         status,
+        rejection_reason,
         created_at,
         updated_at
     `,
-    values: [request_id, school_id]
+    values: [request_id, school_id, rejection_reason]
   };
 
   const { rows } = await pool.query(query);
@@ -208,12 +209,16 @@ const rejectEditRequest = async ({ school_id, request_id }) => {
 };
 
 /**
- * Get edit request statistics (count of pending requests)
+ * Get edit request statistics (counts for all statuses)
  */
 const getEditRequestStats = async ({ school_id }) => {
   const query = {
     text: `
-      SELECT COUNT(*) as pending_count
+      SELECT
+        COUNT(*) FILTER (WHERE status = 'PENDING') as pending_count,
+        COUNT(*) FILTER (WHERE status = 'APPROVED') as approved_count,
+        COUNT(*) FILTER (WHERE status = 'REJECTED') as rejected_count,
+        COUNT(*) as total_count
       FROM teacher_edit_requests
       WHERE school_id = $1
     `,
@@ -221,9 +226,13 @@ const getEditRequestStats = async ({ school_id }) => {
   };
 
   const { rows } = await pool.query(query);
+  const stats = rows[0];
 
   return {
-    total_pending: parseInt(rows[0].pending_count, 10)
+    pending: parseInt(stats.pending_count, 10),
+    approved: parseInt(stats.approved_count, 10),
+    rejected: parseInt(stats.rejected_count, 10),
+    total: parseInt(stats.total_count, 10)
   };
 };
 

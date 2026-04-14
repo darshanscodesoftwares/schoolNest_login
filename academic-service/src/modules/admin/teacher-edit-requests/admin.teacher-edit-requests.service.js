@@ -73,7 +73,7 @@ const getEditRequestById = async ({ user, school_id, request_id }) => {
 /**
  * Approve edit request
  */
-const approveEditRequest = async ({ user, school_id, request_id }) => {
+const approveEditRequest = async ({ user, school_id, request_id, admin_notes }) => {
   try {
     assertAdminRole(user);
 
@@ -90,10 +90,11 @@ const approveEditRequest = async ({ user, school_id, request_id }) => {
       throw error;
     }
 
-    // Approve request (delete the record)
+    // Approve request (update status and apply changes)
     const result = await adminRepository.approveEditRequest({
       school_id,
-      request_id
+      request_id,
+      admin_notes
     });
 
     return result;
@@ -110,7 +111,7 @@ const approveEditRequest = async ({ user, school_id, request_id }) => {
 /**
  * Reject edit request
  */
-const rejectEditRequest = async ({ user, school_id, request_id }) => {
+const rejectEditRequest = async ({ user, school_id, request_id, rejection_reason }) => {
   try {
     assertAdminRole(user);
 
@@ -127,10 +128,11 @@ const rejectEditRequest = async ({ user, school_id, request_id }) => {
       throw error;
     }
 
-    // Reject request (delete the record)
+    // Reject request (update status with rejection reason)
     const result = await adminRepository.rejectEditRequest({
       school_id,
-      request_id
+      request_id,
+      rejection_reason
     });
 
     return result;
