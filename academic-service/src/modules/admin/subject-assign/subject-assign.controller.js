@@ -1,15 +1,28 @@
 const subjectAssignService = require("./subject-assign.service");
 const { commonApiGet } = require("../../../utils/common-api.client");
 
+// Cache for class names to avoid repeated API calls
+const classNameCache = {};
+
 // Helper function to fetch class name from common API
 const getClassName = async (classId) => {
   try {
+    // Check cache first
+    if (classNameCache[classId]) {
+      return classNameCache[classId];
+    }
+
     const response = await commonApiGet(`/api/v1/classes/${classId}`, null);
     if (response && response.success && response.data) {
-      return response.data.class_name || null;
+      const className = response.data.class_name || response.data.name || null;
+      if (className) {
+        classNameCache[classId] = className;
+      }
+      return className;
     }
     return null;
   } catch (error) {
+    console.warn(`Failed to fetch class name for ${classId}:`, error.message);
     return null;
   }
 };
@@ -23,17 +36,22 @@ const getAllClassesWithOrder = async () => {
       // Create a map of class_id to order_number for sorting
       const classOrderMap = {};
       response.data.forEach((cls, index) => {
+        const className = cls.class_name || cls.name;
         classOrderMap[cls.id] = {
           order_number: cls.order_number || index,
-          class_name: cls.class_name,
+          class_name: className,
         };
+        // Cache the class name
+        if (className) {
+          classNameCache[cls.id] = className;
+        }
       });
       return classOrderMap;
     }
     return {};
   } catch (error) {
     // If common API fails, return empty map - class_id will be used as fallback
-    console.warn('getAllClassesWithOrder: common API failed, using class_id as display name', error.message);
+    console.warn('getAllClassesWithOrder: common API failed', error.message);
     return {};
   }
 };
