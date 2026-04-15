@@ -3,21 +3,22 @@ const pool = require('../../../config/db');
 /**
  * Create new edit request with changed fields
  */
-const createEditRequest = async ({ school_id, teacher_id, changed_fields }) => {
+const createEditRequest = async ({ school_id, teacher_id, changed_fields, reason }) => {
   const query = {
     text: `
-      INSERT INTO teacher_edit_requests (school_id, teacher_id, changed_fields, status)
-      VALUES ($1, $2, $3, 'PENDING')
+      INSERT INTO teacher_edit_requests (school_id, teacher_id, changed_fields, reason, status)
+      VALUES ($1, $2, $3, $4, 'PENDING')
       RETURNING
         id,
         school_id,
         teacher_id,
         changed_fields,
+        reason,
         status,
         created_at,
         updated_at
     `,
-    values: [school_id, teacher_id, JSON.stringify(changed_fields)]
+    values: [school_id, teacher_id, JSON.stringify(changed_fields), reason || null]
   };
 
   const { rows } = await pool.query(query);
@@ -35,6 +36,7 @@ const getTeacherEditRequests = async ({ school_id, teacher_id }) => {
         school_id,
         teacher_id,
         changed_fields,
+        reason,
         status,
         created_at,
         updated_at
@@ -60,6 +62,7 @@ const getEditRequestById = async ({ school_id, teacher_id, request_id }) => {
         school_id,
         teacher_id,
         changed_fields,
+        reason,
         status,
         created_at,
         updated_at

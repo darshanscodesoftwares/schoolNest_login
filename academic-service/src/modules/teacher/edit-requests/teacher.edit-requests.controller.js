@@ -35,7 +35,7 @@ const parseChangedFields = (changedFields) => {
 const createEditRequest = async (req, res, next) => {
   try {
     const { user_id: teacher_id, school_id: userSchoolId } = req.user;
-    const { school_id, changed_fields } = req.body;
+    const { school_id, changed_fields, reason } = req.body;
 
     // Validate input
     if (!school_id) {
@@ -66,7 +66,8 @@ const createEditRequest = async (req, res, next) => {
     const result = await editRequestsService.createEditRequest({
       school_id,
       teacher_id,
-      changed_fields
+      changed_fields,
+      reason: reason || null
     });
 
     return res.status(201).json({
@@ -77,6 +78,7 @@ const createEditRequest = async (req, res, next) => {
         school_id: result.school_id,
         teacher_id: result.teacher_id,
         changed_fields: parseChangedFields(result.changed_fields),
+        reason: result.reason,
         status: mapStatusDisplay(result.status),
         created_at: result.created_at
       }

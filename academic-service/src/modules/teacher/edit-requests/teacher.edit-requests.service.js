@@ -6,7 +6,7 @@ const editRequestsRepository = require('./teacher.edit-requests.repository');
  * 1. Check if teacher already has a pending request
  * 2. Create edit request with PENDING status
  */
-const createEditRequest = async ({ school_id, teacher_id, changed_fields }) => {
+const createEditRequest = async ({ school_id, teacher_id, changed_fields, reason }) => {
   try {
     // Check if teacher already has a pending request
     // TODO: Uncomment this validation after testing
@@ -23,7 +23,8 @@ const createEditRequest = async ({ school_id, teacher_id, changed_fields }) => {
     const result = await editRequestsRepository.createEditRequest({
       school_id,
       teacher_id,
-      changed_fields
+      changed_fields,
+      reason
     });
 
     return result;

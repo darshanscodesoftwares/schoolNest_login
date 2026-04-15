@@ -565,6 +565,7 @@ CREATE TABLE IF NOT EXISTS teacher_edit_requests (
   school_id      INT         NOT NULL,
   teacher_id     UUID        NOT NULL REFERENCES teacher_records(id) ON DELETE CASCADE,
   changed_fields JSONB       NOT NULL,
+  reason         TEXT,
   status         VARCHAR(20) DEFAULT 'PENDING' CHECK (status IN ('PENDING','APPROVED','REJECTED')),
   admin_notes    TEXT,
   rejection_reason TEXT,
