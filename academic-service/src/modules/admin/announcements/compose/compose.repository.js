@@ -31,25 +31,20 @@ const getClassName = async (classId) => {
 const composeRepository = {
   // Create announcement
   createAnnouncement: async (school_id, announcement_data, status = 'Draft') => {
-    const { sender_id, sender_name, sender_role, title, message, is_important, audience_type, scope, class_id } = announcement_data;
+    const { created_by, title, message, is_important, audience, scope } = announcement_data;
 
-    // Try progressively simpler queries to discover actual schema
-    // Attempt 1: Try with all columns including sender_id, sender_name, sender_role and status
-    let query = {
+    const query = {
       text: `INSERT INTO announcements
-              (school_id, sender_id, sender_name, sender_role, title, message, audience_type, scope, class_id, is_important, status)
-              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+              (school_id, created_by, title, message, audience, scope, is_important, status)
+              VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
               RETURNING *`,
       values: [
         school_id,
-        sender_id,
-        sender_name,
-        sender_role,
+        created_by,
         title,
         message,
-        audience_type || null,
-        scope || null,
-        class_id || null,
+        audience || 'Both',
+        scope || 'Whole School',
         is_important !== undefined ? is_important : false,
         status
       ],
@@ -60,48 +55,26 @@ const composeRepository = {
       return result.rows[0];
     } catch (error) {
       if (error.code === '42703' || error.code === '23502') {
-        // Attempt 2: Try without scope (keep status)
+        // Fallback: Try with minimal columns
         try {
-          query = {
+          const fallbackQuery = {
             text: `INSERT INTO announcements
-                    (school_id, sender_id, sender_name, sender_role, title, message, audience_type, is_important, status)
-                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                    (school_id, created_by, title, message, is_important, status)
+                    VALUES ($1, $2, $3, $4, $5, $6)
                     RETURNING *`,
             values: [
               school_id,
-              sender_id,
-              sender_name,
-              sender_role,
+              created_by,
               title,
               message,
-              audience_type || null,
               is_important !== undefined ? is_important : false,
               status
             ],
           };
-          const result = await pool.query(query);
+          const result = await pool.query(fallbackQuery);
           return result.rows[0];
         } catch (error2) {
-          if (error2.code === '42703' || error2.code === '23502') {
-            // Attempt 3: Try without audience_type, scope (keep status)
-            try {
-              query = {
-                text: `INSERT INTO announcements
-                        (school_id, sender_id, sender_name, sender_role, title, message, is_important, status)
-                        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-                        RETURNING *`,
-                values: [
-                  school_id,
-                  sender_id,
-                  sender_name,
-                  sender_role,
-                  title,
-                  message,
-                  is_important !== undefined ? is_important : false,
-                  status
-                ],
-              };
-              const result = await pool.query(query);
+          throw error2;
               return result.rows[0];
             } catch (error3) {
               if (error3.code === '42703' || error3.code === '23502') {
@@ -271,9 +244,8 @@ const composeRepository = {
               a.message,
               a.is_important,
               a.status,
-              a.audience_type,
+              a.audience,
               a.scope,
-              a.class_id,
               a.created_at,
               COUNT(DISTINCT ar.id) AS recipient_count,
               COUNT(DISTINCT ar.id) FILTER (WHERE ar.recipient_type = 'Teacher') AS teacher_count,
@@ -294,7 +266,7 @@ const composeRepository = {
             LEFT JOIN announcement_recipients ar ON a.id = ar.announcement_id
             LEFT JOIN teacher_records tr ON ar.recipient_id = tr.id::text AND ar.recipient_type = 'Teacher'
             WHERE a.school_id = $1
-            GROUP BY a.id, a.school_id, a.title, a.message, a.is_important, a.status, a.audience_type, a.scope, a.class_id, a.created_at
+            GROUP BY a.id, a.school_id, a.title, a.message, a.is_important, a.status, a.audience, a.scope, a.created_at
             ORDER BY a.created_at DESC`,
       values: [school_id],
     };
@@ -513,13 +485,13 @@ const composeRepository = {
 
   // Update announcement (only for Draft status) and change to Sent
   updateAnnouncement: async (school_id, announcement_id, announcement_data) => {
-    const { audience_type, title, message, is_important } = announcement_data;
+    const { audience, title, message, is_important } = announcement_data;
     const query = {
       text: `UPDATE announcements
-              SET audience_type = $1, title = $2, message = $3, is_important = $4, status = 'Sent'
+              SET audience = $1, title = $2, message = $3, is_important = $4, status = 'Sent'
               WHERE id = $5 AND school_id = $6
               RETURNING *`,
-      values: [audience_type || null, title, message, is_important !== undefined ? is_important : false, announcement_id, school_id],
+      values: [audience || null, title, message, is_important !== undefined ? is_important : false, announcement_id, school_id],
     };
     const result = await pool.query(query);
     return result.rows[0];
