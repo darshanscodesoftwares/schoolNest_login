@@ -1,5 +1,6 @@
 const workDetailsRepository = require('./teacher.work-details.repository');
 const commonPool = require('../../../config/common-db');
+const editRequestsRepository = require('../edit-requests/teacher.edit-requests.repository');
 
 const ACADEMIC_SERVICE_BASE_URL = process.env.ACADEMIC_SERVICE_URL || 'http://localhost:4000';
 
@@ -108,6 +109,12 @@ const getMyWorkDetails = async (teacher_id, school_id) => {
       photoUrl = `${ACADEMIC_SERVICE_BASE_URL}${teacherInfo.teacher_photo}`;
     }
 
+    // Fetch latest active edit request (PENDING or REJECTED)
+    const activeRequest = await editRequestsRepository.getLatestActiveRequest({
+      school_id,
+      teacher_id
+    });
+
     return {
       teacher: {
         id: teacherInfo.id,
@@ -128,7 +135,20 @@ const getMyWorkDetails = async (teacher_id, school_id) => {
         total_classes: classesMap.size,
         total_students: workHours.students_count,
         hours_per_week: workHours.total_hours
-      }
+      },
+      pending_edit: activeRequest ? {
+        id: activeRequest.id,
+        status: activeRequest.status,
+        changed_fields: typeof activeRequest.changed_fields === 'string'
+          ? JSON.parse(activeRequest.changed_fields)
+          : activeRequest.changed_fields,
+        reason: activeRequest.reason,
+        rejection_reason: activeRequest.rejection_reason,
+        submitted_at: activeRequest.created_at,
+        reviewed_at: activeRequest.updated_at !== activeRequest.created_at
+          ? activeRequest.updated_at
+          : null
+      } : null
     };
   } catch (error) {
     if (error.statusCode) throw error;
