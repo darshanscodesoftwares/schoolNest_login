@@ -33,10 +33,35 @@ const subjectAssignService = {
     }
 
     // Validate each assignment
+    const pool = require("../../../config/db");
     for (const assignment of classAssignments) {
       if (!assignment.class_id || !assignment.teacher_id) {
         const error = new Error(
           "Each assignment must have class_id and teacher_id"
+        );
+        error.statusCode = 400;
+        throw error;
+      }
+
+      // Validate teacher_id is a valid UUID and exists in teacher_records
+      try {
+        const teacherCheck = await pool.query(
+          `SELECT id FROM teacher_records WHERE id = $1::uuid AND school_id = $2 LIMIT 1`,
+          [assignment.teacher_id, school_id]
+        );
+
+        if (!teacherCheck.rows || teacherCheck.rows.length === 0) {
+          const error = new Error(
+            `Invalid teacher_id: ${assignment.teacher_id}. Teacher not found in school.`
+          );
+          error.statusCode = 400;
+          throw error;
+        }
+      } catch (err) {
+        if (err.statusCode === 400) throw err;
+        // If UUID cast fails, teacher_id is invalid format
+        const error = new Error(
+          `Invalid teacher_id format: ${assignment.teacher_id}. Must be a valid UUID.`
         );
         error.statusCode = 400;
         throw error;
@@ -318,6 +343,31 @@ const subjectAssignService = {
     if (!assignment) {
       const error = new Error("Assignment not found for this class and subject");
       error.statusCode = 404;
+      throw error;
+    }
+
+    // Validate teacher_id is a valid UUID and exists in teacher_records
+    const pool = require("../../../config/db");
+    try {
+      const teacherCheck = await pool.query(
+        `SELECT id FROM teacher_records WHERE id = $1::uuid AND school_id = $2 LIMIT 1`,
+        [teacher_id, school_id]
+      );
+
+      if (!teacherCheck.rows || teacherCheck.rows.length === 0) {
+        const error = new Error(
+          `Invalid teacher_id: ${teacher_id}. Teacher not found in school.`
+        );
+        error.statusCode = 400;
+        throw error;
+      }
+    } catch (err) {
+      if (err.statusCode === 400) throw err;
+      // If UUID cast fails, teacher_id is invalid format
+      const error = new Error(
+        `Invalid teacher_id format: ${teacher_id}. Must be a valid UUID.`
+      );
+      error.statusCode = 400;
       throw error;
     }
 
