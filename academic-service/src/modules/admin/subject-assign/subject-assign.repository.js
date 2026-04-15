@@ -186,14 +186,14 @@ const subjectAssignRepository = {
 
       // Then delete all subject-class assignments
       await client.query(
-        `DELETE FROM subject_class_assign WHERE subject_id = $1::uuid AND school_id = $2::uuid`,
+        `DELETE FROM subject_class_assign WHERE subject_id = $1::uuid AND school_id = $2`,
         [subject_id, school_id]
       );
 
       // Finally delete the subject
       const query = {
         text: `DELETE FROM subjects
-               WHERE school_id = $1::uuid AND id = $2::uuid
+               WHERE school_id = $1 AND id = $2::uuid
                RETURNING *`,
         values: [school_id, subject_id],
       };
