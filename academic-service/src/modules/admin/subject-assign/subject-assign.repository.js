@@ -69,7 +69,7 @@ const subjectAssignRepository = {
              s.updated_at
              FROM subjects s
              LEFT JOIN subject_class_assign sca ON s.id = sca.subject_id
-             WHERE s.school_id = $1::uuid
+             WHERE s.school_id = $1
              GROUP BY s.id
              ORDER BY s.created_at DESC`,
       values: [school_id],
@@ -86,7 +86,7 @@ const subjectAssignRepository = {
              s.created_at,
              s.updated_at
              FROM subjects s
-             WHERE s.school_id = $1::uuid AND s.id = $2::uuid`,
+             WHERE s.school_id = $1 AND s.id = $2::uuid`,
       values: [school_id, subject_id],
     };
     const result = await pool.query(query);
@@ -104,8 +104,8 @@ const subjectAssignRepository = {
              sca.created_at,
              sca.updated_at
              FROM subject_class_assign sca
-             LEFT JOIN teacher_records tr ON sca.teacher_id = tr.id
-             WHERE sca.school_id = $1::uuid AND sca.subject_id = $2::uuid
+             LEFT JOIN teacher_records tr ON sca.teacher_id = tr.auth_user_id
+             WHERE sca.school_id = $1 AND sca.subject_id = $2::uuid
              ORDER BY sca.created_at DESC`,
       values: [school_id, subject_id],
     };
@@ -117,7 +117,7 @@ const subjectAssignRepository = {
   checkAssignmentExists: async (school_id, subject_id, class_id) => {
     const query = {
       text: `SELECT id FROM subject_class_assign
-             WHERE school_id = $1::uuid AND subject_id = $2::uuid AND class_id = $3::uuid`,
+             WHERE school_id = $1 AND subject_id = $2::uuid AND class_id = $3::uuid`,
       values: [school_id, subject_id, class_id],
     };
     const result = await pool.query(query);
@@ -129,7 +129,7 @@ const subjectAssignRepository = {
     const query = {
       text: `UPDATE subjects
              SET subject_name = $1, updated_at = NOW()
-             WHERE school_id = $2::uuid AND id = $3::uuid
+             WHERE school_id = $2 AND id = $3::uuid
              RETURNING *`,
       values: [subject_name, school_id, subject_id],
     };
@@ -142,7 +142,7 @@ const subjectAssignRepository = {
     const query = {
       text: `UPDATE subject_class_assign
              SET teacher_id = $1, updated_at = NOW()
-             WHERE school_id = $2::uuid AND id = $3::uuid
+             WHERE school_id = $2 AND id = $3::uuid
              RETURNING *`,
       values: [teacher_id, school_id, assignment_id],
     };
@@ -154,7 +154,7 @@ const subjectAssignRepository = {
   deleteSubjectClassAssign: async (school_id, assignment_id) => {
     const query = {
       text: `DELETE FROM subject_class_assign
-             WHERE school_id = $1::uuid AND id = $2::uuid
+             WHERE school_id = $1 AND id = $2::uuid
              RETURNING *`,
       values: [school_id, assignment_id],
     };
@@ -166,7 +166,7 @@ const subjectAssignRepository = {
   deleteSubjectAssignments: async (school_id, subject_id) => {
     const query = {
       text: `DELETE FROM subject_class_assign
-             WHERE school_id = $1::uuid AND subject_id = $2::uuid`,
+             WHERE school_id = $1 AND subject_id = $2::uuid`,
       values: [school_id, subject_id],
     };
     await pool.query(query);
@@ -176,7 +176,7 @@ const subjectAssignRepository = {
   deleteSubject: async (school_id, subject_id) => {
     const query = {
       text: `DELETE FROM subjects
-             WHERE school_id = $1::uuid AND id = $2::uuid
+             WHERE school_id = $1 AND id = $2::uuid
              RETURNING *`,
       values: [school_id, subject_id],
     };
@@ -201,8 +201,8 @@ const subjectAssignRepository = {
              s.updated_at
              FROM subjects s
              LEFT JOIN subject_class_assign sca ON s.id = sca.subject_id
-             LEFT JOIN teacher_records tr ON sca.teacher_id = tr.id
-             WHERE s.school_id = $1::uuid
+             LEFT JOIN teacher_records tr ON sca.teacher_id = tr.auth_user_id
+             WHERE s.school_id = $1
              GROUP BY s.id
              ORDER BY s.created_at DESC`,
       values: [school_id],
@@ -239,7 +239,7 @@ const subjectAssignRepository = {
              sca.updated_at
              FROM subjects s
              INNER JOIN subject_class_assign sca ON s.id = sca.subject_id
-             LEFT JOIN teacher_records tr ON sca.teacher_id = tr.id
+             LEFT JOIN teacher_records tr ON sca.teacher_id = tr.auth_user_id
              WHERE s.school_id = $1 AND sca.class_id = $2::uuid
              ORDER BY s.created_at DESC`,
       values: [school_id, class_id],
@@ -264,7 +264,7 @@ const subjectAssignRepository = {
              sca.updated_at
              FROM subjects s
              INNER JOIN subject_class_assign sca ON s.id = sca.subject_id
-             LEFT JOIN teacher_records tr ON sca.teacher_id = tr.id
+             LEFT JOIN teacher_records tr ON sca.teacher_id = tr.auth_user_id
              WHERE s.school_id = $1
              ORDER BY sca.class_id, sca.sequence ASC`,
       values: [school_id],
@@ -278,7 +278,7 @@ const subjectAssignRepository = {
     const query = {
       text: `UPDATE subject_class_assign
              SET teacher_id = $1, updated_at = NOW()
-             WHERE school_id = $2::uuid AND class_id = $3::uuid AND subject_id = $4::uuid
+             WHERE school_id = $2 AND class_id = $3::uuid AND subject_id = $4::uuid
              RETURNING *`,
       values: [teacher_id, school_id, class_id, subject_id],
     };
@@ -291,7 +291,7 @@ const subjectAssignRepository = {
     const query = {
       text: `SELECT *
              FROM subject_class_assign
-             WHERE school_id = $1::uuid AND class_id = $2::uuid AND subject_id = $3::uuid`,
+             WHERE school_id = $1 AND class_id = $2::uuid AND subject_id = $3::uuid`,
       values: [school_id, class_id, subject_id],
     };
     const result = await pool.query(query);
