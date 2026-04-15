@@ -245,7 +245,7 @@ const composeRepository = {
               a.audience,
               a.audience_type,
               a.scope,
-              MAX(ar.class_id) AS class_id,
+              (SELECT DISTINCT ar3.class_id FROM announcement_recipients ar3 WHERE ar3.announcement_id = a.id AND ar3.class_id IS NOT NULL LIMIT 1) AS class_id,
               a.created_at,
               COUNT(DISTINCT ar.id) AS recipient_count,
               COUNT(DISTINCT ar.id) FILTER (WHERE ar.recipient_type = 'Teacher') AS teacher_count,
