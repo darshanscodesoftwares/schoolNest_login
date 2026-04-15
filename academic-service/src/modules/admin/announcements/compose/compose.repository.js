@@ -31,7 +31,7 @@ const getClassName = async (classId) => {
 const composeRepository = {
   // Create announcement
   createAnnouncement: async (school_id, announcement_data, status = 'Draft') => {
-    const { created_by, sender_id, sender_name, sender_role, title, message, is_important, audience, audience_type, scope } = announcement_data;
+    const { created_by, sender_id, sender_name, sender_role, title, message, is_important, audience, audience_type, scope, class_id } = announcement_data;
 
     // Use created_by if available, otherwise use sender_id
     const createdBy = created_by || sender_id;
@@ -42,8 +42,8 @@ const composeRepository = {
 
     const query = {
       text: `INSERT INTO announcements
-              (school_id, created_by, sender_id, sender_name, sender_role, title, message, audience, audience_type, scope, is_important, status)
-              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+              (school_id, created_by, sender_id, sender_name, sender_role, title, message, audience, audience_type, scope, class_id, is_important, status)
+              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
               RETURNING *`,
       values: [
         school_id,
@@ -56,6 +56,7 @@ const composeRepository = {
         audienceValue || 'Both',
         audienceTypeValue,
         scope || 'Whole School',
+        class_id || null,
         is_important !== undefined ? is_important : false,
         status
       ],
@@ -70,8 +71,8 @@ const composeRepository = {
         try {
           const fallbackQuery = {
             text: `INSERT INTO announcements
-                    (school_id, created_by, sender_id, sender_name, sender_role, title, message, audience_type, is_important, status)
-                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+                    (school_id, created_by, sender_id, sender_name, sender_role, title, message, audience_type, class_id, is_important, status)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
                     RETURNING *`,
             values: [
               school_id,
@@ -82,6 +83,7 @@ const composeRepository = {
               title,
               message,
               audienceTypeValue,
+              class_id || null,
               is_important !== undefined ? is_important : false,
               status
             ],
@@ -245,7 +247,7 @@ const composeRepository = {
               a.audience,
               a.audience_type,
               a.scope,
-              (SELECT DISTINCT ar3.class_id FROM announcement_recipients ar3 WHERE ar3.announcement_id = a.id AND ar3.class_id IS NOT NULL LIMIT 1) AS class_id,
+              a.class_id,
               a.created_at,
               COUNT(DISTINCT ar.id) AS recipient_count,
               COUNT(DISTINCT ar.id) FILTER (WHERE ar.recipient_type = 'Teacher') AS teacher_count,
@@ -266,7 +268,7 @@ const composeRepository = {
             LEFT JOIN announcement_recipients ar ON a.id = ar.announcement_id
             LEFT JOIN teacher_records tr ON ar.recipient_id = tr.id::text AND ar.recipient_type = 'Teacher'
             WHERE a.school_id = $1
-            GROUP BY a.id, a.school_id, a.title, a.message, a.is_important, a.status, a.audience, a.audience_type, a.scope, a.created_at
+            GROUP BY a.id, a.school_id, a.title, a.message, a.is_important, a.status, a.audience, a.audience_type, a.scope, a.class_id, a.created_at
             ORDER BY a.created_at DESC`,
       values: [school_id],
     };
