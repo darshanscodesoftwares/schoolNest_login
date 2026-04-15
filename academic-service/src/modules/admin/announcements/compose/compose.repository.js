@@ -141,7 +141,7 @@ const composeRepository = {
   getTeachersByClass: async (school_id, class_id) => {
     const query = {
       text: `SELECT teacher_id FROM classes_assign
-              WHERE school_id = $1 AND id = $2`,
+              WHERE school_id = $1 AND class_id = $2::uuid`,
       values: [school_id, class_id],
     };
     const result = await pool.query(query);
@@ -158,7 +158,7 @@ const composeRepository = {
                 SELECT ai.student_id
                 FROM academic_information ai
                 INNER JOIN classes_assign ca ON ca.class_id = ai.class_id AND ca.section_name = ai.section
-                WHERE ca.school_id = $1 AND ca.id = $2
+                WHERE ca.school_id = $1 AND ca.class_id = $2::uuid
               )`,
       values: [school_id, class_id],
     };
