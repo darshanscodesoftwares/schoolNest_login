@@ -256,7 +256,8 @@ const composeController = {
 
       const announcement = await composeRepository.createAnnouncement(
         school_id,
-        saveDraftData
+        saveDraftData,
+        'Draft'
       );
 
       return res.status(201).json({
