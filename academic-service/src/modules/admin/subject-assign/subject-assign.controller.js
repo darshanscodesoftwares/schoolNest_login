@@ -17,6 +17,7 @@ const getClassName = async (classId) => {
 // Helper function to fetch all classes with their order from common API
 const getAllClassesWithOrder = async () => {
   try {
+    // Try old common API first
     const response = await commonApiGet(`/api/v1/classes`, null);
     if (response && response.success && Array.isArray(response.data)) {
       // Create a map of class_id to order_number for sorting
@@ -31,6 +32,8 @@ const getAllClassesWithOrder = async () => {
     }
     return {};
   } catch (error) {
+    // If common API fails, return empty map - class_id will be used as fallback
+    console.warn('getAllClassesWithOrder: common API failed, using class_id as display name', error.message);
     return {};
   }
 };
@@ -460,12 +463,19 @@ const subjectAssignController = {
       });
 
       // Convert subjects map to array for each class, then sort by order_number
-      let classes = Object.values(classMap).map(classItem => ({
-        class_id: classItem.class_id,
-        class_name: classItem.class_name,
-        total_subjects: Object.keys(classItem.subjects).length,
-        subjects: Object.values(classItem.subjects),
-      }));
+      let classes = Object.values(classMap).map(classItem => {
+        // If class_name is the UUID (fallback), use a shortened display
+        const displayName = classItem.class_name === classItem.class_id
+          ? `Class ${classItem.class_id.substring(0, 8).toUpperCase()}`
+          : classItem.class_name;
+
+        return {
+          class_id: classItem.class_id,
+          class_name: displayName,
+          total_subjects: Object.keys(classItem.subjects).length,
+          subjects: Object.values(classItem.subjects),
+        };
+      });
 
       // Sort classes by order_number from common-api
       classes = classes.sort((a, b) => {
