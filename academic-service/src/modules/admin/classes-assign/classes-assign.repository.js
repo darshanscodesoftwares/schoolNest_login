@@ -182,8 +182,7 @@ const classesAssignRepository = {
   // Get all active teachers for a school
   getTeachersList: async (school_id) => {
     const query = {
-      text: `SELECT auth_user_id AS teacher_id,
-             id,
+      text: `SELECT id AS teacher_id,
              first_name,
              designation,
              employment_status
