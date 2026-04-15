@@ -110,10 +110,32 @@ const countPendingRequests = async ({ school_id, teacher_id }) => {
   return parseInt(rows[0].count, 10);
 };
 
+/**
+ * Get the latest active edit request (PENDING or REJECTED) for a teacher
+ * Used by work-details API to show pending edit status in profile response
+ */
+const getLatestActiveRequest = async ({ school_id, teacher_id }) => {
+  const query = {
+    text: `
+      SELECT id, status, changed_fields, reason, rejection_reason, created_at, updated_at
+      FROM teacher_edit_requests
+      WHERE teacher_id = $1 AND school_id = $2
+        AND status IN ('PENDING', 'REJECTED')
+      ORDER BY created_at DESC
+      LIMIT 1
+    `,
+    values: [teacher_id, school_id]
+  };
+
+  const { rows } = await pool.query(query);
+  return rows[0] || null;
+};
+
 module.exports = {
   createEditRequest,
   getTeacherEditRequests,
   getEditRequestById,
   cancelEditRequest,
-  countPendingRequests
+  countPendingRequests,
+  getLatestActiveRequest
 };

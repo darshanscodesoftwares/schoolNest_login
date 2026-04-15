@@ -26,7 +26,7 @@ const getTeacherWorkDetails = async (teacher_id, school_id) => {
         tr.highest_qualification,
         tr.specialization
       FROM teacher_records tr
-      WHERE tr.id = $1 AND tr.school_id = $2
+      WHERE tr.auth_user_id = $1 AND tr.school_id = $2
       LIMIT 1
     `,
     values: [teacher_id, school_id]
