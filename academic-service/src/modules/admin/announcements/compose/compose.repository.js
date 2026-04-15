@@ -36,13 +36,14 @@ const composeRepository = {
     // Use created_by if available, otherwise use sender_id
     const createdBy = created_by || sender_id;
     const audienceValue = audience || audience_type;
+    const audienceTypeValue = audience_type || (audience ? ({'Teachers': 'all_teachers', 'Parents': 'parent', 'Both': 'all_both'}[audience] || 'all_both') : 'all_both');
     const senderName = sender_name || "Admin";
     const senderRole = sender_role || "ADMIN";
 
     const query = {
       text: `INSERT INTO announcements
-              (school_id, created_by, sender_id, sender_name, sender_role, title, message, audience, scope, is_important, status)
-              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+              (school_id, created_by, sender_id, sender_name, sender_role, title, message, audience, audience_type, scope, is_important, status)
+              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
               RETURNING *`,
       values: [
         school_id,
@@ -53,6 +54,7 @@ const composeRepository = {
         title,
         message,
         audienceValue || 'Both',
+        audienceTypeValue,
         scope || 'Whole School',
         is_important !== undefined ? is_important : false,
         status
@@ -68,8 +70,8 @@ const composeRepository = {
         try {
           const fallbackQuery = {
             text: `INSERT INTO announcements
-                    (school_id, created_by, sender_id, sender_name, sender_role, title, message, is_important, status)
-                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                    (school_id, created_by, sender_id, sender_name, sender_role, title, message, audience_type, is_important, status)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
                     RETURNING *`,
             values: [
               school_id,
@@ -79,6 +81,7 @@ const composeRepository = {
               senderRole,
               title,
               message,
+              audienceTypeValue,
               is_important !== undefined ? is_important : false,
               status
             ],
