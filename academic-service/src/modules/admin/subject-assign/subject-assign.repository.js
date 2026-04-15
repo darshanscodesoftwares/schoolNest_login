@@ -129,7 +129,7 @@ const subjectAssignRepository = {
     const query = {
       text: `UPDATE subjects
              SET subject_name = $1, updated_at = NOW()
-             WHERE school_id = $2 AND id = $3
+             WHERE school_id = $2::uuid AND id = $3::uuid
              RETURNING *`,
       values: [subject_name, school_id, subject_id],
     };
@@ -176,7 +176,7 @@ const subjectAssignRepository = {
   deleteSubject: async (school_id, subject_id) => {
     const query = {
       text: `DELETE FROM subjects
-             WHERE school_id = $1 AND id = $2
+             WHERE school_id = $1::uuid AND id = $2::uuid
              RETURNING *`,
       values: [school_id, subject_id],
     };
