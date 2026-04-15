@@ -285,14 +285,14 @@ const composeRepository = {
                   ', '
                 )
                 FROM announcement_recipients ar2
-                LEFT JOIN parent_guardian_information pgi ON ar2.parent_id = pgi.id
+                LEFT JOIN parent_guardian_information pgi ON ar2.recipient_id = pgi.id::text
                 WHERE ar2.announcement_id = a.id
                   AND ar2.recipient_type = 'Parent'
                   AND (pgi.father_full_name IS NOT NULL OR pgi.mother_full_name IS NOT NULL OR pgi.guardian_full_name IS NOT NULL)
               ), NULL) AS parent_names
             FROM announcements a
             LEFT JOIN announcement_recipients ar ON a.id = ar.announcement_id
-            LEFT JOIN teacher_records tr ON ar.recipient_id = tr.id AND ar.recipient_type = 'Teacher'
+            LEFT JOIN teacher_records tr ON ar.recipient_id = tr.id::text AND ar.recipient_type = 'Teacher'
             WHERE a.school_id = $1
             GROUP BY a.id, a.school_id, a.title, a.message, a.is_important, a.status, a.audience_type, a.scope, a.class_id, a.created_at
             ORDER BY a.created_at DESC`,
@@ -438,9 +438,9 @@ const composeRepository = {
                 ELSE NULL
               END AS recipient_name
             FROM announcement_recipients ar
-            LEFT JOIN teacher_records tr ON ar.recipient_id = tr.id AND ar.recipient_type = 'Teacher'
-            LEFT JOIN parent_guardian_information pgi ON ar.recipient_id = pgi.id AND ar.recipient_type = 'Parent'
-            WHERE ar.announcement_id = $1 AND ar.school_id = $2
+            LEFT JOIN teacher_records tr ON ar.recipient_id = tr.id::text AND ar.recipient_type = 'Teacher'
+            LEFT JOIN parent_guardian_information pgi ON ar.recipient_id = pgi.id::text AND ar.recipient_type = 'Parent'
+            WHERE ar.announcement_id = $1::uuid AND ar.school_id = $2
             ORDER BY ar.created_at DESC`,
       values: [announcement_id, school_id],
     };
