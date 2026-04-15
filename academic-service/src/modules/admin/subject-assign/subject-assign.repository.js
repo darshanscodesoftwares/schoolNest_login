@@ -69,7 +69,7 @@ const subjectAssignRepository = {
              s.updated_at
              FROM subjects s
              LEFT JOIN subject_class_assign sca ON s.id = sca.subject_id
-             WHERE s.school_id = $1
+             WHERE s.school_id = $1::uuid
              GROUP BY s.id
              ORDER BY s.created_at DESC`,
       values: [school_id],
@@ -172,16 +172,41 @@ const subjectAssignRepository = {
     await pool.query(query);
   },
 
-  // Delete subject
+  // Delete subject (with cascade delete for dependent records)
   deleteSubject: async (school_id, subject_id) => {
-    const query = {
-      text: `DELETE FROM subjects
-             WHERE school_id = $1 AND id = $2::uuid
-             RETURNING *`,
-      values: [school_id, subject_id],
-    };
-    const result = await pool.query(query);
-    return result.rows[0];
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+
+      // First delete all exam details that reference this subject
+      await client.query(
+        `DELETE FROM exam_details WHERE subject_id = $1::uuid`,
+        [subject_id]
+      );
+
+      // Then delete all subject-class assignments
+      await client.query(
+        `DELETE FROM subject_class_assign WHERE subject_id = $1::uuid AND school_id = $2::uuid`,
+        [subject_id, school_id]
+      );
+
+      // Finally delete the subject
+      const query = {
+        text: `DELETE FROM subjects
+               WHERE school_id = $1::uuid AND id = $2::uuid
+               RETURNING *`,
+        values: [school_id, subject_id],
+      };
+      const result = await client.query(query);
+
+      await client.query("COMMIT");
+      return result.rows[0];
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
+    }
   },
 
   // Get all subjects and their class assignments
@@ -202,7 +227,7 @@ const subjectAssignRepository = {
              FROM subjects s
              LEFT JOIN subject_class_assign sca ON s.id = sca.subject_id
              LEFT JOIN teacher_records tr ON sca.teacher_id = tr.auth_user_id
-             WHERE s.school_id = $1
+             WHERE s.school_id = $1::uuid
              GROUP BY s.id
              ORDER BY s.created_at DESC`,
       values: [school_id],
@@ -240,7 +265,7 @@ const subjectAssignRepository = {
              FROM subjects s
              INNER JOIN subject_class_assign sca ON s.id = sca.subject_id
              LEFT JOIN teacher_records tr ON sca.teacher_id = tr.auth_user_id
-             WHERE s.school_id = $1 AND sca.class_id = $2::uuid
+             WHERE s.school_id = $1::uuid AND sca.class_id = $2::uuid
              ORDER BY s.created_at DESC`,
       values: [school_id, class_id],
     };
