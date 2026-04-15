@@ -31,23 +31,25 @@ const getClassName = async (classId) => {
 const composeRepository = {
   // Create announcement
   createAnnouncement: async (school_id, announcement_data, status = 'Draft') => {
-    const { created_by, sender_id, sender_name, title, message, is_important, audience, audience_type, scope } = announcement_data;
+    const { created_by, sender_id, sender_name, sender_role, title, message, is_important, audience, audience_type, scope } = announcement_data;
 
     // Use created_by if available, otherwise use sender_id
     const createdBy = created_by || sender_id;
     const audienceValue = audience || audience_type;
     const senderName = sender_name || "Admin";
+    const senderRole = sender_role || "ADMIN";
 
     const query = {
       text: `INSERT INTO announcements
-              (school_id, created_by, sender_id, sender_name, title, message, audience, scope, is_important, status)
-              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+              (school_id, created_by, sender_id, sender_name, sender_role, title, message, audience, scope, is_important, status)
+              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
               RETURNING *`,
       values: [
         school_id,
         createdBy,
         createdBy, // sender_id gets same value as created_by
         senderName,
+        senderRole,
         title,
         message,
         audienceValue || 'Both',
@@ -66,14 +68,15 @@ const composeRepository = {
         try {
           const fallbackQuery = {
             text: `INSERT INTO announcements
-                    (school_id, created_by, sender_id, sender_name, title, message, is_important, status)
-                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                    (school_id, created_by, sender_id, sender_name, sender_role, title, message, is_important, status)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
                     RETURNING *`,
             values: [
               school_id,
               createdBy,
               createdBy, // sender_id gets same value as created_by
               senderName,
+              senderRole,
               title,
               message,
               is_important !== undefined ? is_important : false,
