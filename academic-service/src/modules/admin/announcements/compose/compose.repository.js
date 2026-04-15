@@ -100,7 +100,7 @@ const composeRepository = {
   // Get all teachers (active) for "Teachers, Whole School" scope
   getAllTeachers: async (school_id) => {
     const query = {
-      text: `SELECT teacher_id FROM teacher_records
+      text: `SELECT id as teacher_id FROM teacher_records
               WHERE school_id = $1 AND employment_status = 'Active'`,
       values: [school_id],
     };
@@ -111,7 +111,7 @@ const composeRepository = {
   // Get teachers by class assignment ID for "Teachers, By Class" scope
   getTeachersByClass: async (school_id, class_id) => {
     const query = {
-      text: `SELECT teacher_id FROM classes_assign
+      text: `SELECT DISTINCT teacher_id FROM classes_assign
               WHERE school_id = $1 AND class_id = $2::uuid`,
       values: [school_id, class_id],
     };
@@ -145,9 +145,9 @@ const composeRepository = {
     }
 
     const query = {
-      text: `SELECT teacher_id FROM teacher_records
+      text: `SELECT id as teacher_id FROM teacher_records
               WHERE school_id = $1
-              AND teacher_id = ANY($2::uuid[])
+              AND id = ANY($2::uuid[])
               AND employment_status = 'Active'
               ORDER BY first_name ASC`,
       values: [school_id, teacher_ids],
