@@ -75,27 +75,10 @@ const composeRepository = {
           return result.rows[0];
         } catch (error2) {
           throw error2;
-              return result.rows[0];
-            } catch (error3) {
-              if (error3.code === '42703' || error3.code === '23502') {
-                // Attempt 4: Minimal columns with required fields (keep status)
-                query = {
-                  text: `INSERT INTO announcements
-                          (school_id, sender_id, sender_name, sender_role, title, message, status)
-                          VALUES ($1, $2, $3, $4, $5, $6, $7)
-                          RETURNING *`,
-                  values: [school_id, sender_id, sender_name, sender_role, title, message, status],
-                };
-                const result = await pool.query(query);
-                return result.rows[0];
-              }
-              throw error3;
-            }
-          }
-          throw error2;
         }
+      } else {
+        throw error;
       }
-      throw error;
     }
   },
 
