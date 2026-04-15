@@ -30,7 +30,7 @@ const getApprovedStudents = async (schoolId, filters = {}) => {
     // Optional filters
     if (filters.classId) {
       paramIndex++;
-      query += ` AND ai.class_id = $${paramIndex}`;
+      query += ` AND ai.class_id = $${paramIndex}::uuid`;
       params.push(filters.classId);
     }
 
@@ -91,7 +91,7 @@ const getApprovedStudentByRollNumber = async (schoolId, classId, rollNumber) => 
       LEFT JOIN contact_information ci ON sa.id = ci.student_id
       WHERE sa.school_id = $1
         AND sa.admission_status = 'Approved'
-        AND ai.class_id = $2
+        AND ai.class_id = $2::uuid
         AND ai.roll_number = $3
       LIMIT 1
     `;
@@ -127,7 +127,7 @@ const getApprovedStudentsByClassAndSection = async (schoolId, classId, section) 
       LEFT JOIN contact_information ci ON sa.id = ci.student_id
       WHERE sa.school_id = $1
         AND sa.admission_status = 'Approved'
-        AND ai.class_id = $2
+        AND ai.class_id = $2::uuid
         AND ai.section = $3
       ORDER BY ai.roll_number ASC
     `;

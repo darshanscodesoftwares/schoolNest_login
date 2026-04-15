@@ -69,7 +69,7 @@ const classesAssignRepository = {
              FROM classes_assign ca
              LEFT JOIN teacher_records tr ON ca.teacher_id = tr.auth_user_id
              LEFT JOIN sections s ON ca.section_name = s.section_name
-             WHERE ca.school_id = $1 AND ca.class_id = $2
+             WHERE ca.school_id = $1 AND ca.class_id = $2::uuid
              ORDER BY ca.section_name`,
       values: [school_id, class_id],
     };
@@ -123,7 +123,7 @@ const classesAssignRepository = {
   checkAssignmentExists: async (school_id, class_id, section_name) => {
     const query = {
       text: `SELECT id FROM classes_assign
-             WHERE school_id = $1 AND class_id = $2 AND section_name = $3`,
+             WHERE school_id = $1 AND class_id = $2::uuid AND section_name = $3`,
       values: [school_id, class_id, section_name],
     };
     const result = await pool.query(query);
@@ -134,7 +134,7 @@ const classesAssignRepository = {
   deleteClassAssignments: async (school_id, class_id) => {
     const query = {
       text: `DELETE FROM classes_assign
-             WHERE school_id = $1 AND class_id = $2`,
+             WHERE school_id = $1 AND class_id = $2::uuid`,
       values: [school_id, class_id],
     };
     await pool.query(query);
@@ -149,7 +149,7 @@ const classesAssignRepository = {
                FROM students_admission sa
                INNER JOIN academic_information ai ON sa.id = ai.student_id
                WHERE sa.school_id = $1
-                 AND ai.class_id = $2
+                 AND ai.class_id = $2::uuid
                  AND sa.admission_status = 'Approved'
                ORDER BY sa.id, ai.updated_at DESC NULLS LAST
              ) latest_students`,
@@ -168,7 +168,7 @@ const classesAssignRepository = {
                FROM students_admission sa
                INNER JOIN academic_information ai ON sa.id = ai.student_id
                WHERE sa.school_id = $1
-                 AND ai.class_id = $2
+                 AND ai.class_id = $2::uuid
                  AND ai.section = $3
                  AND sa.admission_status = 'Approved'
                ORDER BY sa.id, ai.updated_at DESC NULLS LAST

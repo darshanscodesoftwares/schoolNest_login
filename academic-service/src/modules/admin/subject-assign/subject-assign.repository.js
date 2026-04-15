@@ -117,7 +117,7 @@ const subjectAssignRepository = {
   checkAssignmentExists: async (school_id, subject_id, class_id) => {
     const query = {
       text: `SELECT id FROM subject_class_assign
-             WHERE school_id = $1 AND subject_id = $2 AND class_id = $3`,
+             WHERE school_id = $1 AND subject_id = $2 AND class_id = $3::uuid`,
       values: [school_id, subject_id, class_id],
     };
     const result = await pool.query(query);
@@ -240,7 +240,7 @@ const subjectAssignRepository = {
              FROM subjects s
              INNER JOIN subject_class_assign sca ON s.id = sca.subject_id
              LEFT JOIN teacher_records tr ON sca.teacher_id = tr.id
-             WHERE s.school_id = $1 AND sca.class_id = $2
+             WHERE s.school_id = $1 AND sca.class_id = $2::uuid
              ORDER BY s.created_at DESC`,
       values: [school_id, class_id],
     };
@@ -278,7 +278,7 @@ const subjectAssignRepository = {
     const query = {
       text: `UPDATE subject_class_assign
              SET teacher_id = $1, updated_at = NOW()
-             WHERE school_id = $2 AND class_id = $3 AND subject_id = $4
+             WHERE school_id = $2 AND class_id = $3::uuid AND subject_id = $4
              RETURNING *`,
       values: [teacher_id, school_id, class_id, subject_id],
     };
@@ -291,7 +291,7 @@ const subjectAssignRepository = {
     const query = {
       text: `SELECT *
              FROM subject_class_assign
-             WHERE school_id = $1 AND class_id = $2 AND subject_id = $3`,
+             WHERE school_id = $1 AND class_id = $2::uuid AND subject_id = $3`,
       values: [school_id, class_id, subject_id],
     };
     const result = await pool.query(query);

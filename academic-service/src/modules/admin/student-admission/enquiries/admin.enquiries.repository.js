@@ -42,7 +42,7 @@ const getAllEnquiries = async ({ schoolId, status, classId, fromDate, toDate, li
 
   if (classId) {
     paramCount++;
-    queryText += ` AND class_id = $${paramCount}`;
+    queryText += ` AND class_id = $${paramCount}::uuid`;
     values.push(classId);
   }
 

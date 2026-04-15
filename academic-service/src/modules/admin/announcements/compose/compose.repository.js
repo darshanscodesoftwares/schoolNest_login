@@ -13,7 +13,7 @@ const getClassName = async (classId) => {
 
     // If API fails, verify class exists in classes_assign table
     const dbQuery = {
-      text: `SELECT DISTINCT class_id FROM classes_assign WHERE class_id = $1 LIMIT 1`,
+      text: `SELECT DISTINCT class_id FROM classes_assign WHERE class_id = $1::uuid LIMIT 1`,
       values: [classId],
     };
     const dbResult = await pool.query(dbQuery);
@@ -329,7 +329,7 @@ const composeRepository = {
           const classDetailsQuery = {
             text: `SELECT ca.id as class_assign_id, ca.section_name
                    FROM classes_assign ca
-                   WHERE ca.class_id = $1
+                   WHERE ca.class_id = $1::uuid
                    LIMIT 1`,
             values: [classId],
           };
@@ -395,7 +395,7 @@ const composeRepository = {
       const classDetailsQuery = {
         text: `SELECT ca.id as class_assign_id, ca.section_name
                FROM classes_assign ca
-               WHERE ca.class_id = $1
+               WHERE ca.class_id = $1::uuid
                LIMIT 1`,
         values: [classId],
       };

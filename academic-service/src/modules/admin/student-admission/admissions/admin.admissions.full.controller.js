@@ -162,7 +162,7 @@ async function saveDraftFull(req, res) {
         const rollNumber = allData.academic.roll_number;
         const classId = allData.academic.class_id;
         const existingRoll = await pool.query(
-          "SELECT id FROM academic_information WHERE roll_number = $1 AND class_id = $2 AND school_id = $3 LIMIT 1",
+          "SELECT id FROM academic_information WHERE roll_number = $1 AND class_id = $2::uuid AND school_id = $3 LIMIT 1",
           [rollNumber, classId, schoolId]
         );
         if (existingRoll.rows.length > 0) {
@@ -1699,7 +1699,7 @@ async function completeSaveAdmission(req, res) {
         const rollNumber = allData.academic.roll_number;
         const classId = allData.academic.class_id;
         const existingRoll = await pool.query(
-          "SELECT id FROM academic_information WHERE roll_number = $1 AND class_id = $2 AND school_id = $3 LIMIT 1",
+          "SELECT id FROM academic_information WHERE roll_number = $1 AND class_id = $2::uuid AND school_id = $3 LIMIT 1",
           [rollNumber, classId, schoolId]
         );
         if (existingRoll.rows.length > 0) {

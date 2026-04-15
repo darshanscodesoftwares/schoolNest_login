@@ -380,7 +380,7 @@ const examsRepository = {
   ) => {
     const query = {
       text: `SELECT id FROM exam_details
-             WHERE school_id = $1 AND exam_id = $2 AND class_id = $3 AND section_id = $4 AND subject_id = $5
+             WHERE school_id = $1 AND exam_id = $2 AND class_id = $3::uuid AND section_id = $4 AND subject_id = $5
              LIMIT 1`,
       values: [school_id, exam_id, class_id, section_id, subject_id],
     };

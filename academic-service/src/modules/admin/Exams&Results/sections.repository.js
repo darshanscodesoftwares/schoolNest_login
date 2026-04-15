@@ -7,7 +7,7 @@ const sectionsRepository = {
       text: `SELECT DISTINCT ca.section_name, s.id AS section_id
              FROM classes_assign ca
              LEFT JOIN sections s ON s.school_id = ca.school_id AND s.section_name = ca.section_name
-             WHERE ca.school_id = $1 AND ca.class_id = $2
+             WHERE ca.school_id = $1 AND ca.class_id = $2::uuid
              ORDER BY ca.section_name ASC`,
       values: [school_id, class_id],
     };
@@ -46,7 +46,7 @@ const sectionsRepository = {
   sectionExists: async (school_id, class_id, section_name) => {
     const query = {
       text: `SELECT id FROM classes_assign
-             WHERE school_id = $1 AND class_id = $2 AND section_name = $3
+             WHERE school_id = $1 AND class_id = $2::uuid AND section_name = $3
              LIMIT 1`,
       values: [school_id, class_id, section_name],
     };
