@@ -292,7 +292,7 @@ const composeRepository = {
               ), NULL) AS parent_names
             FROM announcements a
             LEFT JOIN announcement_recipients ar ON a.id = ar.announcement_id
-            LEFT JOIN teacher_records tr ON ar.teacher_id = tr.teacher_id
+            LEFT JOIN teacher_records tr ON ar.recipient_id = tr.id AND ar.recipient_type = 'Teacher'
             WHERE a.school_id = $1
             GROUP BY a.id, a.school_id, a.title, a.message, a.is_important, a.status, a.audience_type, a.scope, a.class_id, a.created_at
             ORDER BY a.created_at DESC`,
@@ -427,7 +427,6 @@ const composeRepository = {
               ar.announcement_id,
               ar.recipient_type,
               ar.recipient_id,
-              ar.teacher_id,
               ar.parent_id,
               ar.class_id,
               ar.read_at,
@@ -439,8 +438,8 @@ const composeRepository = {
                 ELSE NULL
               END AS recipient_name
             FROM announcement_recipients ar
-            LEFT JOIN teacher_records tr ON ar.teacher_id = tr.teacher_id
-            LEFT JOIN parent_guardian_information pgi ON ar.parent_id = pgi.id
+            LEFT JOIN teacher_records tr ON ar.recipient_id = tr.id AND ar.recipient_type = 'Teacher'
+            LEFT JOIN parent_guardian_information pgi ON ar.recipient_id = pgi.id AND ar.recipient_type = 'Parent'
             WHERE ar.announcement_id = $1 AND ar.school_id = $2
             ORDER BY ar.created_at DESC`,
       values: [announcement_id, school_id],
