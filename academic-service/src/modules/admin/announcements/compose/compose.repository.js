@@ -471,7 +471,7 @@ const composeRepository = {
       result.rows.map(async (row) => {
         const className = await getClassName(row.class_id);
         return {
-          id: row.id,
+          id: row.class_id,
           class_name: `${className || 'Unknown'} - ${row.section_name}`,
           name: className || 'Unknown',
           section: row.section_name,
