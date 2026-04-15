@@ -104,7 +104,7 @@ const subjectAssignRepository = {
              sca.created_at,
              sca.updated_at
              FROM subject_class_assign sca
-             LEFT JOIN teacher_records tr ON sca.teacher_id = tr.auth_user_id
+             LEFT JOIN teacher_records tr ON (sca.teacher_id = tr.auth_user_id OR sca.teacher_id = tr.id::text)
              WHERE sca.school_id = $1 AND sca.subject_id = $2::uuid
              ORDER BY sca.created_at DESC`,
       values: [school_id, subject_id],
@@ -226,7 +226,7 @@ const subjectAssignRepository = {
              s.updated_at
              FROM subjects s
              LEFT JOIN subject_class_assign sca ON s.id = sca.subject_id
-             LEFT JOIN teacher_records tr ON sca.teacher_id = tr.auth_user_id
+             LEFT JOIN teacher_records tr ON (sca.teacher_id = tr.auth_user_id OR sca.teacher_id = tr.id::text)
              WHERE s.school_id = $1
              GROUP BY s.id
              ORDER BY s.created_at DESC`,
@@ -264,7 +264,7 @@ const subjectAssignRepository = {
              sca.updated_at
              FROM subjects s
              INNER JOIN subject_class_assign sca ON s.id = sca.subject_id
-             LEFT JOIN teacher_records tr ON sca.teacher_id = tr.auth_user_id
+             LEFT JOIN teacher_records tr ON (sca.teacher_id = tr.auth_user_id OR sca.teacher_id = tr.id::text)
              WHERE s.school_id = $1 AND sca.class_id = $2::uuid
              ORDER BY s.created_at DESC`,
       values: [school_id, class_id],
@@ -289,7 +289,7 @@ const subjectAssignRepository = {
              sca.updated_at
              FROM subjects s
              INNER JOIN subject_class_assign sca ON s.id = sca.subject_id
-             LEFT JOIN teacher_records tr ON sca.teacher_id = tr.auth_user_id
+             LEFT JOIN teacher_records tr ON (sca.teacher_id = tr.auth_user_id OR sca.teacher_id = tr.id::text)
              WHERE s.school_id = $1
              ORDER BY sca.class_id, sca.sequence ASC`,
       values: [school_id],
