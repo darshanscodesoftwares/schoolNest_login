@@ -245,6 +245,7 @@ const composeRepository = {
               a.audience,
               a.audience_type,
               a.scope,
+              a.class_id,
               a.created_at,
               COUNT(DISTINCT ar.id) AS recipient_count,
               COUNT(DISTINCT ar.id) FILTER (WHERE ar.recipient_type = 'Teacher') AS teacher_count,
@@ -265,7 +266,7 @@ const composeRepository = {
             LEFT JOIN announcement_recipients ar ON a.id = ar.announcement_id
             LEFT JOIN teacher_records tr ON ar.recipient_id = tr.id::text AND ar.recipient_type = 'Teacher'
             WHERE a.school_id = $1
-            GROUP BY a.id, a.school_id, a.title, a.message, a.is_important, a.status, a.audience, a.audience_type, a.scope, a.created_at
+            GROUP BY a.id, a.school_id, a.title, a.message, a.is_important, a.status, a.audience, a.audience_type, a.scope, a.class_id, a.created_at
             ORDER BY a.created_at DESC`,
       values: [school_id],
     };
