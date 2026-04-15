@@ -31,7 +31,11 @@ const getClassName = async (classId) => {
 const composeRepository = {
   // Create announcement
   createAnnouncement: async (school_id, announcement_data, status = 'Draft') => {
-    const { created_by, title, message, is_important, audience, scope } = announcement_data;
+    const { created_by, sender_id, title, message, is_important, audience, audience_type, scope } = announcement_data;
+
+    // Use created_by if available, otherwise use sender_id
+    const createdBy = created_by || sender_id;
+    const audienceValue = audience || audience_type;
 
     const query = {
       text: `INSERT INTO announcements
@@ -40,11 +44,11 @@ const composeRepository = {
               RETURNING *`,
       values: [
         school_id,
-        created_by,
-        created_by, // sender_id gets same value as created_by
+        createdBy,
+        createdBy, // sender_id gets same value as created_by
         title,
         message,
-        audience || 'Both',
+        audienceValue || 'Both',
         scope || 'Whole School',
         is_important !== undefined ? is_important : false,
         status
@@ -65,8 +69,8 @@ const composeRepository = {
                     RETURNING *`,
             values: [
               school_id,
-              created_by,
-              created_by, // sender_id gets same value as created_by
+              createdBy,
+              createdBy, // sender_id gets same value as created_by
               title,
               message,
               is_important !== undefined ? is_important : false,
