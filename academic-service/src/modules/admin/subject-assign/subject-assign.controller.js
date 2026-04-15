@@ -15,7 +15,7 @@ const getClassName = async (classId) => {
     // Fetch from academic database
     const pool = require("../../../config/db");
     const result = await pool.query(
-      `SELECT class_name FROM classes WHERE id = $1::uuid LIMIT 1`,
+      `SELECT class_name FROM school_classes WHERE id = $1::uuid LIMIT 1`,
       [classId]
     );
 
@@ -40,7 +40,7 @@ const getAllClassesWithOrder = async () => {
     // Fetch from academic service master data endpoint
     const pool = require("../../../config/db");
     const result = await pool.query(
-      `SELECT id, class_name FROM classes ORDER BY created_at ASC`
+      `SELECT id, class_name FROM school_classes ORDER BY created_at ASC`
     );
 
     if (result.rows && result.rows.length > 0) {
@@ -509,10 +509,20 @@ const subjectAssignController = {
 
       // Convert subjects map to array for each class, then sort by order_number
       let classes = Object.values(classMap).map(classItem => {
-        // If class_name is the UUID (fallback), use a shortened display
-        const displayName = classItem.class_name === classItem.class_id
-          ? `Class ${classItem.class_id.substring(0, 8).toUpperCase()}`
-          : classItem.class_name;
+        // Use the class_name from classOrderMap (which has actual names like "LKG", "Class 2", etc.)
+        // If not found, try cache, if still not found use fallback format
+        let displayName = classItem.class_name;
+
+        if (displayName === classItem.class_id) {
+          // Class name is UUID, try cache
+          const cachedName = classNameCache[classItem.class_id];
+          if (cachedName) {
+            displayName = cachedName;
+          } else {
+            // Last resort fallback
+            displayName = `Class ${classItem.class_id.substring(0, 8).toUpperCase()}`;
+          }
+        }
 
         return {
           class_id: classItem.class_id,
