@@ -4,7 +4,7 @@ const { commonApiGet } = require("../../../utils/common-api.client");
 // Cache for class names to avoid repeated API calls
 const classNameCache = {};
 
-// Helper function to fetch class name from common API
+// Helper function to fetch class name from database
 const getClassName = async (classId) => {
   try {
     // Check cache first
@@ -12,14 +12,21 @@ const getClassName = async (classId) => {
       return classNameCache[classId];
     }
 
-    const response = await commonApiGet(`/api/v1/classes/${classId}`, null);
-    if (response && response.success && response.data) {
-      const className = response.data.class_name || response.data.name || null;
+    // Fetch from academic database
+    const pool = require("../../../config/db");
+    const result = await pool.query(
+      `SELECT class_name FROM classes WHERE id = $1::uuid LIMIT 1`,
+      [classId]
+    );
+
+    if (result.rows && result.rows[0]) {
+      const className = result.rows[0].class_name;
       if (className) {
         classNameCache[classId] = className;
       }
       return className;
     }
+
     return null;
   } catch (error) {
     console.warn(`Failed to fetch class name for ${classId}:`, error.message);
@@ -27,18 +34,21 @@ const getClassName = async (classId) => {
   }
 };
 
-// Helper function to fetch all classes with their order from common API
+// Helper function to fetch all classes with their names from academic service master data
 const getAllClassesWithOrder = async () => {
   try {
-    // Try old common API first
-    const response = await commonApiGet(`/api/v1/classes`, null);
-    if (response && response.success && Array.isArray(response.data)) {
-      // Create a map of class_id to order_number for sorting
+    // Fetch from academic service master data endpoint
+    const pool = require("../../../config/db");
+    const result = await pool.query(
+      `SELECT id, class_name FROM classes ORDER BY created_at ASC`
+    );
+
+    if (result.rows && result.rows.length > 0) {
       const classOrderMap = {};
-      response.data.forEach((cls, index) => {
-        const className = cls.class_name || cls.name;
+      result.rows.forEach((cls, index) => {
+        const className = cls.class_name;
         classOrderMap[cls.id] = {
-          order_number: cls.order_number || index,
+          order_number: index,
           class_name: className,
         };
         // Cache the class name
@@ -48,10 +58,27 @@ const getAllClassesWithOrder = async () => {
       });
       return classOrderMap;
     }
+
+    // Fallback to common API if database query fails
+    console.warn('getAllClassesWithOrder: trying fallback common API');
+    const response = await commonApiGet(`/api/v1/classes`, null);
+    if (response && response.success && Array.isArray(response.data)) {
+      const classOrderMap = {};
+      response.data.forEach((cls, index) => {
+        const className = cls.class_name || cls.name;
+        classOrderMap[cls.id] = {
+          order_number: cls.order_number || index,
+          class_name: className,
+        };
+        if (className) {
+          classNameCache[cls.id] = className;
+        }
+      });
+      return classOrderMap;
+    }
     return {};
   } catch (error) {
-    // If common API fails, return empty map - class_id will be used as fallback
-    console.warn('getAllClassesWithOrder: common API failed', error.message);
+    console.warn('getAllClassesWithOrder: both local and common API failed', error.message);
     return {};
   }
 };
