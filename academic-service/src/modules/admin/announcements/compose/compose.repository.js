@@ -36,11 +36,12 @@ const composeRepository = {
     const query = {
       text: `INSERT INTO announcements
               (school_id, created_by, sender_id, title, message, audience, scope, is_important, status)
-              VALUES ($1, $2, $2, $3, $4, $5, $6, $7, $8)
+              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
               RETURNING *`,
       values: [
         school_id,
         created_by,
+        created_by, // sender_id gets same value as created_by
         title,
         message,
         audience || 'Both',
@@ -60,11 +61,12 @@ const composeRepository = {
           const fallbackQuery = {
             text: `INSERT INTO announcements
                     (school_id, created_by, sender_id, title, message, is_important, status)
-                    VALUES ($1, $2, $2, $3, $4, $5, $6)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7)
                     RETURNING *`,
             values: [
               school_id,
               created_by,
+              created_by, // sender_id gets same value as created_by
               title,
               message,
               is_important !== undefined ? is_important : false,
