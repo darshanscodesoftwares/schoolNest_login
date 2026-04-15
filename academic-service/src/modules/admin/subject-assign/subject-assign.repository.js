@@ -69,7 +69,7 @@ const subjectAssignRepository = {
              s.updated_at
              FROM subjects s
              LEFT JOIN subject_class_assign sca ON s.id = sca.subject_id
-             WHERE s.school_id = $1::uuid
+             WHERE s.school_id = $1
              GROUP BY s.id
              ORDER BY s.created_at DESC`,
       values: [school_id],
@@ -227,7 +227,7 @@ const subjectAssignRepository = {
              FROM subjects s
              LEFT JOIN subject_class_assign sca ON s.id = sca.subject_id
              LEFT JOIN teacher_records tr ON sca.teacher_id = tr.auth_user_id
-             WHERE s.school_id = $1::uuid
+             WHERE s.school_id = $1
              GROUP BY s.id
              ORDER BY s.created_at DESC`,
       values: [school_id],
@@ -265,7 +265,7 @@ const subjectAssignRepository = {
              FROM subjects s
              INNER JOIN subject_class_assign sca ON s.id = sca.subject_id
              LEFT JOIN teacher_records tr ON sca.teacher_id = tr.auth_user_id
-             WHERE s.school_id = $1::uuid AND sca.class_id = $2::uuid
+             WHERE s.school_id = $1 AND sca.class_id = $2::uuid
              ORDER BY s.created_at DESC`,
       values: [school_id, class_id],
     };
