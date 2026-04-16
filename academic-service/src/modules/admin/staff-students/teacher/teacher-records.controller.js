@@ -123,6 +123,9 @@ const updateTeacher = async (req, res, next) => {
         'pan_card'
       ];
 
+      const protocol = req.protocol || 'https';
+      const host = req.get('host');
+
       for (const field of fileFields) {
         if (req.files[field] && req.files[field][0]) {
           const fileId = await fileStorageUtil.saveFileToDB(
@@ -130,7 +133,7 @@ const updateTeacher = async (req, res, next) => {
             schoolId,
             field
           );
-          updateData[field] = `/api/v1/academic/files/${fileId}`;
+          updateData[field] = `${protocol}://${host}/api/v1/academic/files/${fileId}`;
         }
       }
     }
