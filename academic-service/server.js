@@ -3,20 +3,12 @@ require('dotenv').config();
 const app = require('./src/app');
 const pool = require('./src/config/db');
 const authDbPool = require('./src/config/authDb');
-const runMigrations = require('./src/utils/runMigrations');
 
 const PORT = process.env.PORT || 4002;
 
-// Run migrations before starting the server
+// Migrations are manual — see CLAUDE.md for instructions.
+// Do NOT add auto-migration here; it causes Render port-scan timeout.
 const startServer = async () => {
-  try {
-    console.log('Running database migrations...');
-    await runMigrations();
-    console.log('Migrations completed successfully');
-  } catch (error) {
-    console.error('Migration error:', error.message);
-  }
-
   const server = app.listen(PORT, () => {
     console.log(`Academic service running on port ${PORT}`);
   });
