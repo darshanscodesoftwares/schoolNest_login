@@ -1,3 +1,15 @@
+/**
+ * auth-service/seed.js — Seeds auth_db with roles + admin user
+ *
+ * For full cross-DB seeding (teachers, parents, students, demo data),
+ * use the root-level scripts instead:
+ *   node seed-all.js          → reference data + admin user
+ *   node seed-test-users.js   → teachers, parents, students with matching IDs
+ *   node seed-demo-full.js    → full dashboard demo data
+ *
+ * This file is a lightweight auth-only seed for quick local setup.
+ */
+
 require('dotenv').config();
 
 const bcrypt = require('bcrypt');
@@ -6,52 +18,38 @@ const pool = require('./src/config/db');
 const SALT_ROUNDS = 10;
 const SCHOOL_ID = 101;
 
-const seedData = [
-  { id: 'ADM001', role: 'ADMIN', name: 'Admin User', email: 'admin@schoolnest.com', password: 'Admin@123' },
-  { id: 'TCH001', role: 'TEACHER', name: 'John Doe', email: 'john@schoolnest.com', password: 'Teacher@123' },
-  { id: 'TCH002', role: 'TEACHER', name: 'Jane Smith', email: 'jane@schoolnest.com', password: 'Teacher@123' },
-  { id: 'PAR001', role: 'PARENT', name: 'Alice Johnson', email: 'alice@schoolnest.com', password: 'Parent@123' },
-  { id: 'PAR002', role: 'PARENT', name: 'Bob Wilson', email: 'bob@schoolnest.com', password: 'Parent@123' },
-];
-
 const seed = async () => {
   try {
-    console.log('🌱 Starting database seed...');
+    console.log('auth_db seed — roles + admin user\n');
 
-    // Insert roles (ADMIN, TEACHER, PARENT)
-    const roleNames = ['ADMIN', 'TEACHER', 'PARENT'];
-    for (const roleName of roleNames) {
+    // Roles
+    for (const role of ['ADMIN', 'TEACHER', 'PARENT']) {
       await pool.query(
-        'INSERT INTO roles (name) VALUES ($1) ON CONFLICT DO NOTHING',
-        [roleName]
+        'INSERT INTO roles (name) VALUES ($1) ON CONFLICT (name) DO NOTHING',
+        [role]
       );
     }
-    console.log('✓ Roles inserted');
+    console.log('  ✓ Roles: ADMIN, TEACHER, PARENT');
 
-    // Insert users
-    for (const user of seedData) {
-      const passwordHash = await bcrypt.hash(user.password, SALT_ROUNDS);
+    // Admin user
+    const roleRes = await pool.query(`SELECT id FROM roles WHERE name = 'ADMIN' LIMIT 1`);
+    const adminRoleId = roleRes.rows[0].id;
+    const adminHash = await bcrypt.hash('Admin@123', SALT_ROUNDS);
 
-      // Get role_id
-      const roleResult = await pool.query('SELECT id FROM roles WHERE name = $1', [user.role]);
-      const roleId = roleResult.rows[0].id;
+    await pool.query(
+      `INSERT INTO users (id, school_id, role_id, name, email, password_hash)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       ON CONFLICT (id) DO NOTHING`,
+      ['ADM001', SCHOOL_ID, adminRoleId, 'Admin User', 'admin@schoolnest.com', adminHash]
+    );
+    console.log('  ✓ Admin: admin@schoolnest.com / Admin@123');
 
-      await pool.query(
-        `INSERT INTO users (id, school_id, role_id, name, email, password_hash)
-         VALUES ($1, $2, $3, $4, $5, $6)
-         ON CONFLICT DO NOTHING`,
-        [user.id, SCHOOL_ID, roleId, user.name, user.email, passwordHash]
-      );
-    }
-    console.log(`✓ ${seedData.length} users inserted`);
-
-    console.log('\n📋 Seed Summary:');
-    console.log(`   School ID: ${SCHOOL_ID}`);
-    console.log(`   Users: ${seedData.map(u => `${u.email} (${u.role})`).join(', ')}`);
-    console.log('\n🎉 Database seeded successfully!');
+    console.log('\n  For teachers/parents, run from repo root:');
+    console.log('    node seed-test-users.js');
+    console.log('    node seed-demo-full.js\n');
 
   } catch (error) {
-    console.error('❌ Seeding failed:', error.message);
+    console.error('Seed failed:', error.message);
     process.exit(1);
   } finally {
     await pool.end();
