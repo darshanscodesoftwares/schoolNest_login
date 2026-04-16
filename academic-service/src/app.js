@@ -45,6 +45,7 @@ const announcementsRoutes        = require('./modules/admin/announcements/announ
 const schoolProfileRoutes        = require('./modules/admin/setting-management/school-profile.routes');
 const adminTeacherEditRequestsRoutes = require('./modules/admin/teacher-edit-requests/admin.teacher-edit-requests.routes');
 const masterDataRoutes               = require('./modules/admin/master-data/master-data.routes');
+const fileRoutes                     = require('./modules/admin/file-serve/file.routes');
 
 // ─────────────────────────────────────────────────────────────────────────────
 const app = express();
@@ -52,10 +53,13 @@ const app = express();
 // CORS
 app.use(cors());
 
-// Serve uploaded files statically BEFORE auth middleware
+// Serve uploaded files statically BEFORE auth middleware (legacy support)
 const uploadsPath = path.join(__dirname, '../uploads');
 if (!fs.existsSync(uploadsPath)) fs.mkdirSync(uploadsPath, { recursive: true });
 app.use('/uploads', express.static(uploadsPath));
+
+// Serve database-stored files BEFORE auth middleware
+app.use('/api/v1/academic/files', fileRoutes);
 
 // JSON parsing — skip for multipart/form-data (multer handles those)
 app.use((req, res, next) => {
