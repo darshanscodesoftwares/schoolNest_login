@@ -1,4 +1,5 @@
 const teacherService = require('./teacher-records.service');
+const fileStorageUtil = require('../../../../utils/fileStorage.util');
 
 // GET all teachers
 const getAllTeachers = async (req, res, next) => {
@@ -39,14 +40,6 @@ const getTeacherById = async (req, res, next) => {
   }
 };
 
-// Helper function to convert absolute path to relative URL
-const getFileUrl = (absolutePath) => {
-  if (!absolutePath) return null;
-  const uploadsIndex = absolutePath.indexOf('/uploads/');
-  if (uploadsIndex === -1) return absolutePath;
-  return absolutePath.substring(uploadsIndex);
-};
-
 // POST create new teacher
 const createTeacher = async (req, res, next) => {
   try {
@@ -63,25 +56,26 @@ const createTeacher = async (req, res, next) => {
       }
     }
 
-    // Handle file uploads - map file paths to teacherData
+    // Handle file uploads - save to database and get file URLs
     if (req.files) {
-      if (req.files.teacher_photo && req.files.teacher_photo[0]) {
-        teacherData.teacher_photo = getFileUrl(req.files.teacher_photo[0].path);
-      }
-      if (req.files.resume_cv && req.files.resume_cv[0]) {
-        teacherData.resume_cv = getFileUrl(req.files.resume_cv[0].path);
-      }
-      if (req.files.qualification_certificates && req.files.qualification_certificates[0]) {
-        teacherData.qualification_certificates = getFileUrl(req.files.qualification_certificates[0].path);
-      }
-      if (req.files.experience_certificates && req.files.experience_certificates[0]) {
-        teacherData.experience_certificates = getFileUrl(req.files.experience_certificates[0].path);
-      }
-      if (req.files.aadhar_card && req.files.aadhar_card[0]) {
-        teacherData.aadhar_card = getFileUrl(req.files.aadhar_card[0].path);
-      }
-      if (req.files.pan_card && req.files.pan_card[0]) {
-        teacherData.pan_card = getFileUrl(req.files.pan_card[0].path);
+      const fileFields = [
+        'teacher_photo',
+        'resume_cv',
+        'qualification_certificates',
+        'experience_certificates',
+        'aadhar_card',
+        'pan_card'
+      ];
+
+      for (const field of fileFields) {
+        if (req.files[field] && req.files[field][0]) {
+          const fileId = await fileStorageUtil.saveFileToDB(
+            req.files[field][0],
+            schoolId,
+            field
+          );
+          teacherData[field] = `/api/v1/academic/files/${fileId}`;
+        }
       }
     }
 
@@ -116,25 +110,26 @@ const updateTeacher = async (req, res, next) => {
       }
     }
 
-    // Handle file uploads - map file paths to updateData
+    // Handle file uploads - save to database and get file URLs
     if (req.files) {
-      if (req.files.teacher_photo && req.files.teacher_photo[0]) {
-        updateData.teacher_photo = getFileUrl(req.files.teacher_photo[0].path);
-      }
-      if (req.files.resume_cv && req.files.resume_cv[0]) {
-        updateData.resume_cv = getFileUrl(req.files.resume_cv[0].path);
-      }
-      if (req.files.qualification_certificates && req.files.qualification_certificates[0]) {
-        updateData.qualification_certificates = getFileUrl(req.files.qualification_certificates[0].path);
-      }
-      if (req.files.experience_certificates && req.files.experience_certificates[0]) {
-        updateData.experience_certificates = getFileUrl(req.files.experience_certificates[0].path);
-      }
-      if (req.files.aadhar_card && req.files.aadhar_card[0]) {
-        updateData.aadhar_card = getFileUrl(req.files.aadhar_card[0].path);
-      }
-      if (req.files.pan_card && req.files.pan_card[0]) {
-        updateData.pan_card = getFileUrl(req.files.pan_card[0].path);
+      const fileFields = [
+        'teacher_photo',
+        'resume_cv',
+        'qualification_certificates',
+        'experience_certificates',
+        'aadhar_card',
+        'pan_card'
+      ];
+
+      for (const field of fileFields) {
+        if (req.files[field] && req.files[field][0]) {
+          const fileId = await fileStorageUtil.saveFileToDB(
+            req.files[field][0],
+            schoolId,
+            field
+          );
+          updateData[field] = `/api/v1/academic/files/${fileId}`;
+        }
       }
     }
 

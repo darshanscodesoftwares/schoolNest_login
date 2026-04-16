@@ -1,4 +1,5 @@
 const driverService = require('./driver-records.service');
+const fileStorageUtil = require('../../../../utils/fileStorage.util');
 
 // GET all drivers
 const getAllDrivers = async (req, res, next) => {
@@ -38,14 +39,6 @@ const getDriverById = async (req, res, next) => {
   }
 };
 
-// Helper function to convert absolute path to relative URL
-const getFileUrl = (absolutePath) => {
-  if (!absolutePath) return null;
-  const uploadsIndex = absolutePath.indexOf('/uploads/');
-  if (uploadsIndex === -1) return absolutePath;
-  return absolutePath.substring(uploadsIndex);
-};
-
 // POST create new driver
 const createDriver = async (req, res, next) => {
   try {
@@ -75,19 +68,24 @@ const createDriver = async (req, res, next) => {
       driverData.employment_type = 'Permanent';
     }
 
-    // Handle file uploads - map file paths to driverData
+    // Handle file uploads - save to database and get file URLs
     if (req.files) {
-      if (req.files.driver_photo && req.files.driver_photo[0]) {
-        driverData.driver_photo = getFileUrl(req.files.driver_photo[0].path);
-      }
-      if (req.files.license_document && req.files.license_document[0]) {
-        driverData.license_document = getFileUrl(req.files.license_document[0].path);
-      }
-      if (req.files.aadhar_card && req.files.aadhar_card[0]) {
-        driverData.aadhar_card = getFileUrl(req.files.aadhar_card[0].path);
-      }
-      if (req.files.police_clearance && req.files.police_clearance[0]) {
-        driverData.police_clearance = getFileUrl(req.files.police_clearance[0].path);
+      const fileFields = [
+        'driver_photo',
+        'license_document',
+        'aadhar_card',
+        'police_clearance'
+      ];
+
+      for (const field of fileFields) {
+        if (req.files[field] && req.files[field][0]) {
+          const fileId = await fileStorageUtil.saveFileToDB(
+            req.files[field][0],
+            schoolId,
+            field
+          );
+          driverData[field] = `/api/v1/academic/files/${fileId}`;
+        }
       }
     }
 
@@ -127,19 +125,24 @@ const updateDriver = async (req, res, next) => {
       throw error;
     }
 
-    // Handle file uploads - map file paths to updateData
+    // Handle file uploads - save to database and get file URLs
     if (req.files) {
-      if (req.files.driver_photo && req.files.driver_photo[0]) {
-        updateData.driver_photo = getFileUrl(req.files.driver_photo[0].path);
-      }
-      if (req.files.license_document && req.files.license_document[0]) {
-        updateData.license_document = getFileUrl(req.files.license_document[0].path);
-      }
-      if (req.files.aadhar_card && req.files.aadhar_card[0]) {
-        updateData.aadhar_card = getFileUrl(req.files.aadhar_card[0].path);
-      }
-      if (req.files.police_clearance && req.files.police_clearance[0]) {
-        updateData.police_clearance = getFileUrl(req.files.police_clearance[0].path);
+      const fileFields = [
+        'driver_photo',
+        'license_document',
+        'aadhar_card',
+        'police_clearance'
+      ];
+
+      for (const field of fileFields) {
+        if (req.files[field] && req.files[field][0]) {
+          const fileId = await fileStorageUtil.saveFileToDB(
+            req.files[field][0],
+            schoolId,
+            field
+          );
+          updateData[field] = `/api/v1/academic/files/${fileId}`;
+        }
       }
     }
 

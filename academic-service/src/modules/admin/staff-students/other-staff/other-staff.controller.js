@@ -1,12 +1,5 @@
 const otherStaffService = require('./other-staff.service');
-
-// Helper function to convert absolute path to relative URL
-const getFileUrl = (absolutePath) => {
-  if (!absolutePath) return null;
-  const uploadsIndex = absolutePath.indexOf('/uploads/');
-  if (uploadsIndex === -1) return absolutePath;
-  return absolutePath.substring(uploadsIndex);
-};
+const fileStorageUtil = require('../../../../utils/fileStorage.util');
 
 // GET all other staff
 const getAllOtherStaff = async (req, res, next) => {
@@ -78,19 +71,24 @@ const createOtherStaff = async (req, res, next) => {
     // Force-set employment status to Active (ignore user input)
     staffData.other_staff_employment_status = 'Active';
 
-    // Handle file uploads
+    // Handle file uploads - save to database and get file URLs
     if (req.files) {
-      if (req.files.staff_photo && req.files.staff_photo[0]) {
-        staffData.staff_photo = getFileUrl(req.files.staff_photo[0].path);
-      }
-      if (req.files.adhar_document && req.files.adhar_document[0]) {
-        staffData.adhar_document = getFileUrl(req.files.adhar_document[0].path);
-      }
-      if (req.files.pan_card && req.files.pan_card[0]) {
-        staffData.pan_card = getFileUrl(req.files.pan_card[0].path);
-      }
-      if (req.files.education_certificate && req.files.education_certificate[0]) {
-        staffData.education_certificate = getFileUrl(req.files.education_certificate[0].path);
+      const fileFields = [
+        'staff_photo',
+        'adhar_document',
+        'pan_card',
+        'education_certificate'
+      ];
+
+      for (const field of fileFields) {
+        if (req.files[field] && req.files[field][0]) {
+          const fileId = await fileStorageUtil.saveFileToDB(
+            req.files[field][0],
+            schoolId,
+            field
+          );
+          staffData[field] = `/api/v1/academic/files/${fileId}`;
+        }
       }
     } else {
       console.warn('⚠️ No files attached to request');
@@ -132,19 +130,24 @@ const updateOtherStaff = async (req, res, next) => {
       throw error;
     }
 
-    // Handle file uploads
+    // Handle file uploads - save to database and get file URLs
     if (req.files) {
-      if (req.files.staff_photo && req.files.staff_photo[0]) {
-        updateData.staff_photo = getFileUrl(req.files.staff_photo[0].path);
-      }
-      if (req.files.adhar_document && req.files.adhar_document[0]) {
-        updateData.adhar_document = getFileUrl(req.files.adhar_document[0].path);
-      }
-      if (req.files.pan_card && req.files.pan_card[0]) {
-        updateData.pan_card = getFileUrl(req.files.pan_card[0].path);
-      }
-      if (req.files.education_certificate && req.files.education_certificate[0]) {
-        updateData.education_certificate = getFileUrl(req.files.education_certificate[0].path);
+      const fileFields = [
+        'staff_photo',
+        'adhar_document',
+        'pan_card',
+        'education_certificate'
+      ];
+
+      for (const field of fileFields) {
+        if (req.files[field] && req.files[field][0]) {
+          const fileId = await fileStorageUtil.saveFileToDB(
+            req.files[field][0],
+            schoolId,
+            field
+          );
+          updateData[field] = `/api/v1/academic/files/${fileId}`;
+        }
       }
     }
 
