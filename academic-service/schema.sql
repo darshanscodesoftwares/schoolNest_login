@@ -119,12 +119,18 @@ CREATE TABLE IF NOT EXISTS announcements (
   sender_name VARCHAR(100) NOT NULL,
   sender_role VARCHAR(20) NOT NULL,
   class_id UUID REFERENCES classes(id) ON DELETE SET NULL,
-  audience_type VARCHAR(20) NOT NULL CHECK (audience_type IN ('full_class', 'specific_students', 'all_teachers')),
+  audience_type VARCHAR(50),
   title VARCHAR(255),
   message TEXT NOT NULL,
   is_important BOOLEAN NOT NULL DEFAULT false,
   recipient_count INT NOT NULL DEFAULT 0,
-  created_at TIMESTAMP NOT NULL DEFAULT NOW()
+  scope VARCHAR(50) DEFAULT 'Whole School',
+  status VARCHAR(20) DEFAULT 'Sent',
+  created_by VARCHAR(50),
+  audience VARCHAR(50) DEFAULT 'Both',
+  scheduled_at TIMESTAMPTZ,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX IF NOT EXISTS idx_announcements_school ON announcements (school_id);
@@ -137,11 +143,50 @@ CREATE TABLE IF NOT EXISTS announcement_recipients (
   school_id INT NOT NULL,
   is_read BOOLEAN NOT NULL DEFAULT false,
   read_at TIMESTAMP,
+  recipient_type VARCHAR(20) DEFAULT 'Teacher',
+  teacher_id UUID,
+  parent_id UUID,
+  class_id UUID,
+  is_deleted BOOLEAN DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
   UNIQUE (announcement_id, recipient_id)
 );
 
 CREATE INDEX IF NOT EXISTS idx_ann_recipients_recipient ON announcement_recipients (school_id, recipient_id);
 CREATE INDEX IF NOT EXISTS idx_ann_recipients_announcement ON announcement_recipients (announcement_id);
+
+-- Announcement send history
+CREATE TABLE IF NOT EXISTS announcement_history (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  school_id INT NOT NULL,
+  announcement_id UUID NOT NULL REFERENCES announcements(id) ON DELETE CASCADE,
+  sent_at TIMESTAMPTZ,
+  total_recipients INT NOT NULL DEFAULT 0,
+  status VARCHAR(20) NOT NULL DEFAULT 'Sent',
+  error_message TEXT,
+  created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Announcement-class mapping
+CREATE TABLE IF NOT EXISTS announcement_classes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  school_id INT NOT NULL,
+  announcement_id UUID NOT NULL REFERENCES announcements(id) ON DELETE CASCADE,
+  class_id UUID NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+-- File storage (binary)
+CREATE TABLE IF NOT EXISTS file_storage (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  field_name VARCHAR(255),
+  original_name VARCHAR(255),
+  mime_type VARCHAR(100) NOT NULL,
+  file_size INT,
+  file_data BYTEA NOT NULL,
+  school_id INT,
+  created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
 
 -- Exams
 CREATE TABLE IF NOT EXISTS exams (
