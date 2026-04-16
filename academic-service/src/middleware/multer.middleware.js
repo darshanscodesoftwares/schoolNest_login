@@ -143,46 +143,7 @@ const uploadStudentPhoto = multer({
 
 // Multiple file upload for teacher documents
 const uploadTeacherMultiple = multer({
-  storage: multer.diskStorage({
-    destination: (req, file, cb) => {
-      const schoolId = req.user.school_id;
-      let uploadDir;
-
-      // Route files to appropriate directories based on field name
-      switch (file.fieldname) {
-        case 'teacher_photo':
-          uploadDir = uploadPaths.teacherPhotos(schoolId);
-          break;
-        case 'resume_cv':
-          uploadDir = uploadPaths.teacherResumeCVs(schoolId);
-          break;
-        case 'qualification_certificates':
-          uploadDir = uploadPaths.teacherQualificationCertificates(schoolId);
-          break;
-        case 'experience_certificates':
-          uploadDir = uploadPaths.teacherExperienceCertificates(schoolId);
-          break;
-        case 'aadhar_card':
-          uploadDir = uploadPaths.teacherAadhaarCards(schoolId);
-          break;
-        case 'pan_card':
-          uploadDir = uploadPaths.teacherPANCards(schoolId);
-          break;
-        default:
-          uploadDir = uploadPaths.teacherPhotos(schoolId);
-      }
-
-      cb(null, uploadDir);
-    },
-    filename: (req, file, cb) => {
-      const teacherId = req.params.teacherId || 'new'; // Use 'new' for POST requests
-      const schoolId = req.user.school_id;
-      const ext = path.extname(file.originalname);
-      const timestamp = Date.now();
-      const filename = `${schoolId}-${teacherId}-${file.fieldname}-${timestamp}${ext}`;
-      cb(null, filename);
-    }
-  }),
+  storage: multer.memoryStorage(),
   fileFilter: (req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();
     const mime = file.mimetype;
@@ -200,40 +161,7 @@ const uploadTeacherMultiple = multer({
 
 // Multiple file upload for driver documents
 const uploadDriverMultiple = multer({
-  storage: multer.diskStorage({
-    destination: (req, file, cb) => {
-      const schoolId = req.user.school_id;
-      let uploadDir;
-
-      // Route files to appropriate directories based on field name
-      switch (file.fieldname) {
-        case 'driver_photo':
-          uploadDir = uploadPaths.driverPhotos(schoolId);
-          break;
-        case 'license_document':
-          uploadDir = uploadPaths.driverLicenseDocuments(schoolId);
-          break;
-        case 'aadhar_card':
-          uploadDir = uploadPaths.driverAadhaarCards(schoolId);
-          break;
-        case 'police_clearance':
-          uploadDir = uploadPaths.driverPoliceClearance(schoolId);
-          break;
-        default:
-          uploadDir = uploadPaths.driverPhotos(schoolId);
-      }
-
-      cb(null, uploadDir);
-    },
-    filename: (req, file, cb) => {
-      const driverId = req.params.driverId || 'new'; // Use 'new' for POST requests
-      const schoolId = req.user.school_id;
-      const ext = path.extname(file.originalname);
-      const timestamp = Date.now();
-      const filename = `${schoolId}-${driverId}-${file.fieldname}-${timestamp}${ext}`;
-      cb(null, filename);
-    }
-  }),
+  storage: multer.memoryStorage(),
   fileFilter: (req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();
     const mime = file.mimetype;

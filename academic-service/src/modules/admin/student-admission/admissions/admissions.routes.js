@@ -1,58 +1,15 @@
 const express = require('express');
 const multer = require('multer');
 const path = require('path');
-const fs = require('fs');
 const admissionsController = require('./admissions.controller');
 const unifiedController = require('./admin.admissions.unified.controller');
 const simpleController = require('./admin.admissions.simple.controller');
 const fullController = require('./admin.admissions.full.controller');
 const { validateAdminRole } = require('../../../../middleware/auth.middleware');
 
-// Define absolute uploads path
-// File is at: src/modules/admin/student-admission/admissions/admissions.routes.js
-// Uploads is at: academic-service/uploads/ (at project root level)
-// From admissions/ go up 5 levels to reach academic-service/, then into uploads/
-const uploadsDir = path.join(__dirname, '../../../../../uploads');
-
-// Setup multer for file uploads (photo + documents)
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const schoolId = (req.user && req.user.school_id) || 'unknown';
-
-    // Determine subdirectory based on field name
-    let subDir = 'student-photos'; // default for student_photo
-    if (file.fieldname === 'birth_certificate') {
-      subDir = 'documents/birth-certificates';
-    } else if (file.fieldname === 'aadhaar_card') {
-      subDir = 'documents/aadhaar-cards';
-    } else if (file.fieldname === 'transfer_certificate') {
-      subDir = 'documents/transfer-certificates';
-    }
-
-    // Use absolute path
-    const uploadPath = path.join(uploadsDir, subDir, `school-${schoolId}`);
-
-    // Create directory if it doesn't exist
-    if (!fs.existsSync(uploadPath)) {
-      console.log(`📁 Creating directory:`, uploadPath);
-      fs.mkdirSync(uploadPath, { recursive: true });
-      console.log(`✅ Directory created successfully`);
-    }
-
-    console.log(`💾 Destination set for ${file.fieldname}:`, uploadPath);
-    cb(null, uploadPath);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    const fieldName = file.fieldname.replace(/_/g, '-'); // student_photo → student-photo
-    const filename = fieldName + '-' + uniqueSuffix + path.extname(file.originalname);
-    console.log(`📝 Filename set for ${file.fieldname}:`, filename);
-    cb(null, filename);
-  }
-});
-
+// Setup multer for file uploads - using memory storage for database persistence
 const upload = multer({
-  storage: storage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB max per file
   fileFilter: (req, file, cb) => {
     // Allow images: jpeg, jpg, png, gif
