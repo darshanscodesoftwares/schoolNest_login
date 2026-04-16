@@ -74,7 +74,9 @@ const createTeacher = async (req, res, next) => {
             schoolId,
             field
           );
-          teacherData[field] = `/api/v1/academic/files/${fileId}`;
+          const protocol = req.protocol || 'https';
+          const host = req.get('host');
+          teacherData[field] = `${protocol}://${host}/api/v1/academic/files/${fileId}`;
         }
       }
     }

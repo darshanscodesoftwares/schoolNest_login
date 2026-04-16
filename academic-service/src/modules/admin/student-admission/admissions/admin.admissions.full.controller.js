@@ -212,11 +212,16 @@ async function saveDraftFull(req, res) {
         allData.documents = {};
       }
 
+      // Construct base URL for file serving
+      const protocol = req.protocol || 'https';
+      const host = req.get('host');
+      const baseFileUrl = `${protocol}://${host}/api/v1/academic/files`;
+
       // Handle student_photo
       if (req.files.student_photo && req.files.student_photo[0]) {
         const photoFile = req.files.student_photo[0];
         const fileId = await fileStorageUtil.saveFileToDB(photoFile, schoolId, 'student_photo');
-        const fileUrl = `/api/v1/academic/files/${fileId}`;
+        const fileUrl = `${baseFileUrl}/${fileId}`;
         if (!allData.personal) {
           allData.personal = {};
         }
@@ -229,7 +234,7 @@ async function saveDraftFull(req, res) {
       if (req.files.birth_certificate && req.files.birth_certificate[0]) {
         const file = req.files.birth_certificate[0];
         const fileId = await fileStorageUtil.saveFileToDB(file, schoolId, 'birth_certificate');
-        const fileUrl = `/api/v1/academic/files/${fileId}`;
+        const fileUrl = `${baseFileUrl}/${fileId}`;
         allData.documents.birth_certificate = fileUrl;
         allData.documents.birthCertificate = fileUrl;
         console.log('  ✅ birth_certificate:', fileUrl);
@@ -239,7 +244,7 @@ async function saveDraftFull(req, res) {
       if (req.files.aadhaar_card && req.files.aadhaar_card[0]) {
         const file = req.files.aadhaar_card[0];
         const fileId = await fileStorageUtil.saveFileToDB(file, schoolId, 'aadhaar_card');
-        const fileUrl = `/api/v1/academic/files/${fileId}`;
+        const fileUrl = `${baseFileUrl}/${fileId}`;
         allData.documents.aadhaar_card = fileUrl;
         allData.documents.aadhaarCard = fileUrl;
         console.log('  ✅ aadhaar_card:', fileUrl);
@@ -249,7 +254,7 @@ async function saveDraftFull(req, res) {
       if (req.files.transfer_certificate && req.files.transfer_certificate[0]) {
         const file = req.files.transfer_certificate[0];
         const fileId = await fileStorageUtil.saveFileToDB(file, schoolId, 'transfer_certificate');
-        const fileUrl = `/api/v1/academic/files/${fileId}`;
+        const fileUrl = `${baseFileUrl}/${fileId}`;
         allData.documents.transfer_certificate = fileUrl;
         allData.documents.transferCertificate = fileUrl;
         console.log('  ✅ transfer_certificate:', fileUrl);
@@ -1403,11 +1408,16 @@ async function updateDraftFull(req, res) {
         allData.documents = {};
       }
 
+      // Construct base URL for file serving
+      const protocol = req.protocol || 'https';
+      const host = req.get('host');
+      const baseFileUrl = `${protocol}://${host}/api/v1/academic/files`;
+
       // Handle student_photo
       if (req.files.student_photo && req.files.student_photo[0]) {
         const photoFile = req.files.student_photo[0];
         const fileId = await fileStorageUtil.saveFileToDB(photoFile, schoolId, 'student_photo');
-        const fileUrl = `/api/v1/academic/files/${fileId}`;
+        const fileUrl = `${baseFileUrl}/${fileId}`;
         if (!allData.personal) {
           allData.personal = {};
         }
@@ -1420,7 +1430,7 @@ async function updateDraftFull(req, res) {
       if (req.files.birth_certificate && req.files.birth_certificate[0]) {
         const file = req.files.birth_certificate[0];
         const fileId = await fileStorageUtil.saveFileToDB(file, schoolId, 'birth_certificate');
-        const fileUrl = `/api/v1/academic/files/${fileId}`;
+        const fileUrl = `${baseFileUrl}/${fileId}`;
         allData.documents.birth_certificate = fileUrl;
         allData.documents.birthCertificate = fileUrl;
         console.log('  ✅ birth_certificate:', fileUrl);
@@ -1430,7 +1440,7 @@ async function updateDraftFull(req, res) {
       if (req.files.aadhaar_card && req.files.aadhaar_card[0]) {
         const file = req.files.aadhaar_card[0];
         const fileId = await fileStorageUtil.saveFileToDB(file, schoolId, 'aadhaar_card');
-        const fileUrl = `/api/v1/academic/files/${fileId}`;
+        const fileUrl = `${baseFileUrl}/${fileId}`;
         allData.documents.aadhaar_card = fileUrl;
         allData.documents.aadhaarCard = fileUrl;
         console.log('  ✅ aadhaar_card:', fileUrl);
@@ -1440,7 +1450,7 @@ async function updateDraftFull(req, res) {
       if (req.files.transfer_certificate && req.files.transfer_certificate[0]) {
         const file = req.files.transfer_certificate[0];
         const fileId = await fileStorageUtil.saveFileToDB(file, schoolId, 'transfer_certificate');
-        const fileUrl = `/api/v1/academic/files/${fileId}`;
+        const fileUrl = `${baseFileUrl}/${fileId}`;
         allData.documents.transfer_certificate = fileUrl;
         allData.documents.transferCertificate = fileUrl;
         console.log('  ✅ transfer_certificate:', fileUrl);

@@ -87,7 +87,9 @@ const createOtherStaff = async (req, res, next) => {
             schoolId,
             field
           );
-          staffData[field] = `/api/v1/academic/files/${fileId}`;
+          const protocol = req.protocol || 'https';
+          const host = req.get('host');
+          staffData[field] = `${protocol}://${host}/api/v1/academic/files/${fileId}`;
         }
       }
     } else {

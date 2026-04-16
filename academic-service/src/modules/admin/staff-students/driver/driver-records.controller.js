@@ -84,7 +84,9 @@ const createDriver = async (req, res, next) => {
             schoolId,
             field
           );
-          driverData[field] = `/api/v1/academic/files/${fileId}`;
+          const protocol = req.protocol || 'https';
+          const host = req.get('host');
+          driverData[field] = `${protocol}://${host}/api/v1/academic/files/${fileId}`;
         }
       }
     }
