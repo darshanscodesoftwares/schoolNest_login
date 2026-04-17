@@ -31,6 +31,26 @@ const getAllTeachers = async (schoolId, filters = {}) => {
       params.push(filters.employment_status);
     }
 
+    // New text search filters
+    if (filters.teacherName) {
+      paramIndex++;
+      query += ` AND (first_name ILIKE $${paramIndex} OR last_name ILIKE $${paramIndex})`;
+      const searchPattern = `%${filters.teacherName}%`;
+      params.push(searchPattern);
+    }
+
+    if (filters.classes) {
+      paramIndex++;
+      query += ` AND classes ILIKE $${paramIndex}`;
+      params.push(`%${filters.classes}%`);
+    }
+
+    if (filters.experience) {
+      paramIndex++;
+      query += ` AND experience_in_years = $${paramIndex}`;
+      params.push(parseInt(filters.experience, 10));
+    }
+
     query += ` ORDER BY created_at ASC`;
 
     // Add pagination if provided
@@ -52,15 +72,57 @@ const getAllTeachers = async (schoolId, filters = {}) => {
   }
 };
 
-// Get total count of teachers
-const getTotalTeachersCount = async (schoolId) => {
+// Get total count of teachers (with filter support)
+const getTotalTeachersCount = async (schoolId, filters = {}) => {
   try {
-    const query = `
+    let query = `
       SELECT COUNT(*) as total
       FROM teacher_records
       WHERE school_id = $1
     `;
-    const result = await pool.query(query, [schoolId]);
+
+    const params = [schoolId];
+    let paramIndex = 1;
+
+    // Apply same filters as getAllTeachers
+    if (filters.designation) {
+      paramIndex++;
+      query += ` AND designation ILIKE $${paramIndex}`;
+      params.push(`%${filters.designation}%`);
+    }
+
+    if (filters.department_id) {
+      paramIndex++;
+      query += ` AND department_id = $${paramIndex}`;
+      params.push(filters.department_id);
+    }
+
+    if (filters.employment_status) {
+      paramIndex++;
+      query += ` AND employment_status = $${paramIndex}`;
+      params.push(filters.employment_status);
+    }
+
+    if (filters.teacherName) {
+      paramIndex++;
+      query += ` AND (first_name ILIKE $${paramIndex} OR last_name ILIKE $${paramIndex})`;
+      const searchPattern = `%${filters.teacherName}%`;
+      params.push(searchPattern);
+    }
+
+    if (filters.classes) {
+      paramIndex++;
+      query += ` AND classes ILIKE $${paramIndex}`;
+      params.push(`%${filters.classes}%`);
+    }
+
+    if (filters.experience) {
+      paramIndex++;
+      query += ` AND experience_in_years = $${paramIndex}`;
+      params.push(parseInt(filters.experience, 10));
+    }
+
+    const result = await pool.query(query, params);
     return parseInt(result.rows[0].total, 10);
   } catch (error) {
     throw new Error(`Database error: ${error.message}`);

@@ -10,7 +10,11 @@ const getAllTeachers = async (req, res, next) => {
       department_id: req.query.department_id,
       employment_status: req.query.employment_status,
       limit: req.query.limit ? parseInt(req.query.limit, 10) : null,
-      offset: req.query.offset ? parseInt(req.query.offset, 10) : null
+      offset: req.query.offset ? parseInt(req.query.offset, 10) : null,
+      // New search filters
+      teacherName: req.query.teacherName,
+      classes: req.query.classes,
+      experience: req.query.experience
     };
 
     const result = await teacherService.getAllTeachers(schoolId, filters);

@@ -140,7 +140,7 @@ const convertPathsToUrls = async (teacher) => {
 const getAllTeachers = async (schoolId, filters = {}) => {
   try {
     const teachers = await teacherRepository.getAllTeachers(schoolId, filters);
-    const totalCount = await teacherRepository.getTotalTeachersCount(schoolId);
+    const totalCount = await teacherRepository.getTotalTeachersCount(schoolId, filters);
 
     if (!teachers || teachers.length === 0) {
       return {
