@@ -41,13 +41,13 @@ const getAllTeachers = async (schoolId, filters = {}) => {
 
     if (filters.classes) {
       paramIndex++;
-      query += ` AND classes ILIKE $${paramIndex}`;
+      query += ` AND class_ids ILIKE $${paramIndex}`;
       params.push(`%${filters.classes}%`);
     }
 
     if (filters.experience) {
       paramIndex++;
-      query += ` AND experience_in_years = $${paramIndex}`;
+      query += ` AND total_experience_years = $${paramIndex}`;
       params.push(parseInt(filters.experience, 10));
     }
 
@@ -112,13 +112,13 @@ const getTotalTeachersCount = async (schoolId, filters = {}) => {
 
     if (filters.classes) {
       paramIndex++;
-      query += ` AND classes ILIKE $${paramIndex}`;
+      query += ` AND class_ids ILIKE $${paramIndex}`;
       params.push(`%${filters.classes}%`);
     }
 
     if (filters.experience) {
       paramIndex++;
-      query += ` AND experience_in_years = $${paramIndex}`;
+      query += ` AND total_experience_years = $${paramIndex}`;
       params.push(parseInt(filters.experience, 10));
     }
 
