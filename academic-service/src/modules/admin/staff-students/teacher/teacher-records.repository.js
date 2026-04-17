@@ -54,7 +54,7 @@ const getAllTeachers = async (schoolId, filters = {}) => {
       params.push(parseInt(filters.experience, 10));
     }
 
-    query += ` ORDER BY tr.created_at ASC`;
+    query += ` ORDER BY tr.id, tr.created_at ASC`;
 
     // Add pagination if provided
     if (filters.limit) {
