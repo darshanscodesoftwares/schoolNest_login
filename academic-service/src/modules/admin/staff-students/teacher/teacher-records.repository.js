@@ -41,7 +41,7 @@ const getAllTeachers = async (schoolId, filters = {}) => {
 
     if (filters.classes) {
       paramIndex++;
-      query += ` AND class_ids ILIKE $${paramIndex}`;
+      query += ` AND class_ids::TEXT ILIKE $${paramIndex}`;
       params.push(`%${filters.classes}%`);
     }
 
@@ -112,7 +112,7 @@ const getTotalTeachersCount = async (schoolId, filters = {}) => {
 
     if (filters.classes) {
       paramIndex++;
-      query += ` AND class_ids ILIKE $${paramIndex}`;
+      query += ` AND class_ids::TEXT ILIKE $${paramIndex}`;
       params.push(`%${filters.classes}%`);
     }
 
