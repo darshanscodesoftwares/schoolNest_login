@@ -14,6 +14,37 @@ const generateOTP = () => {
 };
 
 /**
+ * Normalize phone number to standard format with country code
+ * Converts both "6384582060" and "+91 6384582060" to "+91 6384582060"
+ * @param {string} phone - Phone number (with or without +91)
+ * @returns {string} Normalized phone number with +91 prefix
+ */
+const normalizePhoneNumber = (phone) => {
+  if (!phone) return null;
+
+  // Remove spaces, hyphens, and other special characters
+  let cleaned = phone.replace(/[\s\-()]/g, '');
+
+  // If it's a 10-digit number, prepend +91
+  if (cleaned.length === 10 && !cleaned.startsWith('+')) {
+    return `+91${cleaned}`;
+  }
+
+  // If it already has +91, return as is
+  if (cleaned.startsWith('+91')) {
+    return cleaned;
+  }
+
+  // If it starts with 91 (without +), prepend +
+  if (cleaned.startsWith('91') && cleaned.length === 12) {
+    return `+${cleaned}`;
+  }
+
+  // Return as is (it's already in some format)
+  return cleaned;
+};
+
+/**
  * Mask phone number for display (e.g., 9876543210 → 987****3210)
  * @param {string} phone - Full phone number
  * @returns {string} Masked phone number
@@ -26,17 +57,21 @@ const maskPhone = (phone) => {
 /**
  * Send OTP to teacher's primary phone
  * Flow:
- * 1. Check if phone exists in ANY school (auto-discover school)
- * 2. Generate OTP and store in memory with expiry
- * 3. Return session ID for subsequent verify/resend calls
+ * 1. Normalize phone number (accept both "+91 6384582060" and "6384582060")
+ * 2. Check if phone exists in ANY school (auto-discover school)
+ * 3. Generate OTP and store in memory with expiry
+ * 4. Return session ID for subsequent verify/resend calls
  *
- * @param {string} primary_phone - Teacher's phone number
+ * @param {string} primary_phone - Teacher's phone number (with or without +91)
  * @returns {Object} { otp_session_id, phone_masked, expires_in }
  */
 const sendOTP = async ({ primary_phone }) => {
   try {
+    // Step 0: Normalize phone number (handles both "6384582060" and "+91 6384582060")
+    const normalizedPhone = normalizePhoneNumber(primary_phone);
+
     // Step 1: Find teacher by phone (auto-discover school)
-    const teachers = await authRepository.findTeachersByPhone(primary_phone);
+    const teachers = await authRepository.findTeachersByPhone(normalizedPhone);
 
     if (!teachers || teachers.length === 0) {
       const error = new Error('Phone number not registered. Please contact school admin');
@@ -49,25 +84,25 @@ const sendOTP = async ({ primary_phone }) => {
     const teacher = teachers[0];
     const school_id = teacher.school_id;
 
-    // Step 2: Generate OTP and unique session ID
+    // Step 3: Generate OTP and unique session ID
     const otp = generateOTP();
     const otp_session_id = `otp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const expires_at = Date.now() + (5 * 60 * 1000); // 5 minutes
 
-    // Step 3: Store OTP session in memory
+    // Step 4: Store OTP session in memory (use normalized phone)
     otpStore.set(otp_session_id, {
       otp,
-      primary_phone,
+      primary_phone: normalizedPhone,
       school_id,
       teacher_id: teacher.id,
       expires_at
     });
 
-    console.log(`📱 OTP sent to ${maskPhone(primary_phone)}: ${otp} (Session: ${otp_session_id})`);
+    console.log(`📱 OTP sent to ${maskPhone(normalizedPhone)}: ${otp} (Session: ${otp_session_id})`);
 
     return {
       otp_session_id,
-      phone_masked: maskPhone(primary_phone),
+      phone_masked: maskPhone(normalizedPhone),
       expires_in: 300, // seconds
       otp // For dev/testing only — remove in production
     };
@@ -171,17 +206,20 @@ const verifyOTP = async ({ otp_session_id, otp_code }) => {
  * If active session exists → generate new OTP (keep same session ID + expiry)
  * If no active session → create new session (same as sendOTP)
  *
- * @param {string} primary_phone - Teacher's phone number
+ * @param {string} primary_phone - Teacher's phone number (with or without +91)
  * @returns {Object} { otp_session_id, phone_masked, expires_in }
  */
 const resendOTP = async ({ primary_phone }) => {
   try {
+    // Normalize phone number first
+    const normalizedPhone = normalizePhoneNumber(primary_phone);
+
     // Look for existing active session for this phone
     let existingSessionId = null;
     let existingOtpData = null;
 
     for (const [sessionId, otpData] of otpStore.entries()) {
-      if (otpData.primary_phone === primary_phone) {
+      if (otpData.primary_phone === normalizedPhone) {
         if (Date.now() <= otpData.expires_at) {
           existingSessionId = sessionId;
           existingOtpData = otpData;
@@ -192,9 +230,9 @@ const resendOTP = async ({ primary_phone }) => {
       }
     }
 
-    // No active session — create new (same as sendOTP)
+    // No active session — create new (same as sendOTP, use normalized phone)
     if (!existingSessionId) {
-      return await sendOTP({ primary_phone });
+      return await sendOTP({ primary_phone: normalizedPhone });
     }
 
     // Active session found — generate new OTP, keep same session ID and expiry
@@ -206,11 +244,11 @@ const resendOTP = async ({ primary_phone }) => {
       resent_at: Date.now()
     });
 
-    console.log(`📱 OTP resent to ${maskPhone(primary_phone)}: ${otp} (Session: ${existingSessionId})`);
+    console.log(`📱 OTP resent to ${maskPhone(normalizedPhone)}: ${otp} (Session: ${existingSessionId})`);
 
     return {
       otp_session_id: existingSessionId,
-      phone_masked: maskPhone(primary_phone),
+      phone_masked: maskPhone(normalizedPhone),
       expires_in: 300,
       otp // For dev/testing only
     };
