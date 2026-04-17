@@ -34,7 +34,7 @@ const getAllTeachers = async (schoolId, filters = {}) => {
     // New text search filters
     if (filters.teacherName) {
       paramIndex++;
-      query += ` AND (first_name ILIKE $${paramIndex} OR last_name ILIKE $${paramIndex})`;
+      query += ` AND first_name ILIKE $${paramIndex}`;
       const searchPattern = `%${filters.teacherName}%`;
       params.push(searchPattern);
     }
@@ -105,7 +105,7 @@ const getTotalTeachersCount = async (schoolId, filters = {}) => {
 
     if (filters.teacherName) {
       paramIndex++;
-      query += ` AND (first_name ILIKE $${paramIndex} OR last_name ILIKE $${paramIndex})`;
+      query += ` AND first_name ILIKE $${paramIndex}`;
       const searchPattern = `%${filters.teacherName}%`;
       params.push(searchPattern);
     }
