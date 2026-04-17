@@ -4,7 +4,7 @@ const staffStudentsService = require('./staff-students.service');
 const getAllApprovedStudents = async (req, res, next) => {
   try {
     const schoolId = req.user.school_id;
-    const { classId, section, rollNumber, limit, offset } = req.query;
+    const { classId, section, rollNumber, limit, offset, studentName, class: className, rollNo, parentGuardian } = req.query;
 
     const filters = {};
     if (classId) filters.classId = classId;
@@ -12,6 +12,12 @@ const getAllApprovedStudents = async (req, res, next) => {
     if (rollNumber) filters.rollNumber = rollNumber;
     if (limit) filters.limit = parseInt(limit, 10);
     if (offset) filters.offset = parseInt(offset, 10);
+
+    // Text search filters
+    if (studentName) filters.studentName = studentName;
+    if (className) filters.className = className;
+    if (rollNo) filters.rollNo = rollNo;
+    if (parentGuardian) filters.parentGuardian = parentGuardian;
 
     const result = await staffStudentsService.getAllApprovedStudents(schoolId, filters);
     return res.status(200).json(result);

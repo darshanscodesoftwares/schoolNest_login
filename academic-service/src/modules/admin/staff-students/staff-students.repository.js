@@ -47,6 +47,33 @@ const getApprovedStudents = async (schoolId, filters = {}) => {
       params.push(filters.rollNumber);
     }
 
+    // Text search filters (partial match)
+    if (filters.studentName) {
+      paramIndex++;
+      query += ` AND (pi.first_name ILIKE $${paramIndex} OR pi.last_name ILIKE $${paramIndex})`;
+      params.push(`%${filters.studentName}%`);
+      params.push(`%${filters.studentName}%`);
+      paramIndex++;
+    }
+
+    if (filters.className) {
+      paramIndex++;
+      query += ` AND (SELECT class_name FROM school_classes WHERE id = ai.class_id) ILIKE $${paramIndex}`;
+      params.push(`%${filters.className}%`);
+    }
+
+    if (filters.rollNo) {
+      paramIndex++;
+      query += ` AND ai.roll_number ILIKE $${paramIndex}`;
+      params.push(`%${filters.rollNo}%`);
+    }
+
+    if (filters.parentGuardian) {
+      paramIndex++;
+      query += ` AND pg.father_full_name ILIKE $${paramIndex}`;
+      params.push(`%${filters.parentGuardian}%`);
+    }
+
     query += ` ORDER BY sa.id, sa.created_at ASC`;
 
     // Add pagination if provided
