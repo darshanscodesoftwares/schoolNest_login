@@ -22,6 +22,7 @@ const getApprovedStudents = async (schoolId, filters = {}) => {
       LEFT JOIN parent_guardian_information pg ON sa.id = pg.student_id
       LEFT JOIN contact_information ci ON sa.id = ci.student_id
       WHERE sa.school_id = $1 AND sa.admission_status = 'Approved'
+      AND pi.student_id IS NOT NULL
     `;
 
     const params = [schoolId];
@@ -144,9 +145,11 @@ const getApprovedStudentsByClassAndSection = async (schoolId, classId, section) 
 const getTotalApprovedStudentsCount = async (schoolId) => {
   try {
     const query = `
-      SELECT COUNT(*) as total
+      SELECT COUNT(DISTINCT pi.student_id) as total
       FROM students_admission sa
+      LEFT JOIN personal_information pi ON sa.id = pi.student_id
       WHERE sa.school_id = $1 AND sa.admission_status = 'Approved'
+      AND pi.student_id IS NOT NULL
     `;
 
     const result = await pool.query(query, [schoolId]);
