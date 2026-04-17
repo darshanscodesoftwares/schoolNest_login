@@ -3,10 +3,11 @@ const pool = require('../../../../config/db');
 // Get all teachers
 const getAllTeachers = async (schoolId, filters = {}) => {
   try {
+    // Use DISTINCT ON to avoid duplicate rows from class join
     let query = `
-      SELECT *
-      FROM teacher_records
-      WHERE school_id = $1
+      SELECT DISTINCT ON (tr.id) tr.*
+      FROM teacher_records tr
+      WHERE tr.school_id = $1
     `;
 
     const params = [schoolId];
@@ -15,43 +16,45 @@ const getAllTeachers = async (schoolId, filters = {}) => {
     // Optional filters
     if (filters.designation) {
       paramIndex++;
-      query += ` AND designation ILIKE $${paramIndex}`;
+      query += ` AND tr.designation ILIKE $${paramIndex}`;
       params.push(`%${filters.designation}%`);
     }
 
     if (filters.department_id) {
       paramIndex++;
-      query += ` AND department_id = $${paramIndex}`;
+      query += ` AND tr.department_id = $${paramIndex}`;
       params.push(filters.department_id);
     }
 
     if (filters.employment_status) {
       paramIndex++;
-      query += ` AND employment_status = $${paramIndex}`;
+      query += ` AND tr.employment_status = $${paramIndex}`;
       params.push(filters.employment_status);
     }
 
     // New text search filters
     if (filters.teacherName) {
       paramIndex++;
-      query += ` AND first_name ILIKE $${paramIndex}`;
+      query += ` AND tr.first_name ILIKE $${paramIndex}`;
       const searchPattern = `%${filters.teacherName}%`;
       params.push(searchPattern);
     }
 
+    // Class search - join with school_classes to search by class name
     if (filters.classes) {
+      query += ` INNER JOIN school_classes sc ON sc.id = ANY(tr.class_ids)`;
       paramIndex++;
-      query += ` AND class_ids::TEXT ILIKE $${paramIndex}`;
+      query += ` AND sc.class_name ILIKE $${paramIndex}`;
       params.push(`%${filters.classes}%`);
     }
 
     if (filters.experience) {
       paramIndex++;
-      query += ` AND total_experience_years = $${paramIndex}`;
+      query += ` AND tr.total_experience_years = $${paramIndex}`;
       params.push(parseInt(filters.experience, 10));
     }
 
-    query += ` ORDER BY created_at ASC`;
+    query += ` ORDER BY tr.created_at ASC`;
 
     // Add pagination if provided
     if (filters.limit) {
@@ -75,10 +78,11 @@ const getAllTeachers = async (schoolId, filters = {}) => {
 // Get total count of teachers (with filter support)
 const getTotalTeachersCount = async (schoolId, filters = {}) => {
   try {
+    // Use DISTINCT ON to count unique teachers (avoid duplicates from class join)
     let query = `
-      SELECT COUNT(*) as total
-      FROM teacher_records
-      WHERE school_id = $1
+      SELECT COUNT(DISTINCT tr.id) as total
+      FROM teacher_records tr
+      WHERE tr.school_id = $1
     `;
 
     const params = [schoolId];
@@ -87,38 +91,40 @@ const getTotalTeachersCount = async (schoolId, filters = {}) => {
     // Apply same filters as getAllTeachers
     if (filters.designation) {
       paramIndex++;
-      query += ` AND designation ILIKE $${paramIndex}`;
+      query += ` AND tr.designation ILIKE $${paramIndex}`;
       params.push(`%${filters.designation}%`);
     }
 
     if (filters.department_id) {
       paramIndex++;
-      query += ` AND department_id = $${paramIndex}`;
+      query += ` AND tr.department_id = $${paramIndex}`;
       params.push(filters.department_id);
     }
 
     if (filters.employment_status) {
       paramIndex++;
-      query += ` AND employment_status = $${paramIndex}`;
+      query += ` AND tr.employment_status = $${paramIndex}`;
       params.push(filters.employment_status);
     }
 
     if (filters.teacherName) {
       paramIndex++;
-      query += ` AND first_name ILIKE $${paramIndex}`;
+      query += ` AND tr.first_name ILIKE $${paramIndex}`;
       const searchPattern = `%${filters.teacherName}%`;
       params.push(searchPattern);
     }
 
+    // Class search - join with school_classes to search by class name
     if (filters.classes) {
+      query += ` INNER JOIN school_classes sc ON sc.id = ANY(tr.class_ids)`;
       paramIndex++;
-      query += ` AND class_ids::TEXT ILIKE $${paramIndex}`;
+      query += ` AND sc.class_name ILIKE $${paramIndex}`;
       params.push(`%${filters.classes}%`);
     }
 
     if (filters.experience) {
       paramIndex++;
-      query += ` AND total_experience_years = $${paramIndex}`;
+      query += ` AND tr.total_experience_years = $${paramIndex}`;
       params.push(parseInt(filters.experience, 10));
     }
 
