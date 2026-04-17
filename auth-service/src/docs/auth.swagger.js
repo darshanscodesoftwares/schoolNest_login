@@ -229,6 +229,114 @@
  *         description: OTP resent — returns otp_session_id
  */
 
+// ============================================================
+// PARENT OTP LOGIN
+// ============================================================
+
+/**
+ * @swagger
+ * /api/v1/auth/parent/send-otp:
+ *   post:
+ *     tags: [Parent OTP]
+ *     summary: Send OTP to parent's phone (from admission records)
+ *     description: |
+ *       Looks up the parent by the phone number given during their child's
+ *       admission (father_phone or mother_phone in parent_guardian_information).
+ *       A parent with multiple children will be found across all admissions
+ *       but resolved to a single auth user.
+ *       In dev mode the OTP is always **1234**.
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [phone]
+ *             properties:
+ *               phone:
+ *                 type: string
+ *                 example: "9000020005"
+ *                 description: Phone number given during child's admission
+ *     responses:
+ *       200:
+ *         description: OTP sent
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:        { type: boolean, example: true }
+ *                 message:        { type: string, example: "OTP sent successfully" }
+ *                 otp_session_id: { type: string }
+ *                 phone_masked:   { type: string, example: "900****0005" }
+ *                 expires_in:     { type: integer, example: 300 }
+ *                 children_count: { type: integer, example: 2, description: "Number of children enrolled under this parent" }
+ *       404:
+ *         description: Phone not found in any admission record
+ */
+
+/**
+ * @swagger
+ * /api/v1/auth/parent/verify-otp:
+ *   post:
+ *     tags: [Parent OTP]
+ *     summary: Verify OTP and receive JWT token (role=PARENT)
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [otp_session_id, otp_code]
+ *             properties:
+ *               otp_session_id: { type: string, description: "Returned by send-otp" }
+ *               otp_code:       { type: string, example: "1234", description: "Dev mode: always 1234" }
+ *     responses:
+ *       200:
+ *         description: Verified — returns JWT token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success: { type: boolean, example: true }
+ *                 token:   { type: string, example: "eyJhbGciOiJIUzI1NiIs..." }
+ *                 user:
+ *                   type: object
+ *                   properties:
+ *                     id:             { type: string, example: "PAR201" }
+ *                     name:           { type: string, example: "Anil Agarwal" }
+ *                     email:          { type: string }
+ *                     role:           { type: string, example: "PARENT" }
+ *                     school_id:      { type: integer, example: 101 }
+ *                     children_count: { type: integer, example: 2 }
+ *       401:
+ *         description: Invalid or expired OTP
+ */
+
+/**
+ * @swagger
+ * /api/v1/auth/parent/resend-otp:
+ *   post:
+ *     tags: [Parent OTP]
+ *     summary: Resend OTP (reuses active session or creates new one)
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [phone]
+ *             properties:
+ *               phone: { type: string, example: "9000020005" }
+ *     responses:
+ *       200:
+ *         description: OTP resent
+ */
+
 /**
  * @swagger
  * /api/v1/auth/logout:

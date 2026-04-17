@@ -24,7 +24,8 @@ const options = {
     },
     tags: [
       { name: 'Auth', description: 'Login and Logout (email + password) — works for Admin, Teacher, Parent' },
-      { name: 'Teacher OTP', description: 'Teacher phone-based OTP login' }
+      { name: 'Teacher OTP', description: 'Teacher phone-based OTP login' },
+      { name: 'Parent OTP', description: 'Parent phone-based OTP login — uses the phone from child admission records' }
     ]
   },
   apis: ['./src/docs/*.js']
