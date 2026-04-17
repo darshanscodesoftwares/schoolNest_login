@@ -4,7 +4,7 @@ const pool = require('../../../config/db');
 const getApprovedStudents = async (schoolId, filters = {}) => {
   try {
     let query = `
-      SELECT
+      SELECT DISTINCT ON (sa.id)
         pi.student_id,
         ai.roll_number,
         pi.first_name,
@@ -47,7 +47,7 @@ const getApprovedStudents = async (schoolId, filters = {}) => {
       params.push(filters.rollNumber);
     }
 
-    query += ` ORDER BY sa.created_at ASC`;
+    query += ` ORDER BY sa.id, sa.created_at ASC`;
 
     // Add pagination if provided
     if (filters.limit) {
@@ -145,7 +145,7 @@ const getApprovedStudentsByClassAndSection = async (schoolId, classId, section) 
 const getTotalApprovedStudentsCount = async (schoolId) => {
   try {
     const query = `
-      SELECT COUNT(DISTINCT pi.student_id) as total
+      SELECT COUNT(DISTINCT sa.id) as total
       FROM students_admission sa
       LEFT JOIN personal_information pi ON sa.id = pi.student_id
       WHERE sa.school_id = $1 AND sa.admission_status = 'Approved'
