@@ -50,10 +50,9 @@ const getApprovedStudents = async (schoolId, filters = {}) => {
     // Text search filters (partial match)
     if (filters.studentName) {
       paramIndex++;
+      const searchPattern = `%${filters.studentName}%`;
       query += ` AND (pi.first_name ILIKE $${paramIndex} OR pi.last_name ILIKE $${paramIndex})`;
-      params.push(`%${filters.studentName}%`);
-      params.push(`%${filters.studentName}%`);
-      paramIndex++;
+      params.push(searchPattern);
     }
 
     if (filters.className) {
