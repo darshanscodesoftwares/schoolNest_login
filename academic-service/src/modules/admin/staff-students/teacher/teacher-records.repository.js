@@ -7,11 +7,17 @@ const getAllTeachers = async (schoolId, filters = {}) => {
     let query = `
       SELECT DISTINCT ON (tr.id) tr.*
       FROM teacher_records tr
-      WHERE tr.school_id = $1
     `;
 
     const params = [schoolId];
     let paramIndex = 1;
+
+    // Add class join BEFORE WHERE clause if classes filter is present
+    if (filters.classes) {
+      query += ` INNER JOIN school_classes sc ON sc.id = ANY(tr.class_ids)`;
+    }
+
+    query += ` WHERE tr.school_id = $1`;
 
     // Optional filters
     if (filters.designation) {
@@ -40,9 +46,8 @@ const getAllTeachers = async (schoolId, filters = {}) => {
       params.push(searchPattern);
     }
 
-    // Class search - join with school_classes to search by class name
+    // Class search - join happens above, add condition here
     if (filters.classes) {
-      query += ` INNER JOIN school_classes sc ON sc.id = ANY(tr.class_ids)`;
       paramIndex++;
       query += ` AND sc.class_name ILIKE $${paramIndex}`;
       params.push(`%${filters.classes}%`);
@@ -54,7 +59,7 @@ const getAllTeachers = async (schoolId, filters = {}) => {
       params.push(parseInt(filters.experience, 10));
     }
 
-    query += ` ORDER BY tr.created_at ASC`;
+    query += ` ORDER BY tr.id, tr.created_at ASC`;
 
     // Add pagination if provided
     if (filters.limit) {
@@ -78,15 +83,21 @@ const getAllTeachers = async (schoolId, filters = {}) => {
 // Get total count of teachers (with filter support)
 const getTotalTeachersCount = async (schoolId, filters = {}) => {
   try {
-    // Use DISTINCT ON to count unique teachers (avoid duplicates from class join)
+    // Use COUNT(DISTINCT) to count unique teachers (avoid duplicates from class join)
     let query = `
       SELECT COUNT(DISTINCT tr.id) as total
       FROM teacher_records tr
-      WHERE tr.school_id = $1
     `;
 
     const params = [schoolId];
     let paramIndex = 1;
+
+    // Add class join BEFORE WHERE clause if classes filter is present
+    if (filters.classes) {
+      query += ` INNER JOIN school_classes sc ON sc.id = ANY(tr.class_ids)`;
+    }
+
+    query += ` WHERE tr.school_id = $1`;
 
     // Apply same filters as getAllTeachers
     if (filters.designation) {
@@ -114,9 +125,8 @@ const getTotalTeachersCount = async (schoolId, filters = {}) => {
       params.push(searchPattern);
     }
 
-    // Class search - join with school_classes to search by class name
+    // Class search - join happens above, add condition here
     if (filters.classes) {
-      query += ` INNER JOIN school_classes sc ON sc.id = ANY(tr.class_ids)`;
       paramIndex++;
       query += ` AND sc.class_name ILIKE $${paramIndex}`;
       params.push(`%${filters.classes}%`);
