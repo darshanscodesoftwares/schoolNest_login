@@ -90,7 +90,7 @@ const findTeachersByPhone = async (primary_phone) => {
         primary_phone,
         primary_email
       FROM teacher_records
-      WHERE primary_phone = $1
+      WHERE REPLACE(primary_phone, ' ', '') = REPLACE($1, ' ', '')
     `,
     values: [primary_phone]
   };
