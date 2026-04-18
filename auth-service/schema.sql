@@ -21,9 +21,11 @@ CREATE INDEX IF NOT EXISTS idx_users_email     ON users (email);
 CREATE INDEX IF NOT EXISTS idx_users_school_id ON users (school_id);
 
 -- Token blacklist for logout/revocation
+-- Note: user_id has NO foreign key constraint so logout never fails
+-- even if user is deleted or doesn't exist in users table
 CREATE TABLE IF NOT EXISTS token_blacklist (
   id         BIGSERIAL    PRIMARY KEY,
-  user_id    VARCHAR(50)  NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  user_id    VARCHAR(50)  NOT NULL,
   issued_at  BIGINT       NOT NULL,
   expires_at TIMESTAMPTZ  NOT NULL,
   created_at TIMESTAMPTZ  NOT NULL DEFAULT NOW()
