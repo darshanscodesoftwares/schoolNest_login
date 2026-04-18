@@ -278,7 +278,8 @@ const classesAssignService = {
   },
 
   // Get all parents list for a school
-  getParentsList: async (user, school_id) => {
+  // Updated: Now supports optional filtering by classId and section
+  getParentsList: async (user, school_id, filters = {}) => {
     assertAdminRole(user);
 
     if (!school_id) {
@@ -287,7 +288,7 @@ const classesAssignService = {
       throw error;
     }
 
-    const parents = await classesAssignRepository.getParentsList(school_id);
+    const parents = await classesAssignRepository.getParentsList(school_id, filters);
     return parents;
   },
 

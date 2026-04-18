@@ -302,14 +302,21 @@ const classesAssignController = {
   },
 
   // Get all parents list for a school
-  // GET /api/v1/academic/admin/parents-list
+  // Updated: Now supports optional filtering by classId and section
+  // GET /api/v1/academic/admin/parents-list?classId=uuid&section=A
   // school_id extracted from JWT token
   getParentsList: async (req, res, next) => {
     try {
       const school_id = req.user.school_id;
       const user = req.user;
+      const { classId, section } = req.query;
 
-      const parents = await classesAssignService.getParentsList(user, school_id);
+      // Build filters object only with provided parameters
+      const filters = {};
+      if (classId) filters.classId = classId;
+      if (section) filters.section = section;
+
+      const parents = await classesAssignService.getParentsList(user, school_id, filters);
 
       // Enrich class_info with actual class names from API
       const enrichedParents = await Promise.all(

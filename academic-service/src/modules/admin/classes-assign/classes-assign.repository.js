@@ -196,9 +196,10 @@ const classesAssignRepository = {
   },
 
   // Get all parents for a school with their student information
-  getParentsList: async (school_id) => {
-    const query = {
-      text: `SELECT DISTINCT
+  // Updated: Now supports optional filtering by classId and section
+  // Parameters: { classId?: uuid, section?: string }
+  getParentsList: async (school_id, filters = {}) => {
+    let query = `SELECT DISTINCT
              pgi.id,
              COALESCE(pgi.father_full_name, pgi.mother_full_name, pgi.guardian_full_name) as parent_full_name,
              STRING_AGG(DISTINCT CONCAT(pi.first_name, ' ', pi.last_name), ', ') as student_names,
@@ -207,12 +208,33 @@ const classesAssignRepository = {
              LEFT JOIN students_admission sa ON pgi.student_id = sa.id
              LEFT JOIN personal_information pi ON sa.id = pi.student_id
              LEFT JOIN academic_information ai ON sa.id = ai.student_id
-             WHERE pgi.school_id = $1
-             GROUP BY pgi.id, pgi.father_full_name, pgi.mother_full_name, pgi.guardian_full_name
-             ORDER BY COALESCE(pgi.father_full_name, pgi.mother_full_name, pgi.guardian_full_name) ASC`,
-      values: [school_id],
+             WHERE pgi.school_id = $1`;
+
+    const params = [school_id];
+    let paramIndex = 1;
+
+    // Optional filter by class_id - returns parents whose students are in this class
+    if (filters.classId) {
+      paramIndex++;
+      query += ` AND ai.class_id = $${paramIndex}::uuid`;
+      params.push(filters.classId);
+    }
+
+    // Optional filter by section - returns parents whose students are in this section
+    if (filters.section) {
+      paramIndex++;
+      query += ` AND ai.section = $${paramIndex}`;
+      params.push(filters.section);
+    }
+
+    query += ` GROUP BY pgi.id, pgi.father_full_name, pgi.mother_full_name, pgi.guardian_full_name
+             ORDER BY COALESCE(pgi.father_full_name, pgi.mother_full_name, pgi.guardian_full_name) ASC`;
+
+    const queryObj = {
+      text: query,
+      values: params,
     };
-    const result = await pool.query(query);
+    const result = await pool.query(queryObj);
     return result.rows;
   },
 
