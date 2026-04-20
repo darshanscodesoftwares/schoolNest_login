@@ -360,6 +360,23 @@ const getEnquiryStats = async (user) => {
 };
 
 /**
+ * Check if email already exists in enquiries
+ */
+const checkEmailExists = async (user, email) => {
+  assertAdminRole(user);
+
+  try {
+    const result = await enquiriesRepository.findEnquiryByEmail(email);
+    return {
+      exists: result !== null,
+      enquiryId: result ? result.id : null
+    };
+  } catch (error) {
+    throw error;
+  }
+};
+
+/**
  * Auto-transition enquiries from "New" to "Follow-up" after 24 hours
  * This function is called by a scheduled job (node-cron)
  */
@@ -394,5 +411,6 @@ module.exports = {
   updateEnquiryStatus,
   deleteEnquiry,
   getEnquiryStats,
+  checkEmailExists,
   autoTransitionNewEnquiries
 };

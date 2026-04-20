@@ -317,6 +317,21 @@ const getEnquiryCountByStatus = async ({ schoolId }) => {
 };
 
 /**
+ * Find enquiry by email (case-insensitive)
+ */
+const findEnquiryByEmail = async (email) => {
+  try {
+    const result = await pool.query(
+      `SELECT id, email FROM student_enquiries WHERE LOWER(email) = LOWER($1) LIMIT 1`,
+      [email]
+    );
+    return result.rows[0] || null;
+  } catch (error) {
+    throw error;
+  }
+};
+
+/**
  * Auto-update old "New" enquiries to "Follow-up" status (after 24 hours)
  * Called by scheduled job (node-cron) - no school_id filter needed as this is a system job
  * Uses IST (Indian Standard Time: UTC+5:30) for timestamp comparison
@@ -344,5 +359,6 @@ module.exports = {
   updateEnquiryStatus,
   deleteEnquiry,
   getEnquiryCountByStatus,
+  findEnquiryByEmail,
   updateOldNewEnquiries
 };

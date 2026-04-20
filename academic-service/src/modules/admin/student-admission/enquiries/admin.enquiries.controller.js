@@ -162,6 +162,34 @@ const getEnquiryStats = async (req, res, next) => {
 };
 
 /**
+ * GET /api/v1/academic/admin/enquiries/check-email
+ * Check if email already exists in enquiries
+ * Query param: email
+ */
+const checkEmailExists = async (req, res, next) => {
+  try {
+    const { email } = req.query;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        exists: false,
+        message: "Email parameter is required"
+      });
+    }
+
+    const result = await enquiriesService.checkEmailExists(req.user, email);
+    return res.status(200).json({
+      success: true,
+      exists: result.exists,
+      message: result.exists ? "Email already registered" : "Email is available"
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+/**
  * POST /api/v1/academic/admin/enquiries/jobs/trigger-auto-transition
  * Manually trigger auto-transition job (for testing)
  * Converts all "New" enquiries older than 24 hours to "Follow-up" status
@@ -185,5 +213,6 @@ module.exports = {
   updateEnquiryStatus,
   deleteEnquiry,
   getEnquiryStats,
+  checkEmailExists,
   triggerAutoTransition
 };

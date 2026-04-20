@@ -15,6 +15,12 @@ router.get(
   enquiriesController.getEnquiryStats
 );
 
+// Email uniqueness check (placed before ID-based routes)
+router.get(
+  "/admin/enquiries/check-email",
+  enquiriesController.checkEmailExists
+);
+
 // CRUD endpoints
 //?limit=10&offset=0
 router.get("/admin/enquiries", enquiriesController.getAllEnquiries);
