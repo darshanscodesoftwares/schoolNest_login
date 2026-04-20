@@ -107,10 +107,15 @@
 
 /**
  * @swagger
- * /api/v1/academic/parent/students/{studentId}/timetable:
+ * /api/v1/parent/students/{studentId}/timetable:
  *   get:
  *     tags: [Parent - Timetable]
- *     summary: Get child's timetable
+ *     summary: Get child's daily schedule with breaks
+ *     description: >
+ *       Returns the PUBLISHED timetable for the given student on the specified day.
+ *       Defaults to today if `day` is omitted. Break entries are automatically inserted
+ *       between periods wherever a gap exists. Only PUBLISHED timetables are visible —
+ *       if admin hasn't published yet, `schedule` will be empty.
  *     parameters:
  *       - in: path
  *         name: studentId
@@ -123,9 +128,98 @@
  *         schema:
  *           type: string
  *           enum: [Monday, Tuesday, Wednesday, Thursday, Friday, Saturday]
+ *         description: Day to fetch. Defaults to today.
  *     responses:
  *       200:
- *         description: Student's timetable for the day
+ *         description: Student's schedule for the day including breaks
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 student:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                       format: uuid
+ *                     name:
+ *                       type: string
+ *                       example: Rohit Kumar
+ *                 day:
+ *                   type: string
+ *                   example: Monday
+ *                 total_periods:
+ *                   type: integer
+ *                   description: Count of teaching periods only (breaks excluded)
+ *                   example: 6
+ *                 schedule:
+ *                   type: array
+ *                   description: Ordered list of periods and breaks for the day
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       type:
+ *                         type: string
+ *                         enum: [period, break]
+ *                         description: Use this to decide card style — break = yellow card
+ *                       period_number:
+ *                         type: integer
+ *                         nullable: true
+ *                         description: null for break entries
+ *                         example: 1
+ *                       subject:
+ *                         type: string
+ *                         description: Subject name for periods, "Break" for breaks
+ *                         example: Mathematics
+ *                       start_time:
+ *                         type: string
+ *                         example: "08:00:00"
+ *                       end_time:
+ *                         type: string
+ *                         example: "08:45:00"
+ *                       duration_minutes:
+ *                         type: integer
+ *                         example: 45
+ *                       day_of_week:
+ *                         type: string
+ *                         example: Monday
+ *             example:
+ *               success: true
+ *               student:
+ *                 id: "uuid"
+ *                 name: "Rohit Kumar"
+ *               day: "Monday"
+ *               total_periods: 6
+ *               schedule:
+ *                 - type: period
+ *                   period_number: 1
+ *                   subject: Mathematics
+ *                   start_time: "08:00:00"
+ *                   end_time: "08:45:00"
+ *                   duration_minutes: 45
+ *                   day_of_week: Monday
+ *                 - type: period
+ *                   period_number: 2
+ *                   subject: English
+ *                   start_time: "08:45:00"
+ *                   end_time: "09:30:00"
+ *                   duration_minutes: 45
+ *                   day_of_week: Monday
+ *                 - type: break
+ *                   period_number: null
+ *                   subject: Break
+ *                   start_time: "10:15:00"
+ *                   end_time: "10:45:00"
+ *                   duration_minutes: 30
+ *                   day_of_week: Monday
+ *       400:
+ *         description: Invalid day value
+ *       403:
+ *         description: Student does not belong to this parent
  */
 
 // ============================================================

@@ -281,16 +281,91 @@
  * /api/v1/academic/timetable:
  *   get:
  *     tags: [Teacher - Timetable]
- *     summary: Get teacher's timetable (periods for a day + next class)
+ *     summary: Get teacher's timetable for a day
+ *     description: >
+ *       Returns all PUBLISHED periods assigned to the logged-in teacher for the given day.
+ *       Defaults to today if `day` is omitted. Also returns the next upcoming class when viewing today.
+ *       Only PUBLISHED timetables are visible — if admin hasn't published yet, `periods` will be empty.
  *     parameters:
  *       - in: query
  *         name: day
  *         schema:
  *           type: string
  *           enum: [Monday, Tuesday, Wednesday, Thursday, Friday, Saturday]
+ *         description: Day to fetch. Defaults to today.
  *     responses:
  *       200:
- *         description: Timetable with periods, subjects, and time slots
+ *         description: Teacher's timetable for the day
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 day:
+ *                   type: string
+ *                   example: Monday
+ *                 current_time:
+ *                   type: string
+ *                   nullable: true
+ *                   description: Current HH:MM (only set when viewing today)
+ *                   example: "09:30"
+ *                 next_class:
+ *                   nullable: true
+ *                   description: Next upcoming period today (null if viewing another day or no more classes)
+ *                   type: object
+ *                   properties:
+ *                     class_name:
+ *                       type: string
+ *                       example: Class 12
+ *                     section:
+ *                       type: string
+ *                       example: A
+ *                     subject:
+ *                       type: string
+ *                       example: Mathematics
+ *                     start_time:
+ *                       type: string
+ *                       example: "10:45:00"
+ *                     end_time:
+ *                       type: string
+ *                       example: "11:30:00"
+ *                 total_periods:
+ *                   type: integer
+ *                   example: 6
+ *                 periods:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: string
+ *                         format: uuid
+ *                       class_name:
+ *                         type: string
+ *                         example: Class 12
+ *                       section:
+ *                         type: string
+ *                         example: A
+ *                       day_of_week:
+ *                         type: string
+ *                         example: Monday
+ *                       period_number:
+ *                         type: integer
+ *                         example: 1
+ *                       subject:
+ *                         type: string
+ *                         example: Mathematics
+ *                       start_time:
+ *                         type: string
+ *                         example: "08:00:00"
+ *                       end_time:
+ *                         type: string
+ *                         example: "08:45:00"
+ *       400:
+ *         description: Invalid day value
  */
 
 /**
