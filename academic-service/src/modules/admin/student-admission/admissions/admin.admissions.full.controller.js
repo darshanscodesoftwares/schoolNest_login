@@ -1591,6 +1591,17 @@ async function completeSaveAdmission(req, res) {
     const schoolId = req.user.school_id;
     const admissionStatus = 'Under Verification'; // ✅ POST /complete-save creates Under Verification status
 
+    // DEBUG: Log enquiryId to verify it's being received
+    console.log('📥 completeSaveAdmission received enquiryId:', enquiryId);
+    console.log('📥 req.body keys:', Object.keys(req.body));
+    console.log('📥 req.body.enquiry_id:', req.body.enquiry_id);
+
+    // If enquiryId not found, try alternative names
+    if (!enquiryId && (req.body.enquiry_id || req.body.enquiryId)) {
+      enquiryId = req.body.enquiry_id || req.body.enquiryId;
+      console.log('✅ Found enquiryId from req.body:', enquiryId);
+    }
+
     // Parse allData if it's a string (from FormData)
     if (typeof allData === 'string') {
       allData = JSON.parse(allData);
