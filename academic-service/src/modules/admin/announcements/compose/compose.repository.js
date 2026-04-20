@@ -469,15 +469,42 @@ const composeRepository = {
     };
     const result = await pool.query(query);
 
+    // Get student counts per class
+    const studentCountQuery = {
+      text: `SELECT ca.class_id, COUNT(DISTINCT s.id) as student_count
+             FROM classes_assign ca
+             LEFT JOIN personal_information s ON ca.id = s.class_assign_id
+             WHERE ca.school_id = $1
+             GROUP BY ca.class_id`,
+      values: [school_id],
+    };
+    const studentCountResult = await pool.query(studentCountQuery);
+    const studentCountMap = {};
+    studentCountResult.rows.forEach((row) => {
+      studentCountMap[row.class_id] = parseInt(row.student_count, 10);
+    });
+
+    // Count sections per class
+    const sectionCountMap = {};
+    result.rows.forEach((row) => {
+      if (!sectionCountMap[row.class_id]) {
+        sectionCountMap[row.class_id] = new Set();
+      }
+      sectionCountMap[row.class_id].add(row.section_name);
+    });
+
     // Enrich with class names from common API
     const enriched = await Promise.all(
       result.rows.map(async (row) => {
         const className = await getClassName(row.class_id);
         return {
           id: row.class_id,
+          class_id: row.class_id,
           class_name: `${className || 'Unknown'} - ${row.section_name}`,
           name: className || 'Unknown',
           section: row.section_name,
+          student_count: studentCountMap[row.class_id] || 0,
+          section_count: sectionCountMap[row.class_id] ? sectionCountMap[row.class_id].size : 0,
         };
       })
     );
