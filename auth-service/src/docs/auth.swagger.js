@@ -3,8 +3,13 @@
  * /api/v1/auth/login:
  *   post:
  *     tags: [Auth]
- *     summary: Login with email and password
- *     description: Returns a JWT token on successful authentication. Works for Admin, Teacher, and Parent roles.
+ *     summary: Admin login (email + password)
+ *     description: |
+ *       **Admin only.** Returns a JWT token on successful authentication.
+ *
+ *       Teachers and Parents use phone OTP login instead:
+ *       - Teacher → `POST /api/v1/auth/teacher/send-otp` then `POST /api/v1/auth/teacher/verify-otp`
+ *       - Parent  → `POST /api/v1/auth/parent/send-otp`  then `POST /api/v1/auth/parent/verify-otp`
  *     security: []
  *     requestBody:
  *       required: true
@@ -16,26 +21,26 @@
  *             properties:
  *               email:
  *                 type: string
- *                 example: "john@schoolnest.com"
+ *                 example: "admin@schoolnest.com"
  *               password:
  *                 type: string
- *                 example: "Teacher@123"
+ *                 example: "Admin@123"
  *           examples:
- *             Teacher:
- *               summary: Teacher login
- *               value:
- *                 email: "john@schoolnest.com"
- *                 password: "Teacher@123"
- *             Parent:
- *               summary: Parent login
- *               value:
- *                 email: "alice@schoolnest.com"
- *                 password: "Parent@123"
- *             Admin:
- *               summary: Admin login
+ *             Admin (school 101):
+ *               summary: Demo school admin
  *               value:
  *                 email: "admin@schoolnest.com"
  *                 password: "Admin@123"
+ *             Admin (school 102):
+ *               summary: School 102 admin
+ *               value:
+ *                 email: "admin2@schoolnest.com"
+ *                 password: "Admin1@123"
+ *             Admin (school 103):
+ *               summary: School 103 admin
+ *               value:
+ *                 email: "admin3@schoolnest.com"
+ *                 password: "Admin2@123"
  *     responses:
  *       200:
  *         description: Login successful
@@ -58,32 +63,18 @@
  *                   properties:
  *                     user_id:
  *                       type: string
- *                       example: "TCH001"
+ *                       example: "ADM001"
  *                     name:
  *                       type: string
- *                       example: "John Smith"
+ *                       example: "School Admin"
  *                     role:
  *                       type: string
- *                       example: "TEACHER"
+ *                       example: "ADMIN"
  *                     school_id:
  *                       type: integer
  *                       example: 101
  *       400:
  *         description: Missing email or password
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: false
- *                 message:
- *                   type: string
- *                   example: "Email and password are required"
- *                 code:
- *                   type: string
- *                   example: "VALIDATION_ERROR"
  *       401:
  *         description: Invalid credentials
  *         content:
@@ -126,7 +117,8 @@
  *             properties:
  *               primary_phone:
  *                 type: string
- *                 example: "9876543210"
+ *                 example: "6384582060"
+ *                 description: Teacher's registered phone number
  *     responses:
  *       200:
  *         description: OTP sent — returns otp_session_id
@@ -256,8 +248,8 @@
  *             properties:
  *               phone:
  *                 type: string
- *                 example: "9000020005"
- *                 description: Phone number given during child's admission
+ *                 example: "9500012345"
+ *                 description: Phone number given during child's admission (father_phone or mother_phone)
  *     responses:
  *       200:
  *         description: OTP sent
@@ -331,7 +323,7 @@
  *             type: object
  *             required: [phone]
  *             properties:
- *               phone: { type: string, example: "9000020005" }
+ *               phone: { type: string, example: "9500012345" }
  *     responses:
  *       200:
  *         description: OTP resent
