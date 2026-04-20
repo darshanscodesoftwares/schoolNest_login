@@ -263,6 +263,7 @@ CREATE TABLE IF NOT EXISTS students_admission (
   admission_status VARCHAR(50) DEFAULT 'Draft',
   submitted_by     VARCHAR(50),
   submitted_date   TIMESTAMPTZ,
+  enquiry_id       UUID        REFERENCES student_enquiries(id) ON DELETE SET NULL,
   created_at       TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
   updated_at       TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
