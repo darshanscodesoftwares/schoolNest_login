@@ -1587,7 +1587,7 @@ async function updateDraftFull(req, res) {
 async function completeSaveAdmission(req, res) {
   try {
     let allData = req.body.allData;
-    const { enquiryId } = req.body;
+    let { enquiryId } = req.body;
     const schoolId = req.user.school_id;
     const admissionStatus = 'Under Verification'; // ✅ POST /complete-save creates Under Verification status
 
