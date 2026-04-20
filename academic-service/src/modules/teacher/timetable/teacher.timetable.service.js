@@ -48,6 +48,10 @@ const getTimetable = async ({ user, day }) => {
       : Promise.resolve(null)
   ]);
 
+  // Re-number periods sequentially so break slots don't create gaps
+  let counter = 1;
+  periods.forEach(function(p) { p.period_number = counter++; });
+
   return {
     success: true,
     day: resolvedDay,

@@ -20,11 +20,10 @@ const toMinutes = (t) => {
 const buildScheduleWithBreaks = (periods) => {
   const schedule = [];
   for (let i = 0; i < periods.length; i++) {
-    const entry = Object.assign({}, periods[i], {
+    schedule.push(Object.assign({}, periods[i], {
       type: 'period',
       duration_minutes: toMinutes(periods[i].end_time) - toMinutes(periods[i].start_time)
-    });
-    schedule.push(entry);
+    }));
 
     if (i < periods.length - 1) {
       const currentEnd = periods[i].end_time;
@@ -41,6 +40,16 @@ const buildScheduleWithBreaks = (periods) => {
       }
     }
   }
+
+  // Re-number periods sequentially (1,2,3,break,4,5,6...)
+  // so breaks don't create gaps regardless of how many breaks exist
+  let counter = 1;
+  schedule.forEach(function(entry) {
+    if (entry.type === 'period') {
+      entry.period_number = counter++;
+    }
+  });
+
   return schedule;
 };
 
