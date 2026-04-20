@@ -1,6 +1,6 @@
 /**
  * seed-demo-full.js — Full demo dataset for every admin/teacher/parent dashboard
- *data
+ *datas
  * Run from repo root:
  *   Local:  node seed-demo-full.js
  *   Render: set -a && source auth-service/.env.production && set +a \
