@@ -391,6 +391,21 @@ const approveAdmission = async (user, admissionId) => {
     transfer_certificate_status: 'Approved'
   });
 
+  // ✅ When approval is successful, also update the enquiry status to Converted
+  if (admission.enquiry_id) {
+    try {
+      const enquiriesRepository = require('../enquiries/admin.enquiries.repository');
+      await enquiriesRepository.updateEnquiryStatus({
+        schoolId: user.school_id,
+        enquiryId: admission.enquiry_id,
+        status: 'Converted'
+      });
+    } catch (error) {
+      console.error('Failed to update enquiry status:', error);
+      // Don't throw - continue with admission approval even if enquiry update fails
+    }
+  }
+
   // Bridge 2: create parent auth user + sync student to teacher/parent system
   await runBridge2(user.school_id, admissionId);
 
