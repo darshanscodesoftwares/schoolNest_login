@@ -29,6 +29,7 @@ const getAdmissionById = async ({ schoolId, admissionId }) => {
         am.admission_status,
         am.submitted_by,
         am.submitted_date,
+        am.enquiry_id,
         am.created_at,
         am.updated_at,
         pi.id as pi_id, pi.first_name, pi.last_name, pi.date_of_birth, pi.gender,
