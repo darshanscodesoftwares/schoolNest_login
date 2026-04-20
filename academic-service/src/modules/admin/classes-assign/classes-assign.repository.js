@@ -256,7 +256,7 @@ const classesAssignRepository = {
   // Get all unique classes from classes_assign
   getAllClasses: async (school_id) => {
     const query = {
-      text: `SELECT DISTINCT class_id
+      text: `SELECT DISTINCT ON (class_id) class_id
              FROM classes_assign
              WHERE school_id = $1
              ORDER BY class_id ASC`,
