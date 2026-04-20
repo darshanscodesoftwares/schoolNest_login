@@ -129,7 +129,7 @@ async function saveDraftFull(req, res) {
     Object.entries(fieldMappings).forEach(([section, fieldNames]) => {
       const hasFieldsInRoot = fieldNames.some(field => req.body[field] !== undefined);
 
-      if (hasFieldsInRoot && !allData[section]) {
+      if (hasFieldsInRoot && (!allData[section] || Object.keys(allData[section]).length === 0)) {
         allData[section] = {};
         fieldNames.forEach(field => {
           if (req.body[field] !== undefined) {
@@ -1348,7 +1348,7 @@ async function updateDraftFull(req, res) {
     Object.entries(fieldMappings).forEach(([section, fieldNames]) => {
       const hasFieldsInRoot = fieldNames.some(field => req.body[field] !== undefined);
 
-      if (hasFieldsInRoot && !allData[section]) {
+      if (hasFieldsInRoot && (!allData[section] || Object.keys(allData[section]).length === 0)) {
         allData[section] = {};
         fieldNames.forEach(field => {
           if (req.body[field] !== undefined) {
@@ -1684,7 +1684,7 @@ async function completeSaveAdmission(req, res) {
     Object.entries(fieldMappings).forEach(([section, fieldNames]) => {
       const hasFieldsInRoot = fieldNames.some(field => req.body[field] !== undefined);
 
-      if (hasFieldsInRoot && !allData[section]) {
+      if (hasFieldsInRoot && (!allData[section] || Object.keys(allData[section]).length === 0)) {
         allData[section] = {};
         fieldNames.forEach(field => {
           if (req.body[field] !== undefined) {
