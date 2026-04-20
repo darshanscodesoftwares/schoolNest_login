@@ -23,6 +23,18 @@ async function saveDraftFull(req, res) {
     const schoolId = req.user.school_id;
     const admissionStatus = 'Draft'; // ✅ POST /save-draft always creates Draft status
 
+    // DEBUG: Log enquiryId to verify it's being received
+    console.log('📥 saveDraftFull received enquiryId:', enquiryId);
+    console.log('📥 req.body keys:', Object.keys(req.body));
+    console.log('📥 req.body.enquiry_id:', req.body.enquiry_id);
+    console.log('📥 req.body.enquiryId:', req.body.enquiryId);
+
+    // If enquiryId not found, try alternative names
+    if (!enquiryId && (req.body.enquiry_id || req.body.enquiryId)) {
+      enquiryId = req.body.enquiry_id || req.body.enquiryId;
+      console.log('✅ Found enquiryId from req.body:', enquiryId);
+    }
+
     // Parse allData if it's a string (from FormData)
     if (typeof allData === 'string') {
       allData = JSON.parse(allData);
