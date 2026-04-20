@@ -2071,3 +2071,240 @@
  *       409:
  *         description: In use — cannot delete
  */
+
+// ============================================================
+// ADMIN - TIMETABLE
+// ============================================================
+
+/**
+ * @swagger
+ * /api/v1/academic/admin/timetable/period-config:
+ *   get:
+ *     tags: [Admin - Timetable]
+ *     summary: Get period config for a class (settings modal)
+ *     description: Returns all time slots (periods + breaks) configured for the given class. Applies to all sections of that class.
+ *     parameters:
+ *       - in: query
+ *         name: class_name
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: Class 12
+ *     responses:
+ *       200:
+ *         description: Period config list
+ *         content:
+ *           application/json:
+ *             example:
+ *               success: true
+ *               data:
+ *                 - period_number: 1
+ *                   label: Period 1
+ *                   is_break: false
+ *                   start_time: "08:00:00"
+ *                   end_time: "08:45:00"
+ *                 - period_number: 4
+ *                   label: Lunch Break
+ *                   is_break: true
+ *                   start_time: "10:15:00"
+ *                   end_time: "10:45:00"
+ *   put:
+ *     tags: [Admin - Timetable]
+ *     summary: Save period config for a class (replaces existing)
+ *     description: Replaces all period/break slots for the class. Run this before filling the timetable grid.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [class_name, periods]
+ *             properties:
+ *               class_name:
+ *                 type: string
+ *                 example: Class 12
+ *               periods:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   required: [period_number, label, is_break, start_time, end_time]
+ *                   properties:
+ *                     period_number:
+ *                       type: integer
+ *                       example: 1
+ *                     label:
+ *                       type: string
+ *                       example: Period 1
+ *                     is_break:
+ *                       type: boolean
+ *                       example: false
+ *                     start_time:
+ *                       type: string
+ *                       example: "08:00"
+ *                     end_time:
+ *                       type: string
+ *                       example: "08:45"
+ *           example:
+ *             class_name: Class 12
+ *             periods:
+ *               - { period_number: 1, label: "Period 1",    is_break: false, start_time: "08:00", end_time: "08:45" }
+ *               - { period_number: 2, label: "Period 2",    is_break: false, start_time: "08:45", end_time: "09:30" }
+ *               - { period_number: 3, label: "Period 3",    is_break: false, start_time: "09:30", end_time: "10:15" }
+ *               - { period_number: 4, label: "Lunch Break", is_break: true,  start_time: "10:15", end_time: "10:45" }
+ *               - { period_number: 5, label: "Period 4",    is_break: false, start_time: "10:45", end_time: "11:30" }
+ *               - { period_number: 6, label: "Period 5",    is_break: false, start_time: "11:30", end_time: "12:15" }
+ *               - { period_number: 7, label: "Period 6",    is_break: false, start_time: "12:15", end_time: "13:00" }
+ *     responses:
+ *       200:
+ *         description: Config saved
+ */
+
+/**
+ * @swagger
+ * /api/v1/academic/admin/timetable:
+ *   get:
+ *     tags: [Admin - Timetable]
+ *     summary: Get timetable grid for a class+section
+ *     description: >
+ *       Returns the full weekly grid (all 6 days) or a single day if `day` is provided.
+ *       Each slot is merged with period config — shows subject+teacher if filled, null if empty.
+ *       Status is DRAFT until admin publishes.
+ *     parameters:
+ *       - in: query
+ *         name: class_name
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: Class 12
+ *       - in: query
+ *         name: section
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: A
+ *       - in: query
+ *         name: day
+ *         schema:
+ *           type: string
+ *           enum: [Monday, Tuesday, Wednesday, Thursday, Friday, Saturday]
+ *         description: Optional — omit for full week
+ *     responses:
+ *       200:
+ *         description: Timetable grid
+ *         content:
+ *           application/json:
+ *             example:
+ *               success: true
+ *               data:
+ *                 class_name: Class 12
+ *                 section: A
+ *                 status: PUBLISHED
+ *                 grid:
+ *                   Monday:
+ *                     - period_number: 1
+ *                       label: Period 1
+ *                       is_break: false
+ *                       start_time: "08:00:00"
+ *                       end_time: "08:45:00"
+ *                       subject: Mathematics
+ *                       teacher_id: "uuid"
+ *                       teacher_name: Vijay S
+ *                       status: PUBLISHED
+ *                     - period_number: 4
+ *                       label: Lunch Break
+ *                       is_break: true
+ *                       start_time: "10:15:00"
+ *                       end_time: "10:45:00"
+ *                       subject: null
+ *                       teacher_id: null
+ *                       teacher_name: null
+ *                       status: DRAFT
+ */
+
+/**
+ * @swagger
+ * /api/v1/academic/admin/timetable/period:
+ *   put:
+ *     tags: [Admin - Timetable]
+ *     summary: Save a single cell (Edit Period modal)
+ *     description: Upserts subject + teacher for one period slot. Period config must exist first. Sets status to DRAFT.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [class_name, section, day_of_week, period_number, subject]
+ *             properties:
+ *               class_name:    { type: string, example: Class 12 }
+ *               section:       { type: string, example: A }
+ *               day_of_week:   { type: string, example: Monday }
+ *               period_number: { type: integer, example: 1 }
+ *               subject:       { type: string, example: Mathematics }
+ *               teacher_id:    { type: string, format: uuid, description: Optional }
+ *     responses:
+ *       200:
+ *         description: Period saved
+ *       400:
+ *         description: Period number not in config / invalid day / missing fields
+ *   delete:
+ *     tags: [Admin - Timetable]
+ *     summary: Clear a single cell
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [class_name, section, day_of_week, period_number]
+ *             properties:
+ *               class_name:    { type: string, example: Class 12 }
+ *               section:       { type: string, example: A }
+ *               day_of_week:   { type: string, example: Monday }
+ *               period_number: { type: integer, example: 1 }
+ *     responses:
+ *       200:
+ *         description: Period deleted
+ */
+
+/**
+ * @swagger
+ * /api/v1/academic/admin/timetable/publish:
+ *   post:
+ *     tags: [Admin - Timetable]
+ *     summary: Publish timetable — teachers and parents can now see it
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [class_name, section]
+ *             properties:
+ *               class_name: { type: string, example: Class 12 }
+ *               section:    { type: string, example: A }
+ *     responses:
+ *       200:
+ *         description: Timetable published
+ */
+
+/**
+ * @swagger
+ * /api/v1/academic/admin/timetable/unpublish:
+ *   post:
+ *     tags: [Admin - Timetable]
+ *     summary: Unpublish timetable — sets back to DRAFT, hidden from teachers and parents
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [class_name, section]
+ *             properties:
+ *               class_name: { type: string, example: Class 12 }
+ *               section:    { type: string, example: A }
+ *     responses:
+ *       200:
+ *         description: Timetable unpublished
+ */
