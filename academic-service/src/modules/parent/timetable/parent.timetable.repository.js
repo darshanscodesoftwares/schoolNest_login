@@ -11,21 +11,13 @@ const getStudentByParent = async ({ studentId, parentId, schoolId }) => {
   return rows[0] || null;
 };
 
-const getTimetableByClass = async ({ schoolId, classId }) => {
+const getTimetableByClass = async ({ schoolId, classId, day }) => {
   const query = {
-    text: `SELECT day_of_week, period_number, subject
+    text: `SELECT day_of_week, period_number, subject, start_time, end_time
            FROM timetable
-           WHERE school_id = $1 AND class_id = $2
-           ORDER BY
-             CASE day_of_week
-               WHEN 'Monday' THEN 1
-               WHEN 'Tuesday' THEN 2
-               WHEN 'Wednesday' THEN 3
-               WHEN 'Thursday' THEN 4
-               WHEN 'Friday' THEN 5
-             END,
-             period_number`,
-    values: [schoolId, classId]
+           WHERE school_id = $1 AND class_id = $2 AND day_of_week = $3
+           ORDER BY start_time ASC`,
+    values: [schoolId, classId, day]
   };
   const { rows } = await pool.query(query);
   return rows;
