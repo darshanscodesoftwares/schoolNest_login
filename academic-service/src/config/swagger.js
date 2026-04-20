@@ -51,6 +51,7 @@ const options = {
       { name: 'Admin - Settings',              description: 'School profile settings' },
       { name: 'Admin - Teacher Edit Requests', description: 'Review and approve/reject teacher profile change requests' },
       { name: 'Admin - Master Data',           description: 'CRUD over reference/lookup tables (blood groups, classes, departments, sections, subjects, staff roles/depts/positions, license types, enquiry sources)' },
+      { name: 'Admin - Timetable',             description: 'Configure period timings, fill timetable grid, publish/unpublish for teachers and parents' },
       // Teacher
       { name: 'Teacher - Attendance', description: 'Mark, view, edit, delete student attendance' },
       { name: 'Teacher - Homework', description: 'Create and manage homework assignments' },
