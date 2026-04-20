@@ -18,7 +18,7 @@ const fileStorageUtil = require("../../../../utils/fileStorage.util");
 
 async function saveDraftFull(req, res) {
   try {
-    let { studentId } = req.body;
+    let { studentId, enquiryId } = req.body;
     let allData = req.body.allData;
     const schoolId = req.user.school_id;
     const admissionStatus = 'Draft'; // ✅ POST /save-draft always creates Draft status
@@ -195,10 +195,10 @@ async function saveDraftFull(req, res) {
     // ✅ Auto-create studentId if not provided
     if (!studentId) {
       const createResult = await pool.query(
-        `INSERT INTO students_admission (school_id, admission_status)
-         VALUES ($1, $2)
+        `INSERT INTO students_admission (school_id, admission_status, enquiry_id)
+         VALUES ($1, $2, $3)
          RETURNING id as student_id`,
-        [schoolId, admissionStatus]
+        [schoolId, admissionStatus, enquiryId || null]
       );
       studentId = createResult.rows[0].student_id;
     }
@@ -1575,6 +1575,7 @@ async function updateDraftFull(req, res) {
 async function completeSaveAdmission(req, res) {
   try {
     let allData = req.body.allData;
+    const { enquiryId } = req.body;
     const schoolId = req.user.school_id;
     const admissionStatus = 'Under Verification'; // ✅ POST /complete-save creates Under Verification status
 
@@ -1788,8 +1789,8 @@ async function completeSaveAdmission(req, res) {
 
     // ✅ CREATE MAIN STUDENT ADMISSION RECORD (REQUIRED for foreign key)
     await pool.query(
-      "INSERT INTO students_admission (id, school_id, admission_status) VALUES ($1, $2, $3)",
-      [studentId, schoolId, admissionStatus]
+      "INSERT INTO students_admission (id, school_id, admission_status, enquiry_id) VALUES ($1, $2, $3, $4)",
+      [studentId, schoolId, admissionStatus, enquiryId || null]
     );
     console.log('✅ Main student record created:', studentId, '| Status:', admissionStatus);
 
