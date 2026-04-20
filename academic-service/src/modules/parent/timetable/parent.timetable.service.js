@@ -71,8 +71,9 @@ const getStudentTimetable = async ({ user, studentId, day }) => {
 
   const periods = await timetableRepository.getTimetableByClass({
     schoolId: user.school_id,
-    classId: student.class_id,
-    day: resolvedDay
+    className: student.class_name,
+    section:   student.section,
+    day:       resolvedDay
   });
 
   const schedule = buildScheduleWithBreaks(periods);

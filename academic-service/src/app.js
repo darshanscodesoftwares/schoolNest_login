@@ -46,6 +46,7 @@ const schoolProfileRoutes        = require('./modules/admin/setting-management/s
 const adminTeacherEditRequestsRoutes = require('./modules/admin/teacher-edit-requests/admin.teacher-edit-requests.routes');
 const masterDataRoutes               = require('./modules/admin/master-data/master-data.routes');
 const fileRoutes                     = require('./modules/admin/file-serve/file.routes');
+const adminTimetableRoutes           = require('./modules/admin/timetable/admin.timetable.routes');
 
 // ─────────────────────────────────────────────────────────────────────────────
 const app = express();
@@ -111,6 +112,7 @@ app.use('/api/v1/academic/admin', authMiddleware, examsRoutes);
 app.use('/api/v1/academic/admin/announcements', authMiddleware, announcementsRoutes);
 app.use('/api/v1/academic/admin/settings', authMiddleware, schoolProfileRoutes);
 app.use('/api/v1/academic/admin', authMiddleware, adminTeacherEditRequestsRoutes);
+app.use('/api/v1/academic/admin/timetable', authMiddleware, adminTimetableRoutes);
 app.use('/api/v1/academic', masterDataRoutes);
 
 // ── 404 ───────────────────────────────────────────────────────────────────────

@@ -78,21 +78,40 @@ CREATE INDEX IF NOT EXISTS idx_leave_student_date_status ON leave_requests (scho
 CREATE INDEX IF NOT EXISTS idx_leave_class ON leave_requests (school_id, status);
 
 CREATE TABLE IF NOT EXISTS timetable (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  school_id INT NOT NULL,
-  class_id UUID NOT NULL REFERENCES classes(id) ON DELETE CASCADE,
-  day_of_week VARCHAR(10) NOT NULL,
-  period_number INT NOT NULL,
-  subject VARCHAR(100) NOT NULL,
-  teacher_id VARCHAR(50),
-  start_time TIME NOT NULL,
-  end_time TIME NOT NULL,
-  created_at TIMESTAMP NOT NULL DEFAULT NOW()
+  id            UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+  school_id     INT          NOT NULL,
+  class_id      UUID         REFERENCES classes(id) ON DELETE CASCADE,
+  class_name    VARCHAR(50),
+  section       VARCHAR(10),
+  day_of_week   VARCHAR(10)  NOT NULL,
+  period_number INT          NOT NULL,
+  subject       VARCHAR(100) NOT NULL,
+  teacher_id    VARCHAR(50),
+  start_time    TIME         NOT NULL,
+  end_time      TIME         NOT NULL,
+  status        VARCHAR(20)  NOT NULL DEFAULT 'DRAFT',
+  created_at    TIMESTAMP    NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX IF NOT EXISTS idx_timetable_class ON timetable (school_id, class_id);
 CREATE INDEX IF NOT EXISTS idx_timetable_day ON timetable (day_of_week);
-ALTER TABLE timetable ADD CONSTRAINT uq_timetable UNIQUE (school_id, class_id, day_of_week, period_number);
+ALTER TABLE timetable ADD CONSTRAINT uq_timetable_admin UNIQUE (school_id, class_name, section, day_of_week, period_number);
+
+CREATE TABLE IF NOT EXISTS timetable_period_config (
+  id            UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+  school_id     INT          NOT NULL,
+  class_name    VARCHAR(50)  NOT NULL,
+  period_number INT          NOT NULL,
+  label         VARCHAR(50)  NOT NULL DEFAULT '',
+  is_break      BOOLEAN      NOT NULL DEFAULT false,
+  start_time    TIME         NOT NULL,
+  end_time      TIME         NOT NULL,
+  created_at    TIMESTAMP    NOT NULL DEFAULT NOW(),
+  updated_at    TIMESTAMP    NOT NULL DEFAULT NOW(),
+  UNIQUE (school_id, class_name, period_number)
+);
+
+CREATE INDEX IF NOT EXISTS idx_period_config_school_class ON timetable_period_config (school_id, class_name);
 
 CREATE TABLE IF NOT EXISTS homework (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

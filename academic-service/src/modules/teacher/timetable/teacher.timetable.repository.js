@@ -6,19 +6,18 @@ const getTimetableByDay = async ({ schoolId, teacherId, day }) => {
     text: `
       SELECT
         t.id,
-        t.class_id,
-        c.name AS class_name,
-        c.section,
+        t.class_name,
+        t.section,
         t.day_of_week,
         t.period_number,
         t.subject,
         t.start_time,
         t.end_time
       FROM timetable t
-      JOIN classes c ON c.id = t.class_id AND c.school_id = t.school_id
       WHERE t.school_id = $1
         AND t.teacher_id = $2
         AND t.day_of_week = $3
+        AND t.status = 'PUBLISHED'
       ORDER BY t.start_time ASC
     `,
     values: [schoolId, teacherId, day]
