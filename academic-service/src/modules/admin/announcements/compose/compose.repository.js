@@ -473,7 +473,7 @@ const composeRepository = {
     const studentCountQuery = {
       text: `SELECT ca.class_id, COUNT(DISTINCT s.student_id) as student_count
              FROM classes_assign ca
-             LEFT JOIN personal_information s ON ca.id = s.student_id AND ca.school_id = s.school_id
+             LEFT JOIN personal_information s ON ca.class_id = s.class_id AND ca.school_id = s.school_id
              WHERE ca.school_id = $1
              GROUP BY ca.class_id`,
       values: [school_id],
