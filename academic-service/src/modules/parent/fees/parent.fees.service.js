@@ -75,4 +75,58 @@ const getPaymentHistory = async ({ user, studentId }) => {
   };
 };
 
-module.exports = { getFeesSummary, getPaymentHistory };
+// Dev-only dummy payment — flips fee to PAID and records a payment row.
+// No gateway call, no settlement — intended for mobile dev until a real
+// payment gateway (Razorpay / Cashfree / etc.) is wired in.
+const dummyPayFee = async ({ user, studentId, feeId }) => {
+  assertParentRole(user);
+  await assertStudentOwnership(studentId, user);
+
+  const fee = await feesRepository.getFeeForStudent({
+    schoolId: user.school_id,
+    studentId,
+    feeId
+  });
+  if (!fee) {
+    const err = new Error('Fee not found for this student');
+    err.statusCode = 404; err.code = 'FEE_NOT_FOUND';
+    throw err;
+  }
+  if (fee.status === 'PAID') {
+    const err = new Error('Fee is already paid');
+    err.statusCode = 409; err.code = 'FEE_ALREADY_PAID';
+    throw err;
+  }
+
+  const transactionId = 'DUMMY' + Date.now() + Math.floor(Math.random() * 1000);
+
+  const { fee: updated, payment } = await feesRepository.markFeePaidTxn({
+    schoolId:     user.school_id,
+    studentId,
+    feeId,
+    amount:       fee.amount,
+    method:       'UPI',
+    transactionId
+  });
+
+  return {
+    fee: {
+      id:        updated.id,
+      fee_name:  fee.fee_name,
+      icon:      fee.icon,
+      amount:    Number(updated.amount),
+      status:    updated.status,
+      paid_at:   updated.paid_at
+    },
+    payment: {
+      id:             payment.id,
+      amount:         Number(payment.amount),
+      method:         payment.method,
+      transaction_id: payment.transaction_id,
+      status:         payment.status,
+      paid_at:        payment.paid_at
+    }
+  };
+};
+
+module.exports = { getFeesSummary, getPaymentHistory, dummyPayFee };
