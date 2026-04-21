@@ -298,12 +298,13 @@
  *                 user:
  *                   type: object
  *                   properties:
- *                     id:             { type: string, example: "PAR201" }
- *                     name:           { type: string, example: "Anil Agarwal" }
- *                     email:          { type: string }
+ *                     id:             { type: string, example: "7ef6c80e-0bca-413c-9bee-8aa686ff88fd" }
+ *                     name:           { type: string, example: "Ravi Kumar" }
+ *                     email:          { type: string, example: "ravi.kumar.parent@schoolnest.com" }
+ *                     phone:          { type: string, example: "9500012345" }
  *                     role:           { type: string, example: "PARENT" }
  *                     school_id:      { type: integer, example: 101 }
- *                     children_count: { type: integer, example: 2 }
+ *                     children_count: { type: integer, example: 3 }
  *       401:
  *         description: Invalid or expired OTP
  */

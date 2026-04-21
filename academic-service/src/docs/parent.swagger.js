@@ -23,9 +23,11 @@
  *       - in: path
  *         name: studentId
  *         required: true
+ *         description: Aryan Kumar (Ravi's eldest) — pre-filled for Flutter testing
  *         schema:
  *           type: string
  *           format: uuid
+ *           example: f3d218f8-0209-4c17-be43-0ab7386305f0
  *     responses:
  *       200:
  *         description: Attendance summary with counts and percentage
@@ -41,9 +43,11 @@
  *       - in: path
  *         name: studentId
  *         required: true
+ *         description: Aryan Kumar (Ravi's eldest) — pre-filled for Flutter testing
  *         schema:
  *           type: string
  *           format: uuid
+ *           example: f3d218f8-0209-4c17-be43-0ab7386305f0
  *       - in: query
  *         name: month
  *         schema:
@@ -65,9 +69,11 @@
  *       - in: path
  *         name: studentId
  *         required: true
+ *         description: Aryan Kumar (Ravi's eldest) — pre-filled for Flutter testing
  *         schema:
  *           type: string
  *           format: uuid
+ *           example: f3d218f8-0209-4c17-be43-0ab7386305f0
  *     responses:
  *       200:
  *         description: Recent attendance records
@@ -120,9 +126,11 @@
  *       - in: path
  *         name: studentId
  *         required: true
+ *         description: Aryan Kumar (Ravi's eldest) — pre-filled for Flutter testing
  *         schema:
  *           type: string
  *           format: uuid
+ *           example: f3d218f8-0209-4c17-be43-0ab7386305f0
  *       - in: query
  *         name: day
  *         schema:
@@ -331,9 +339,11 @@
  *       - in: path
  *         name: studentId
  *         required: true
+ *         description: Aryan Kumar (Ravi's eldest) — pre-filled for Flutter testing
  *         schema:
  *           type: string
  *           format: uuid
+ *           example: f3d218f8-0209-4c17-be43-0ab7386305f0
  *     responses:
  *       200:
  *         description: List of exams with subjects
@@ -349,9 +359,11 @@
  *       - in: path
  *         name: studentId
  *         required: true
+ *         description: Aryan Kumar (Ravi's eldest) — pre-filled for Flutter testing
  *         schema:
  *           type: string
  *           format: uuid
+ *           example: f3d218f8-0209-4c17-be43-0ab7386305f0
  *       - in: path
  *         name: examId
  *         required: true
@@ -386,7 +398,8 @@
  *       - in: path
  *         name: studentId
  *         required: true
- *         schema: { type: string, format: uuid }
+ *         description: Aryan Kumar (Ravi's eldest) — pre-filled for Flutter testing
+ *         schema: { type: string, format: uuid, example: f3d218f8-0209-4c17-be43-0ab7386305f0 }
  *     responses:
  *       200:
  *         description: Fee summary + breakdown
@@ -442,7 +455,8 @@
  *       - in: path
  *         name: studentId
  *         required: true
- *         schema: { type: string, format: uuid }
+ *         description: Aryan Kumar (Ravi's eldest) — pre-filled for Flutter testing
+ *         schema: { type: string, format: uuid, example: f3d218f8-0209-4c17-be43-0ab7386305f0 }
  *     responses:
  *       200:
  *         description: Every payment recorded for this student, newest first
@@ -488,11 +502,13 @@
  *       - in: path
  *         name: studentId
  *         required: true
- *         schema: { type: string, format: uuid }
+ *         description: Aryan Kumar (Ravi's eldest) — pre-filled for Flutter testing
+ *         schema: { type: string, format: uuid, example: f3d218f8-0209-4c17-be43-0ab7386305f0 }
  *       - in: path
  *         name: feeId
  *         required: true
- *         schema: { type: string, format: uuid }
+ *         description: Aryan's pending Tuition Fee — change if already paid
+ *         schema: { type: string, format: uuid, example: 1ccdd9a0-d4f3-4a37-82c2-1854e3c44f60 }
  *     responses:
  *       200:
  *         description: Payment recorded; returns the updated fee + the new payment row
