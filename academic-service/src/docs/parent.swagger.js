@@ -372,17 +372,64 @@
  * /api/v1/parent/students/{studentId}/fees:
  *   get:
  *     tags: [Parent - Fees]
- *     summary: Get child's fees summary and breakdown
+ *     summary: Fees summary + per-fee breakdown for one child
+ *     description: >
+ *       Backs the Flutter Fees screen — three summary cards (Total / Paid /
+ *       Remaining) plus the scrollable fee list (icon, name, due date, amount,
+ *       status pill, optional Pay button).
+ *
+ *       **Date formats:** `due_date` is ISO `YYYY-MM-DD`. `paid_at` is the
+ *       project's IST 12-hour string `YYYY-MM-DD hh:mm AM/PM` — not ISO-8601.
+ *       Flutter needs a custom parser for it (shared across every timestamp in
+ *       this service — see `academic-service/src/config/db.js`).
  *     parameters:
  *       - in: path
  *         name: studentId
  *         required: true
- *         schema:
- *           type: string
- *           format: uuid
+ *         schema: { type: string, format: uuid }
  *     responses:
  *       200:
- *         description: Fee summary (total, paid, remaining) + individual fee details
+ *         description: Fee summary + breakdown
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success: { type: boolean, example: true }
+ *                 summary:
+ *                   type: object
+ *                   properties:
+ *                     total_fee: { type: number, example: 20000, description: "Sum of all fee amounts for this student" }
+ *                     paid:      { type: number, example: 2000,  description: "Sum of amounts where status = 'PAID'" }
+ *                     remaining: { type: number, example: 18000, description: "total_fee - paid" }
+ *                 fees:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:        { type: string, format: uuid }
+ *                       fee_name:  { type: string, example: "Tuition Fee" }
+ *                       icon:      { type: string, example: "book", description: "Asset key — current values: book, bus, edit. Flutter maps to its own icon set." }
+ *                       amount:    { type: number, example: 15000, description: "In rupees (no paise). Display as ₹15,000." }
+ *                       due_date:  { type: string, format: date, example: "2026-07-10" }
+ *                       status:    { type: string, enum: [PENDING, PAID, OVERDUE], example: "PENDING" }
+ *                       paid_at:
+ *                         type: string
+ *                         nullable: true
+ *                         example: "2026-04-14 07:08 PM"
+ *                         description: "IST 12-hour string (not ISO-8601). Null when status != PAID."
+ *             examples:
+ *               mobile-design:
+ *                 summary: Matches the Fees screen mock (total ₹20,000 / 3 items)
+ *                 value:
+ *                   success: true
+ *                   summary: { total_fee: 20000, paid: 2000, remaining: 18000 }
+ *                   fees:
+ *                     - { id: "uuid-1", fee_name: "Tuition Fee",   icon: "book", amount: 15000, due_date: "2026-07-10", status: "PENDING", paid_at: null }
+ *                     - { id: "uuid-2", fee_name: "Transport Fee", icon: "bus",  amount: 3000,  due_date: "2026-07-10", status: "PENDING", paid_at: null }
+ *                     - { id: "uuid-3", fee_name: "Exam Fee",      icon: "edit", amount: 2000,  due_date: "2026-07-15", status: "PAID",    paid_at: "2026-04-14 07:08 PM" }
+ *       401: { description: Missing or invalid token }
+ *       403: { description: Not a parent, or student does not belong to this parent }
  */
 
 /**
@@ -390,15 +437,92 @@
  * /api/v1/parent/students/{studentId}/fees/history:
  *   get:
  *     tags: [Parent - Fees]
- *     summary: Get child's payment history
+ *     summary: Payment history for one child
  *     parameters:
  *       - in: path
  *         name: studentId
  *         required: true
- *         schema:
- *           type: string
- *           format: uuid
+ *         schema: { type: string, format: uuid }
  *     responses:
  *       200:
- *         description: List of all payment attempts (successful and failed)
+ *         description: Every payment recorded for this student, newest first
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success: { type: boolean, example: true }
+ *                 payments:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:             { type: string, format: uuid }
+ *                       fee_name:       { type: string, example: "Tuition Fee" }
+ *                       amount:         { type: number, example: 15000 }
+ *                       method:         { type: string, enum: [UPI, CARD, NET_BANKING, CASH], example: "UPI" }
+ *                       transaction_id: { type: string, example: "TXN1776173920546752", description: "Dummy payments use a 'DUMMY' prefix until a real gateway is wired in." }
+ *                       status:         { type: string, enum: [PAID, FAILED], example: "PAID" }
+ *                       paid_at:        { type: string, example: "2026-04-14 07:08 PM" }
+ *       401: { description: Missing or invalid token }
+ *       403: { description: Not a parent, or student does not belong to this parent }
+ */
+
+/**
+ * @swagger
+ * /api/v1/parent/students/{studentId}/fees/{feeId}/pay:
+ *   post:
+ *     tags: [Parent - Fees]
+ *     summary: Dummy UPI payment (dev only — no real gateway)
+ *     description: >
+ *       Flips the specified fee's status to PAID and inserts a matching row in
+ *       `payments` with `method='UPI'` and a `transaction_id` prefixed
+ *       `DUMMY<timestamp>`. Intended for the Flutter MVP while a real payment
+ *       gateway (Razorpay / Cashfree / etc.) is pending.
+ *
+ *       Behaviour:
+ *       - If the fee is already PAID → **409 FEE_ALREADY_PAID**.
+ *       - If the fee doesn't exist for this student → **404 FEE_NOT_FOUND**.
+ *       - Amount is read from the fee row; the client cannot override it.
+ *     parameters:
+ *       - in: path
+ *         name: studentId
+ *         required: true
+ *         schema: { type: string, format: uuid }
+ *       - in: path
+ *         name: feeId
+ *         required: true
+ *         schema: { type: string, format: uuid }
+ *     responses:
+ *       200:
+ *         description: Payment recorded; returns the updated fee + the new payment row
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success: { type: boolean, example: true }
+ *                 message: { type: string, example: "Payment recorded (dummy)" }
+ *                 fee:
+ *                   type: object
+ *                   properties:
+ *                     id:       { type: string, format: uuid }
+ *                     fee_name: { type: string, example: "Tuition Fee" }
+ *                     icon:     { type: string, example: "book" }
+ *                     amount:   { type: number, example: 15000 }
+ *                     status:   { type: string, enum: [PAID], example: "PAID" }
+ *                     paid_at:  { type: string, example: "2026-04-14 07:08 PM" }
+ *                 payment:
+ *                   type: object
+ *                   properties:
+ *                     id:             { type: string, format: uuid }
+ *                     amount:         { type: number, example: 15000 }
+ *                     method:         { type: string, enum: [UPI], example: "UPI" }
+ *                     transaction_id: { type: string, example: "DUMMY1776858900123456" }
+ *                     status:         { type: string, enum: [PAID], example: "PAID" }
+ *                     paid_at:        { type: string, example: "2026-04-14 07:08 PM" }
+ *       404: { description: Fee not found for this student }
+ *       409: { description: Fee is already paid }
+ *       401: { description: Missing or invalid token }
+ *       403: { description: Not a parent, or student does not belong to this parent }
  */
