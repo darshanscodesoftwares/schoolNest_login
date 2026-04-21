@@ -8,17 +8,56 @@
 -- FORMER COMMON-API: Reference/Lookup Tables (school-specific)
 -- ============================================================
 
+-- Global class template catalogue (no school_id — shared across tenants).
+-- Super-admin owned; schools pick from this in the Add New Class popup.
+-- See migration 015_class_and_section_templates.sql for the seed data.
+CREATE TABLE IF NOT EXISTS class_templates (
+  id            UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+  class_name    VARCHAR(50)  NOT NULL UNIQUE,
+  order_number  INT          NOT NULL DEFAULT 0,
+  is_active     BOOLEAN      NOT NULL DEFAULT true,
+  created_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+  updated_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+);
+
+-- Global section template catalogue (no school_id — shared across tenants).
+-- is_default=true auto-attaches to every new class and cannot be detached.
+CREATE TABLE IF NOT EXISTS section_templates (
+  id            UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+  section_name  VARCHAR(10)  NOT NULL UNIQUE,
+  order_number  INT          NOT NULL DEFAULT 0,
+  is_default    BOOLEAN      NOT NULL DEFAULT false,
+  is_active     BOOLEAN      NOT NULL DEFAULT true,
+  created_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+  updated_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+);
+
 -- Admin-managed class definitions per school (e.g. "Class 1", "LKG", "Grade 10")
 CREATE TABLE IF NOT EXISTS school_classes (
-  id         UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
-  school_id  INT          NOT NULL,
-  class_name VARCHAR(100) NOT NULL,
-  order_number INT        NOT NULL DEFAULT 0,
-  created_at TIMESTAMPTZ  DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMPTZ  DEFAULT CURRENT_TIMESTAMP,
+  id           UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+  school_id    INT          NOT NULL,
+  class_name   VARCHAR(100) NOT NULL,
+  order_number INT          NOT NULL DEFAULT 0,
+  template_id  UUID         REFERENCES class_templates(id) ON DELETE SET NULL,
+  created_at   TIMESTAMPTZ  DEFAULT CURRENT_TIMESTAMP,
+  updated_at   TIMESTAMPTZ  DEFAULT CURRENT_TIMESTAMP,
   UNIQUE (school_id, class_name)
 );
 CREATE INDEX IF NOT EXISTS idx_school_classes_school ON school_classes(school_id);
+
+-- Per-class section binding. "A" for Class 1 and "A" for Class 2 are
+-- separate rows, both pointing at the same section_templates record.
+CREATE TABLE IF NOT EXISTS class_sections (
+  id                   UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+  school_id            INT          NOT NULL,
+  class_id             UUID         NOT NULL REFERENCES school_classes(id) ON DELETE CASCADE,
+  section_template_id  UUID         NOT NULL REFERENCES section_templates(id) ON DELETE RESTRICT,
+  section_name         VARCHAR(10)  NOT NULL,
+  created_at           TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+  updated_at           TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+  UNIQUE (school_id, class_id, section_template_id)
+);
+CREATE INDEX IF NOT EXISTS idx_class_sections_class ON class_sections(school_id, class_id);
 
 -- Departments (e.g. Science, Arts, Commerce)
 CREATE TABLE IF NOT EXISTS departments (
