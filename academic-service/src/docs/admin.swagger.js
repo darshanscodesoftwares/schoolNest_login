@@ -2308,3 +2308,307 @@
  *       200:
  *         description: Timetable unpublished
  */
+
+// ─────────────────────────────────────────────────────────────────────────
+// Admin - Class Templates
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * @swagger
+ * /api/v1/academic/admin/class-templates:
+ *   get:
+ *     tags: [Admin - Class Templates]
+ *     summary: List global class templates (dropdown source for Add New Class popup)
+ *     description: >
+ *       Read-only catalogue of classes that every school can pick from. Seeded with
+ *       Nursery → Class 12. Future super-admin portal will CRUD this list.
+ *     responses:
+ *       200:
+ *         description: Template list
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success: { type: boolean, example: true }
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:           { type: string, format: uuid }
+ *                       class_name:   { type: string, example: Class 1 }
+ *                       order_number: { type: integer, example: 4 }
+ *       403: { description: Forbidden — admins only }
+ */
+
+// ─────────────────────────────────────────────────────────────────────────
+// Admin - Section Templates
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * @swagger
+ * /api/v1/academic/admin/section-templates:
+ *   get:
+ *     tags: [Admin - Section Templates]
+ *     summary: List global section templates (chip source for Add New Class popup)
+ *     description: >
+ *       Read-only catalogue of sections that every school can pick from. Seeded with
+ *       A-F, A1-A5, B1-B5, and colour houses. `is_default=true` means the section
+ *       is auto-attached to every new class and cannot be detached.
+ *       Sections must be attached in `order_number` sequence — no gaps allowed
+ *       (see `/admin/classes` endpoints).
+ *     responses:
+ *       200:
+ *         description: Template list in canonical order
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success: { type: boolean, example: true }
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:           { type: string, format: uuid }
+ *                       section_name: { type: string, example: A }
+ *                       order_number: { type: integer, example: 1 }
+ *                       is_default:   { type: boolean, example: true }
+ *       403: { description: Forbidden — admins only }
+ */
+
+// ─────────────────────────────────────────────────────────────────────────
+// Admin - Classes (Add New Class popup + per-class section CRUD)
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * @swagger
+ * /api/v1/academic/admin/classes:
+ *   post:
+ *     tags: [Admin - Classes]
+ *     summary: Add a new class with sections (Add New Class popup submit)
+ *     description: >
+ *       Creates a school_classes row from the picked class template and attaches
+ *       sections atomically.
+ *
+ *       Rules:
+ *       - Defaults A, B, C, D are **always auto-attached** regardless of payload.
+ *       - `section_template_ids` is OPTIONAL. Any IDs you pass are added on top
+ *         of the defaults.
+ *       - The resulting set must form a **contiguous prefix** of the
+ *         `section_templates` order. You cannot pick F without E, or Red without
+ *         everything before it. Violations return 400 `SECTION_ORDER_VIOLATION`.
+ *       - Idempotent: re-submitting the same payload is a no-op.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [class_template_id]
+ *             properties:
+ *               class_template_id:
+ *                 type: string
+ *                 format: uuid
+ *                 description: From GET /admin/class-templates
+ *               section_template_ids:
+ *                 type: array
+ *                 description: Optional extras on top of the A/B/C/D defaults
+ *                 items: { type: string, format: uuid }
+ *           examples:
+ *             minimal:
+ *               summary: Just a class — defaults A,B,C,D auto-attach
+ *               value: { class_template_id: "uuid-of-class-1" }
+ *             withExtras:
+ *               summary: Class 1 + E and Red
+ *               value:
+ *                 class_template_id: "uuid-of-class-1"
+ *                 section_template_ids: ["uuid-of-E", "uuid-of-Red"]
+ *     responses:
+ *       200:
+ *         description: Class created (or updated idempotently)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success: { type: boolean, example: true }
+ *                 message: { type: string, example: Class created }
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     class:
+ *                       type: object
+ *                       properties:
+ *                         id:          { type: string, format: uuid }
+ *                         class_name:  { type: string, example: Class 1 }
+ *                         template_id: { type: string, format: uuid }
+ *                     sections:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:                  { type: string, format: uuid }
+ *                           section_template_id: { type: string, format: uuid }
+ *                           section_name:        { type: string, example: A }
+ *                           is_default:          { type: boolean, example: true }
+ *       400:
+ *         description: |
+ *           Validation error. Possible codes:
+ *           - `VALIDATION_ERROR` — missing class_template_id
+ *           - `INVALID_SECTION_TEMPLATE` — one of the section IDs doesn't exist
+ *           - `SECTION_ORDER_VIOLATION` — selection is not a contiguous prefix
+ *       403: { description: Forbidden — admins only }
+ *       404: { description: Class template not found }
+ *
+ *   get:
+ *     tags: [Admin - Classes]
+ *     summary: List all classes at this school with section counts
+ *     responses:
+ *       200:
+ *         description: Class list
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success: { type: boolean, example: true }
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:            { type: string, format: uuid }
+ *                       class_name:    { type: string, example: Class 1 }
+ *                       template_id:   { type: string, format: uuid, nullable: true }
+ *                       section_count: { type: integer, example: 4 }
+ */
+
+/**
+ * @swagger
+ * /api/v1/academic/admin/classes/{classId}/sections:
+ *   get:
+ *     tags: [Admin - Classes]
+ *     summary: List sections attached to one class
+ *     parameters:
+ *       - in: path
+ *         name: classId
+ *         required: true
+ *         schema: { type: string, format: uuid }
+ *     responses:
+ *       200:
+ *         description: Sections in order, each with `is_default` flag
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success: { type: boolean, example: true }
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:                  { type: string, format: uuid }
+ *                       section_template_id: { type: string, format: uuid }
+ *                       section_name:        { type: string, example: A }
+ *                       is_default:          { type: boolean, example: true }
+ *       404: { description: Class not found for this school }
+ *
+ *   post:
+ *     tags: [Admin - Classes]
+ *     summary: Attach the next-in-order section to a class
+ *     description: >
+ *       The `section_template_id` must correspond to the single section template
+ *       at index = current_attached_count (see GET /sections/next-available).
+ *       Violations return 400 `SECTION_ORDER_VIOLATION`.
+ *     parameters:
+ *       - in: path
+ *         name: classId
+ *         required: true
+ *         schema: { type: string, format: uuid }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [section_template_id]
+ *             properties:
+ *               section_template_id: { type: string, format: uuid }
+ *     responses:
+ *       200: { description: Section attached }
+ *       400:
+ *         description: |
+ *           - `INVALID_SECTION_TEMPLATE`
+ *           - `SECTION_ORDER_VIOLATION`
+ *       404: { description: Class not found }
+ *       409: { description: Section already attached }
+ */
+
+/**
+ * @swagger
+ * /api/v1/academic/admin/classes/{classId}/sections/next-available:
+ *   get:
+ *     tags: [Admin - Classes]
+ *     summary: The single section template admin can attach next
+ *     description: >
+ *       Returns the section_templates row at index = current attached count.
+ *       FE uses this to render a single "Add next section" button, guaranteeing
+ *       the attach payload won't violate the contiguous-prefix rule. Returns
+ *       `null` once every active template is attached.
+ *     parameters:
+ *       - in: path
+ *         name: classId
+ *         required: true
+ *         schema: { type: string, format: uuid }
+ *     responses:
+ *       200:
+ *         description: Next template (or null)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success: { type: boolean, example: true }
+ *                 data:
+ *                   oneOf:
+ *                     - type: 'null'
+ *                     - type: object
+ *                       properties:
+ *                         id:           { type: string, format: uuid }
+ *                         section_name: { type: string, example: E }
+ *                         order_number: { type: integer, example: 5 }
+ *                         is_default:   { type: boolean, example: false }
+ *       404: { description: Class not found }
+ */
+
+/**
+ * @swagger
+ * /api/v1/academic/admin/classes/{classId}/sections/{classSectionId}:
+ *   delete:
+ *     tags: [Admin - Classes]
+ *     summary: Detach the tail section from a class
+ *     description: >
+ *       Only the last-attached section can be detached (keeps the attached set
+ *       as a contiguous prefix). Default sections A, B, C, D are locked and
+ *       cannot be detached.
+ *     parameters:
+ *       - in: path
+ *         name: classId
+ *         required: true
+ *         schema: { type: string, format: uuid }
+ *       - in: path
+ *         name: classSectionId
+ *         required: true
+ *         schema: { type: string, format: uuid }
+ *     responses:
+ *       200: { description: Section detached }
+ *       400:
+ *         description: |
+ *           - `DEFAULT_SECTION_LOCKED` — tried to remove A/B/C/D
+ *           - `SECTION_ORDER_VIOLATION` — tried to detach a non-tail section
+ *       404: { description: Class or section not found }
+ */

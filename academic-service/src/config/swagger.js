@@ -52,6 +52,9 @@ const options = {
       { name: 'Admin - Teacher Edit Requests', description: 'Review and approve/reject teacher profile change requests' },
       { name: 'Admin - Master Data',           description: 'CRUD over reference/lookup tables (blood groups, classes, departments, sections, subjects, staff roles/depts/positions, license types, enquiry sources)' },
       { name: 'Admin - Timetable',             description: 'Configure period timings, fill timetable grid, publish/unpublish for teachers and parents' },
+      { name: 'Admin - Class Templates',       description: 'Read-only global class catalogue (Nursery → Class 12) that feeds the Add New Class popup dropdown' },
+      { name: 'Admin - Section Templates',     description: 'Read-only global section catalogue (A-F, A1-A5, B1-B5, colour houses) that feeds the Add New Class popup chips. A/B/C/D are defaults (is_default=true)' },
+      { name: 'Admin - Classes',               description: 'Add class + sections atomically, list classes with section counts, per-class section CRUD. Sections must be attached as a contiguous prefix of the section_templates order' },
       // Teacher
       { name: 'Teacher - Attendance', description: 'Mark, view, edit, delete student attendance' },
       { name: 'Teacher - Homework', description: 'Create and manage homework assignments' },
