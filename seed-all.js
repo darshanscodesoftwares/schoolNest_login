@@ -148,7 +148,11 @@ async function seedAcademicDb() {
   ok(`school_classes: ${classNames.length} classes (Nursery → Class 12)`);
 
   // ── Sections
-  log('academic_db — sections for school 101');
+  // Legacy `sections` table (pre-migration-015 school-wide pool). New
+  // per-class section binding lives in `class_sections` and pulls names
+  // from the global `section_templates` catalogue (seeded by migration 015).
+  // Kept only to satisfy legacy FK references; will be dropped in Phase 2.
+  log('academic_db — sections (legacy pool — kept for back-compat only)');
   const sectionNames = ['A', 'B', 'C', 'D', 'E'];
   for (let i = 0; i < sectionNames.length; i++) {
     await academicPool.query(
@@ -156,7 +160,7 @@ async function seedAcademicDb() {
       [SCHOOL_ID, sectionNames[i]]
     ).catch(e => err(`section ${sectionNames[i]}`, e));
   }
-  ok(`sections: ${sectionNames.join(', ')}`);
+  ok(`sections: ${sectionNames.join(', ')} (legacy)`);
 
   // ── Enquiry sources
   log('academic_db — enquiry_sources for school 101');
