@@ -18,7 +18,7 @@ const getExamDetailsForId = async (school_id, exam_id) => {
 const examsRepository = {
   // Get or create subject by name
   getOrCreateSubject: async (school_id, subject_name) => {
-    // First, try to find existing subject
+    // Only find existing subject - do NOT auto-create
     const findQuery = {
       text: `SELECT id FROM subjects WHERE school_id = $1 AND LOWER(subject_name) = LOWER($2) LIMIT 1`,
       values: [school_id, subject_name],
@@ -29,13 +29,17 @@ const examsRepository = {
       return findResult.rows[0].id;
     }
 
-    // If not found, create new subject
-    const createQuery = {
-      text: `INSERT INTO subjects (school_id, subject_name) VALUES ($1, $2) RETURNING id`,
-      values: [school_id, subject_name],
-    };
-    const createResult = await pool.query(createQuery);
-    return createResult.rows[0].id;
+    // If not found, throw error instead of auto-creating
+    // Auto-creating caused duplicate subjects to appear in subject-assign list
+    // const createQuery = {
+    //   text: `INSERT INTO subjects (school_id, subject_name) VALUES ($1, $2) RETURNING id`,
+    //   values: [school_id, subject_name],
+    // };
+    // const createResult = await pool.query(createQuery);
+    // return createResult.rows[0].id;
+    const error = new Error(`Subject "${subject_name}" not found. Please create it first from Subject Management.`);
+    error.statusCode = 400;
+    throw error;
   },
 
 
