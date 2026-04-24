@@ -390,6 +390,7 @@ CREATE TABLE IF NOT EXISTS parent_guardian_information (
   guardian_relation     VARCHAR(100),
   guardian_phone        VARCHAR(20),
   guardian_email        VARCHAR(150),
+  guardian_occupation   VARCHAR(150),
   guardian_annual_income DECIMAL(12,2),
   created_at            TIMESTAMPTZ   DEFAULT CURRENT_TIMESTAMP,
   updated_at            TIMESTAMPTZ   DEFAULT CURRENT_TIMESTAMP
