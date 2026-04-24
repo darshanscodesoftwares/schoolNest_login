@@ -116,6 +116,7 @@ async function saveDraftFull(req, res) {
         'guardian_relation', 'guardianRelation',
         'guardian_phone', 'guardianPhone',
         'guardian_email', 'guardianEmail',
+        'guardian_occupation', 'guardianOccupation',
         'guardian_annual_income', 'guardianAnnualIncome'
       ],
       emergency: [
@@ -831,28 +832,45 @@ async function handleParentInfoSave(studentId, schoolId, data) {
     return value;
   };
 
-  // Helper function to check if a field was provided in the request
-  const isProvided = (value) => {
-    return value !== undefined && value !== null;
+  // Helper function to check if a field was provided in the request (can be null)
+  const isProvided = (wasProvidedInRequest) => {
+    return wasProvidedInRequest;
   };
 
   // Normalize field names - accept both camelCase and snake_case
-  // ONLY convert fields that were actually provided
-  const fatherFullName = data.fatherName !== undefined || data.fatherFullName !== undefined || data.father_full_name !== undefined ? toNull(data.fatherName || data.fatherFullName || data.father_full_name) : undefined;
-  const fatherOccupation = data.fatherOccupation !== undefined || data.father_occupation !== undefined ? toNull(data.fatherOccupation || data.father_occupation) : undefined;
-  const fatherPhone = data.fatherPhone !== undefined || data.father_phone !== undefined ? toNull(data.fatherPhone || data.father_phone) : undefined;
-  const fatherEmail = data.fatherEmail !== undefined || data.father_email !== undefined ? toNull(data.fatherEmail || data.father_email) : undefined;
-  const fatherAnnualIncome = data.fatherAnnualIncome !== undefined || data.father_annual_income !== undefined ? toNull(data.fatherAnnualIncome || data.father_annual_income) : undefined;
-  const motherFullName = data.motherName !== undefined || data.motherFullName !== undefined || data.mother_full_name !== undefined ? toNull(data.motherName || data.motherFullName || data.mother_full_name) : undefined;
-  const motherOccupation = data.motherOccupation !== undefined || data.mother_occupation !== undefined ? toNull(data.motherOccupation || data.mother_occupation) : undefined;
-  const motherPhone = data.motherPhone !== undefined || data.mother_phone !== undefined ? toNull(data.motherPhone || data.mother_phone) : undefined;
-  const motherEmail = data.motherEmail !== undefined || data.mother_email !== undefined ? toNull(data.motherEmail || data.mother_email) : undefined;
-  const motherAnnualIncome = data.motherAnnualIncome !== undefined || data.mother_annual_income !== undefined ? toNull(data.motherAnnualIncome || data.mother_annual_income) : undefined;
-  const guardianFullName = data.guardianName !== undefined || data.guardianFullName !== undefined || data.guardian_full_name !== undefined ? toNull(data.guardianName || data.guardianFullName || data.guardian_full_name) : undefined;
-  const guardianRelation = data.guardianRelation !== undefined || data.guardian_relation !== undefined || data.relation !== undefined ? toNull(data.guardianRelation || data.guardian_relation || data.relation) : undefined;
-  const guardianPhone = data.guardianPhone !== undefined || data.guardian_phone !== undefined ? toNull(data.guardianPhone || data.guardian_phone) : undefined;
-  const guardianEmail = data.guardianEmail !== undefined || data.guardian_email !== undefined ? toNull(data.guardianEmail || data.guardian_email) : undefined;
-  const guardianAnnualIncome = data.guardianAnnualIncome !== undefined || data.guardian_annual_income !== undefined ? toNull(data.guardianAnnualIncome || data.guardian_annual_income) : undefined;
+  // Track if field was provided (even if empty), then convert to proper value
+  const fatherFullNameProvided = data.fatherName !== undefined || data.fatherFullName !== undefined || data.father_full_name !== undefined;
+  const fatherFullName = fatherFullNameProvided ? toNull(data.fatherName || data.fatherFullName || data.father_full_name) : undefined;
+  const fatherOccupationProvided = data.fatherOccupation !== undefined || data.father_occupation !== undefined;
+  const fatherOccupation = fatherOccupationProvided ? toNull(data.fatherOccupation || data.father_occupation) : undefined;
+  const fatherPhoneProvided = data.fatherPhone !== undefined || data.father_phone !== undefined;
+  const fatherPhone = fatherPhoneProvided ? toNull(data.fatherPhone || data.father_phone) : undefined;
+  const fatherEmailProvided = data.fatherEmail !== undefined || data.father_email !== undefined;
+  const fatherEmail = fatherEmailProvided ? toNull(data.fatherEmail || data.father_email) : undefined;
+  const fatherAnnualIncomeProvided = data.fatherAnnualIncome !== undefined || data.father_annual_income !== undefined;
+  const fatherAnnualIncome = fatherAnnualIncomeProvided ? toNull(data.fatherAnnualIncome || data.father_annual_income) : undefined;
+  const motherFullNameProvided = data.motherName !== undefined || data.motherFullName !== undefined || data.mother_full_name !== undefined;
+  const motherFullName = motherFullNameProvided ? toNull(data.motherName || data.motherFullName || data.mother_full_name) : undefined;
+  const motherOccupationProvided = data.motherOccupation !== undefined || data.mother_occupation !== undefined;
+  const motherOccupation = motherOccupationProvided ? toNull(data.motherOccupation || data.mother_occupation) : undefined;
+  const motherPhoneProvided = data.motherPhone !== undefined || data.mother_phone !== undefined;
+  const motherPhone = motherPhoneProvided ? toNull(data.motherPhone || data.mother_phone) : undefined;
+  const motherEmailProvided = data.motherEmail !== undefined || data.mother_email !== undefined;
+  const motherEmail = motherEmailProvided ? toNull(data.motherEmail || data.mother_email) : undefined;
+  const motherAnnualIncomeProvided = data.motherAnnualIncome !== undefined || data.mother_annual_income !== undefined;
+  const motherAnnualIncome = motherAnnualIncomeProvided ? toNull(data.motherAnnualIncome || data.mother_annual_income) : undefined;
+  const guardianFullNameProvided = data.guardianName !== undefined || data.guardianFullName !== undefined || data.guardian_full_name !== undefined;
+  const guardianFullName = guardianFullNameProvided ? toNull(data.guardianName || data.guardianFullName || data.guardian_full_name) : undefined;
+  const guardianRelationProvided = data.guardianRelation !== undefined || data.guardian_relation !== undefined || data.relation !== undefined;
+  const guardianRelation = guardianRelationProvided ? toNull(data.guardianRelation || data.guardian_relation || data.relation) : undefined;
+  const guardianPhoneProvided = data.guardianPhone !== undefined || data.guardian_phone !== undefined;
+  const guardianPhone = guardianPhoneProvided ? toNull(data.guardianPhone || data.guardian_phone) : undefined;
+  const guardianEmailProvided = data.guardianEmail !== undefined || data.guardian_email !== undefined;
+  const guardianEmail = guardianEmailProvided ? toNull(data.guardianEmail || data.guardian_email) : undefined;
+  const guardianOccupationProvided = data.guardianOccupation !== undefined || data.guardian_occupation !== undefined;
+  const guardianOccupation = guardianOccupationProvided ? toNull(data.guardianOccupation || data.guardian_occupation) : undefined;
+  const guardianAnnualIncomeProvided = data.guardianAnnualIncome !== undefined || data.guardian_annual_income !== undefined;
+  const guardianAnnualIncome = guardianAnnualIncomeProvided ? toNull(data.guardianAnnualIncome || data.guardian_annual_income) : undefined;
 
   const existing = await pool.query(
     "SELECT * FROM parent_guardian_information WHERE student_id = $1 AND school_id = $2",
@@ -865,67 +883,67 @@ async function handleParentInfoSave(studentId, schoolId, data) {
     const updateValues = [studentId, schoolId];
     let paramCount = 2;
 
-    if (isProvided(fatherFullName)) {
+    if (isProvided(fatherFullNameProvided)) {
       updateFields.push(`father_full_name = $${++paramCount}`);
       updateValues.push(fatherFullName);
     }
-    if (isProvided(fatherOccupation)) {
+    if (isProvided(fatherOccupationProvided)) {
       updateFields.push(`father_occupation = $${++paramCount}`);
       updateValues.push(fatherOccupation);
     }
-    if (isProvided(fatherPhone)) {
+    if (isProvided(fatherPhoneProvided)) {
       updateFields.push(`father_phone = $${++paramCount}`);
       updateValues.push(fatherPhone);
     }
-    if (isProvided(fatherEmail)) {
+    if (isProvided(fatherEmailProvided)) {
       updateFields.push(`father_email = $${++paramCount}`);
       updateValues.push(fatherEmail);
     }
-    if (isProvided(fatherAnnualIncome)) {
+    if (isProvided(fatherAnnualIncomeProvided)) {
       updateFields.push(`father_annual_income = $${++paramCount}`);
       updateValues.push(fatherAnnualIncome);
     }
-    if (isProvided(motherFullName)) {
+    if (isProvided(motherFullNameProvided)) {
       updateFields.push(`mother_full_name = $${++paramCount}`);
       updateValues.push(motherFullName);
     }
-    if (isProvided(motherOccupation)) {
+    if (isProvided(motherOccupationProvided)) {
       updateFields.push(`mother_occupation = $${++paramCount}`);
       updateValues.push(motherOccupation);
     }
-    if (isProvided(motherPhone)) {
+    if (isProvided(motherPhoneProvided)) {
       updateFields.push(`mother_phone = $${++paramCount}`);
       updateValues.push(motherPhone);
     }
-    if (isProvided(motherEmail)) {
+    if (isProvided(motherEmailProvided)) {
       updateFields.push(`mother_email = $${++paramCount}`);
       updateValues.push(motherEmail);
     }
-    if (isProvided(motherAnnualIncome)) {
+    if (isProvided(motherAnnualIncomeProvided)) {
       updateFields.push(`mother_annual_income = $${++paramCount}`);
       updateValues.push(motherAnnualIncome);
     }
-    if (isProvided(guardianFullName)) {
+    if (isProvided(guardianFullNameProvided)) {
       updateFields.push(`guardian_full_name = $${++paramCount}`);
       updateValues.push(guardianFullName);
     }
-    if (isProvided(guardianRelation)) {
+    if (isProvided(guardianRelationProvided)) {
       updateFields.push(`guardian_relation = $${++paramCount}`);
       updateValues.push(guardianRelation);
     }
-    if (isProvided(guardianPhone)) {
+    if (isProvided(guardianPhoneProvided)) {
       updateFields.push(`guardian_phone = $${++paramCount}`);
       updateValues.push(guardianPhone);
     }
-    if (isProvided(guardianEmail)) {
+    if (isProvided(guardianEmailProvided)) {
       updateFields.push(`guardian_email = $${++paramCount}`);
       updateValues.push(guardianEmail);
     }
-    if (isProvided(guardianOccupation)) {
+    if (isProvided(guardianOccupationProvided)) {
       updateFields.push(`guardian_occupation = $${++paramCount}`);
       updateValues.push(guardianOccupation);
     }
-    if (isProvided(guardianAnnualIncome)) {
+    if (isProvided(guardianAnnualIncomeProvided)) {
       updateFields.push(`guardian_annual_income = $${++paramCount}`);
       updateValues.push(guardianAnnualIncome);
     }
@@ -1340,6 +1358,7 @@ async function updateDraftFull(req, res) {
         'guardian_relation', 'guardianRelation',
         'guardian_phone', 'guardianPhone',
         'guardian_email', 'guardianEmail',
+        'guardian_occupation', 'guardianOccupation',
         'guardian_annual_income', 'guardianAnnualIncome'
       ],
       emergency: [
@@ -1688,6 +1707,7 @@ async function completeSaveAdmission(req, res) {
         'guardian_relation', 'guardianRelation',
         'guardian_phone', 'guardianPhone',
         'guardian_email', 'guardianEmail',
+        'guardian_occupation', 'guardianOccupation',
         'guardian_annual_income', 'guardianAnnualIncome'
       ],
       emergency: [
