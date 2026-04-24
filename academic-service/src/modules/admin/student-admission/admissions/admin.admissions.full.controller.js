@@ -921,6 +921,10 @@ async function handleParentInfoSave(studentId, schoolId, data) {
       updateFields.push(`guardian_email = $${++paramCount}`);
       updateValues.push(guardianEmail);
     }
+    if (isProvided(guardianOccupation)) {
+      updateFields.push(`guardian_occupation = $${++paramCount}`);
+      updateValues.push(guardianOccupation);
+    }
     if (isProvided(guardianAnnualIncome)) {
       updateFields.push(`guardian_annual_income = $${++paramCount}`);
       updateValues.push(guardianAnnualIncome);
@@ -947,8 +951,8 @@ async function handleParentInfoSave(studentId, schoolId, data) {
        (school_id, student_id, father_full_name, father_occupation, father_phone,
         father_email, father_annual_income, mother_full_name, mother_occupation,
         mother_phone, mother_email, mother_annual_income, guardian_full_name,
-        guardian_relation, guardian_phone, guardian_email, guardian_annual_income)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+        guardian_relation, guardian_phone, guardian_email, guardian_occupation, guardian_annual_income)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
        RETURNING *`,
       [
         schoolId,
@@ -967,6 +971,7 @@ async function handleParentInfoSave(studentId, schoolId, data) {
         guardianRelation || null,
         guardianPhone || null,
         guardianEmail || null,
+        guardianOccupation || null,
         guardianAnnualIncome || null,
       ]
     );

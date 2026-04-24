@@ -362,14 +362,15 @@ async function handleGuardianInfoSave(studentId, schoolId, data) {
     const result = await pool.query(
       `UPDATE parent_guardian_information
        SET guardian_full_name = $1, guardian_relation = $2, guardian_phone = $3,
-           guardian_email = $4, updated_at = NOW()
-       WHERE student_id = $5 AND school_id = $6
+           guardian_email = $4, guardian_occupation = $5, updated_at = NOW()
+       WHERE student_id = $6 AND school_id = $7
        RETURNING *`,
       [
         data.guardianName || null,
         data.guardianRelation || null,
         data.guardianPhone || null,
         data.guardianEmail || null,
+        data.guardianOccupation || null,
         studentId,
         schoolId,
       ]
@@ -378,8 +379,8 @@ async function handleGuardianInfoSave(studentId, schoolId, data) {
   } else {
     const result = await pool.query(
       `INSERT INTO parent_guardian_information
-       (school_id, student_id, guardian_full_name, guardian_relation, guardian_phone, guardian_email)
-       VALUES ($1, $2, $3, $4, $5, $6)
+       (school_id, student_id, guardian_full_name, guardian_relation, guardian_phone, guardian_email, guardian_occupation)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
        RETURNING *`,
       [
         schoolId,
@@ -388,6 +389,7 @@ async function handleGuardianInfoSave(studentId, schoolId, data) {
         data.guardianRelation || null,
         data.guardianPhone || null,
         data.guardianEmail || null,
+        data.guardianOccupation || null,
       ]
     );
     return result.rows[0];
