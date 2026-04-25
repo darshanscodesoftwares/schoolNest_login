@@ -27,8 +27,8 @@ const listClasses = async (schoolId) => {
            FROM school_classes sc
            LEFT JOIN class_sections cs ON cs.class_id = sc.id AND cs.school_id = sc.school_id
            WHERE sc.school_id = $1
-           GROUP BY sc.id, sc.class_name, sc.template_id
-           ORDER BY sc.class_name ASC`,
+           GROUP BY sc.id, sc.class_name, sc.template_id, sc.order_number
+           ORDER BY sc.order_number ASC, sc.class_name ASC`,
     values: [schoolId]
   });
   return rows;
@@ -57,19 +57,20 @@ const getClassSectionWithTemplate = async ({ schoolId, classId, classSectionId }
   return rows[0] || null;
 };
 
-const createClassWithSectionsTxn = async ({ schoolId, classTemplateId, className, sectionTemplates }) => {
+const createClassWithSectionsTxn = async ({ schoolId, classTemplateId, className, orderNumber, sectionTemplates }) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
 
     const upsert = await client.query({
-      text: `INSERT INTO school_classes (school_id, class_name, template_id)
-             VALUES ($1, $2, $3)
+      text: `INSERT INTO school_classes (school_id, class_name, template_id, order_number)
+             VALUES ($1, $2, $3, $4)
              ON CONFLICT (school_id, class_name)
-             DO UPDATE SET template_id = COALESCE(school_classes.template_id, EXCLUDED.template_id),
-                           updated_at  = NOW()
+             DO UPDATE SET template_id  = COALESCE(school_classes.template_id, EXCLUDED.template_id),
+                           order_number = EXCLUDED.order_number,
+                           updated_at   = NOW()
              RETURNING id, class_name, template_id`,
-      values: [schoolId, className, classTemplateId]
+      values: [schoolId, className, classTemplateId, orderNumber ?? 0]
     });
     const cls = upsert.rows[0];
 

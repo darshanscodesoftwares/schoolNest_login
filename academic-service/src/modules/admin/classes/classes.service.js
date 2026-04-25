@@ -88,6 +88,7 @@ const createClassWithSections = async ({ schoolId, classTemplateId, sectionTempl
     schoolId,
     classTemplateId,
     className: classTpl.class_name,
+    orderNumber: classTpl.order_number,
     sectionTemplates
   });
 };
