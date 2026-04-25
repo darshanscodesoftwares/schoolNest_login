@@ -201,6 +201,7 @@ const updateApprovedStudent = async (schoolId, studentId, updateData) => {
     const updatableFields = {
       first_name: updateData.first_name || updateData.firstName,
       last_name: updateData.last_name || updateData.lastName,
+      student_phone: updateData.student_phone || updateData.studentPhone,
       student_email: updateData.student_email || updateData.studentEmail,
       father_full_name: updateData.father_full_name || updateData.fatherFullName,
       father_phone: updateData.father_phone || updateData.fatherPhone,
@@ -241,11 +242,27 @@ const updateApprovedStudent = async (schoolId, studentId, updateData) => {
     }
 
     // Update contact_information
-    if ('student_email' in updatableFields) {
-      await pool.query(
-        `UPDATE contact_information SET student_email = $3, updated_at = NOW() WHERE student_id = $1 AND school_id = $2`,
-        [studentId, schoolId, updatableFields.student_email]
-      );
+    if ('student_phone' in updatableFields || 'student_email' in updatableFields) {
+      const contactUpdates = [];
+      const contactValues = [studentId, schoolId];
+      let contactParamCount = 2;
+
+      if ('student_phone' in updatableFields) {
+        contactParamCount++;
+        contactUpdates.push(`student_phone = $${contactParamCount}`);
+        contactValues.push(updatableFields.student_phone);
+      }
+      if ('student_email' in updatableFields) {
+        contactParamCount++;
+        contactUpdates.push(`student_email = $${contactParamCount}`);
+        contactValues.push(updatableFields.student_email);
+      }
+      if (contactUpdates.length > 0) {
+        await pool.query(
+          `UPDATE contact_information SET ${contactUpdates.join(', ')}, updated_at = NOW() WHERE student_id = $1 AND school_id = $2`,
+          contactValues
+        );
+      }
     }
 
     // Update parent_guardian_information
