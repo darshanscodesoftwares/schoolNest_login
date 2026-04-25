@@ -13,6 +13,7 @@ const getApprovedStudents = async (schoolId, filters = {}) => {
         ai.section,
         pg.father_full_name,
         pg.father_phone,
+        ci.student_phone,
         ci.student_email,
         sa.admission_status,
         ai.admission_number
@@ -108,6 +109,7 @@ const getApprovedStudentByRollNumber = async (schoolId, classId, rollNumber) => 
         ai.section,
         pg.father_full_name,
         pg.father_phone,
+        ci.student_phone,
         ci.student_email,
         sa.admission_status,
         ai.admission_number
@@ -144,6 +146,7 @@ const getApprovedStudentsByClassAndSection = async (schoolId, classId, section) 
         ai.section,
         pg.father_full_name,
         pg.father_phone,
+        ci.student_phone,
         ci.student_email,
         sa.admission_status,
         ai.admission_number
@@ -309,6 +312,7 @@ const updateApprovedStudent = async (schoolId, studentId, updateData) => {
         ai.section,
         pg.father_full_name,
         pg.father_phone,
+        ci.student_phone,
         ci.student_email,
         sa.admission_status,
         ai.admission_number
