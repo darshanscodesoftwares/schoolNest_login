@@ -120,6 +120,15 @@ const detachSection = async ({ schoolId, classId, classSectionId }) => {
   });
 };
 
+const deleteClass = async ({ schoolId, classId }) => {
+  const { rowCount } = await pool.query({
+    text: `DELETE FROM school_classes
+           WHERE school_id = $1 AND id = $2`,
+    values: [schoolId, classId]
+  });
+  return rowCount > 0;
+};
+
 const getSchoolClassById = async ({ schoolId, classId }) => {
   const { rows } = await pool.query({
     text: `SELECT id, class_name, template_id
@@ -139,5 +148,6 @@ module.exports = {
   createClassWithSectionsTxn,
   attachSection,
   detachSection,
+  deleteClass,
   getSchoolClassById
 };

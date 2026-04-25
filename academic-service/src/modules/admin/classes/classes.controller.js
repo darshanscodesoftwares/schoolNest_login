@@ -76,11 +76,23 @@ const detachSection = async (req, res, next) => {
   } catch (e) { return next(e); }
 };
 
+const deleteClass = async (req, res, next) => {
+  try {
+    assertAdmin(req.user);
+    await svc.deleteClass({
+      schoolId: req.user.school_id,
+      classId:  req.params.classId
+    });
+    return res.status(200).json({ success: true, message: 'Class removed' });
+  } catch (e) { return next(e); }
+};
+
 module.exports = {
   createClassWithSections,
   listClasses,
   listSections,
   nextAvailableSection,
   attachSection,
-  detachSection
+  detachSection,
+  deleteClass
 };

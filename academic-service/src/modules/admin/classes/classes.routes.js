@@ -15,5 +15,6 @@ router.get('/:classId/sections/next-available', ctrl.nextAvailableSection);
 router.get('/:classId/sections',                ctrl.listSections);
 router.post('/:classId/sections',               ctrl.attachSection);
 router.delete('/:classId/sections/:classSectionId', ctrl.detachSection);
+router.delete('/:classId', ctrl.deleteClass);
 
 module.exports = router;

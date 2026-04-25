@@ -189,11 +189,29 @@ const detachSection = async ({ schoolId, classId, classSectionId }) => {
   await repo.detachSection({ schoolId, classId, classSectionId });
 };
 
+const deleteClass = async ({ schoolId, classId }) => {
+  if (!classId) {
+    const err = new Error('classId is required');
+    err.statusCode = 400; err.code = 'VALIDATION_ERROR'; throw err;
+  }
+  const cls = await repo.getSchoolClassById({ schoolId, classId });
+  if (!cls) {
+    const err = new Error('Class not found for this school');
+    err.statusCode = 404; err.code = 'CLASS_NOT_FOUND'; throw err;
+  }
+  const deleted = await repo.deleteClass({ schoolId, classId });
+  if (!deleted) {
+    const err = new Error('Failed to delete class');
+    err.statusCode = 500; err.code = 'DELETE_FAILED'; throw err;
+  }
+};
+
 module.exports = {
   createClassWithSections,
   listClasses,
   listSections,
   nextAvailableSection,
   attachSection,
-  detachSection
+  detachSection,
+  deleteClass
 };
