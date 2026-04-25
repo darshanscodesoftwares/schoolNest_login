@@ -234,43 +234,59 @@ async function saveDraftFull(req, res) {
       if (req.files.student_photo && req.files.student_photo[0]) {
         const photoFile = req.files.student_photo[0];
         const fileId = await fileStorageUtil.saveFileToDB(photoFile, schoolId, 'student_photo');
-        const fileUrl = `${baseFileUrl}/${fileId}`;
-        if (!allData.personal) {
-          allData.personal = {};
+        if (fileId) {
+          const fileUrl = `${baseFileUrl}/${fileId}`;
+          if (!allData.personal) {
+            allData.personal = {};
+          }
+          allData.personal.student_photo = fileUrl;
+          allData.personal.studentPhoto = fileUrl;
+          console.log('  ✅ student_photo:', fileUrl);
+        } else {
+          console.warn('  ⚠️ student_photo: saveFileToDB returned null');
         }
-        allData.personal.student_photo = fileUrl;
-        allData.personal.studentPhoto = fileUrl;
-        console.log('  ✅ student_photo:', fileUrl);
       }
 
       // Handle birth_certificate
       if (req.files.birth_certificate && req.files.birth_certificate[0]) {
         const file = req.files.birth_certificate[0];
         const fileId = await fileStorageUtil.saveFileToDB(file, schoolId, 'birth_certificate');
-        const fileUrl = `${baseFileUrl}/${fileId}`;
-        allData.documents.birth_certificate = fileUrl;
-        allData.documents.birthCertificate = fileUrl;
-        console.log('  ✅ birth_certificate:', fileUrl);
+        if (fileId) {
+          const fileUrl = `${baseFileUrl}/${fileId}`;
+          allData.documents.birth_certificate = fileUrl;
+          allData.documents.birthCertificate = fileUrl;
+          console.log('  ✅ birth_certificate:', fileUrl);
+        } else {
+          console.warn('  ⚠️ birth_certificate: saveFileToDB returned null');
+        }
       }
 
       // Handle aadhaar_card
       if (req.files.aadhaar_card && req.files.aadhaar_card[0]) {
         const file = req.files.aadhaar_card[0];
         const fileId = await fileStorageUtil.saveFileToDB(file, schoolId, 'aadhaar_card');
-        const fileUrl = `${baseFileUrl}/${fileId}`;
-        allData.documents.aadhaar_card = fileUrl;
-        allData.documents.aadhaarCard = fileUrl;
-        console.log('  ✅ aadhaar_card:', fileUrl);
+        if (fileId) {
+          const fileUrl = `${baseFileUrl}/${fileId}`;
+          allData.documents.aadhaar_card = fileUrl;
+          allData.documents.aadhaarCard = fileUrl;
+          console.log('  ✅ aadhaar_card:', fileUrl);
+        } else {
+          console.warn('  ⚠️ aadhaar_card: saveFileToDB returned null');
+        }
       }
 
       // Handle transfer_certificate
       if (req.files.transfer_certificate && req.files.transfer_certificate[0]) {
         const file = req.files.transfer_certificate[0];
         const fileId = await fileStorageUtil.saveFileToDB(file, schoolId, 'transfer_certificate');
-        const fileUrl = `${baseFileUrl}/${fileId}`;
-        allData.documents.transfer_certificate = fileUrl;
-        allData.documents.transferCertificate = fileUrl;
-        console.log('  ✅ transfer_certificate:', fileUrl);
+        if (fileId) {
+          const fileUrl = `${baseFileUrl}/${fileId}`;
+          allData.documents.transfer_certificate = fileUrl;
+          allData.documents.transferCertificate = fileUrl;
+          console.log('  ✅ transfer_certificate:', fileUrl);
+        } else {
+          console.warn('  ⚠️ transfer_certificate: saveFileToDB returned null');
+        }
       }
     }
 
@@ -1453,43 +1469,59 @@ async function updateDraftFull(req, res) {
       if (req.files.student_photo && req.files.student_photo[0]) {
         const photoFile = req.files.student_photo[0];
         const fileId = await fileStorageUtil.saveFileToDB(photoFile, schoolId, 'student_photo');
-        const fileUrl = `${baseFileUrl}/${fileId}`;
-        if (!allData.personal) {
-          allData.personal = {};
+        if (fileId) {
+          const fileUrl = `${baseFileUrl}/${fileId}`;
+          if (!allData.personal) {
+            allData.personal = {};
+          }
+          allData.personal.student_photo = fileUrl;
+          allData.personal.studentPhoto = fileUrl;
+          console.log('  ✅ student_photo:', fileUrl);
+        } else {
+          console.warn('  ⚠️ student_photo: saveFileToDB returned null');
         }
-        allData.personal.student_photo = fileUrl;
-        allData.personal.studentPhoto = fileUrl;
-        console.log('  ✅ student_photo:', fileUrl);
       }
 
       // Handle birth_certificate
       if (req.files.birth_certificate && req.files.birth_certificate[0]) {
         const file = req.files.birth_certificate[0];
         const fileId = await fileStorageUtil.saveFileToDB(file, schoolId, 'birth_certificate');
-        const fileUrl = `${baseFileUrl}/${fileId}`;
-        allData.documents.birth_certificate = fileUrl;
-        allData.documents.birthCertificate = fileUrl;
-        console.log('  ✅ birth_certificate:', fileUrl);
+        if (fileId) {
+          const fileUrl = `${baseFileUrl}/${fileId}`;
+          allData.documents.birth_certificate = fileUrl;
+          allData.documents.birthCertificate = fileUrl;
+          console.log('  ✅ birth_certificate:', fileUrl);
+        } else {
+          console.warn('  ⚠️ birth_certificate: saveFileToDB returned null');
+        }
       }
 
       // Handle aadhaar_card
       if (req.files.aadhaar_card && req.files.aadhaar_card[0]) {
         const file = req.files.aadhaar_card[0];
         const fileId = await fileStorageUtil.saveFileToDB(file, schoolId, 'aadhaar_card');
-        const fileUrl = `${baseFileUrl}/${fileId}`;
-        allData.documents.aadhaar_card = fileUrl;
-        allData.documents.aadhaarCard = fileUrl;
-        console.log('  ✅ aadhaar_card:', fileUrl);
+        if (fileId) {
+          const fileUrl = `${baseFileUrl}/${fileId}`;
+          allData.documents.aadhaar_card = fileUrl;
+          allData.documents.aadhaarCard = fileUrl;
+          console.log('  ✅ aadhaar_card:', fileUrl);
+        } else {
+          console.warn('  ⚠️ aadhaar_card: saveFileToDB returned null');
+        }
       }
 
       // Handle transfer_certificate
       if (req.files.transfer_certificate && req.files.transfer_certificate[0]) {
         const file = req.files.transfer_certificate[0];
         const fileId = await fileStorageUtil.saveFileToDB(file, schoolId, 'transfer_certificate');
-        const fileUrl = `${baseFileUrl}/${fileId}`;
-        allData.documents.transfer_certificate = fileUrl;
-        allData.documents.transferCertificate = fileUrl;
-        console.log('  ✅ transfer_certificate:', fileUrl);
+        if (fileId) {
+          const fileUrl = `${baseFileUrl}/${fileId}`;
+          allData.documents.transfer_certificate = fileUrl;
+          allData.documents.transferCertificate = fileUrl;
+          console.log('  ✅ transfer_certificate:', fileUrl);
+        } else {
+          console.warn('  ⚠️ transfer_certificate: saveFileToDB returned null');
+        }
       }
     }
 
@@ -1780,9 +1812,13 @@ async function completeSaveAdmission(req, res) {
       }
     }
 
-    // ✅ Handle multiple file uploads with unified paths
+    // ✅ Handle multiple file uploads — store in DB via fileStorageUtil
     if (req.files) {
       console.log('📁 Processing uploaded files:', Object.keys(req.files));
+
+      const protocol = req.protocol || 'https';
+      const host = req.get('host');
+      const baseFileUrl = `${protocol}://${host}/api/v1/academic/files`;
 
       // Ensure documents object exists
       if (!allData.documents) {
@@ -1792,40 +1828,60 @@ async function completeSaveAdmission(req, res) {
       // Handle student_photo
       if (req.files.student_photo && req.files.student_photo[0]) {
         const photoFile = req.files.student_photo[0];
-        const filePath = `/uploads/student-photos/school-${schoolId}/${photoFile.filename}`;
-        if (!allData.personal) {
-          allData.personal = {};
+        const fileId = await fileStorageUtil.saveFileToDB(photoFile, schoolId, 'student_photo');
+        if (fileId) {
+          const fileUrl = `${baseFileUrl}/${fileId}`;
+          if (!allData.personal) {
+            allData.personal = {};
+          }
+          allData.personal.student_photo = fileUrl;
+          allData.personal.studentPhoto = fileUrl;
+          console.log('  ✅ student_photo:', fileUrl);
+        } else {
+          console.warn('  ⚠️ student_photo: saveFileToDB returned null');
         }
-        allData.personal.student_photo = filePath;
-        allData.personal.studentPhoto = filePath;
-        console.log('  ✅ student_photo:', filePath);
       }
 
       // Handle birth_certificate
       if (req.files.birth_certificate && req.files.birth_certificate[0]) {
         const file = req.files.birth_certificate[0];
-        const filePath = `/uploads/documents/birth-certificates/school-${schoolId}/${file.filename}`;
-        allData.documents.birth_certificate = filePath;
-        allData.documents.birthCertificate = filePath;
-        console.log('  ✅ birth_certificate:', filePath);
+        const fileId = await fileStorageUtil.saveFileToDB(file, schoolId, 'birth_certificate');
+        if (fileId) {
+          const fileUrl = `${baseFileUrl}/${fileId}`;
+          allData.documents.birth_certificate = fileUrl;
+          allData.documents.birthCertificate = fileUrl;
+          console.log('  ✅ birth_certificate:', fileUrl);
+        } else {
+          console.warn('  ⚠️ birth_certificate: saveFileToDB returned null');
+        }
       }
 
       // Handle aadhaar_card
       if (req.files.aadhaar_card && req.files.aadhaar_card[0]) {
         const file = req.files.aadhaar_card[0];
-        const filePath = `/uploads/documents/aadhaar-cards/school-${schoolId}/${file.filename}`;
-        allData.documents.aadhaar_card = filePath;
-        allData.documents.aadhaarCard = filePath;
-        console.log('  ✅ aadhaar_card:', filePath);
+        const fileId = await fileStorageUtil.saveFileToDB(file, schoolId, 'aadhaar_card');
+        if (fileId) {
+          const fileUrl = `${baseFileUrl}/${fileId}`;
+          allData.documents.aadhaar_card = fileUrl;
+          allData.documents.aadhaarCard = fileUrl;
+          console.log('  ✅ aadhaar_card:', fileUrl);
+        } else {
+          console.warn('  ⚠️ aadhaar_card: saveFileToDB returned null');
+        }
       }
 
       // Handle transfer_certificate
       if (req.files.transfer_certificate && req.files.transfer_certificate[0]) {
         const file = req.files.transfer_certificate[0];
-        const filePath = `/uploads/documents/transfer-certificates/school-${schoolId}/${file.filename}`;
-        allData.documents.transfer_certificate = filePath;
-        allData.documents.transferCertificate = filePath;
-        console.log('  ✅ transfer_certificate:', filePath);
+        const fileId = await fileStorageUtil.saveFileToDB(file, schoolId, 'transfer_certificate');
+        if (fileId) {
+          const fileUrl = `${baseFileUrl}/${fileId}`;
+          allData.documents.transfer_certificate = fileUrl;
+          allData.documents.transferCertificate = fileUrl;
+          console.log('  ✅ transfer_certificate:', fileUrl);
+        } else {
+          console.warn('  ⚠️ transfer_certificate: saveFileToDB returned null');
+        }
       }
     }
 
