@@ -121,12 +121,44 @@ const detachSection = async ({ schoolId, classId, classSectionId }) => {
 };
 
 const deleteClass = async ({ schoolId, classId }) => {
-  const { rowCount } = await pool.query({
-    text: `DELETE FROM school_classes
-           WHERE school_id = $1 AND id = $2`,
-    values: [schoolId, classId]
-  });
-  return rowCount > 0;
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    // Clear nullable FK references that don't have ON DELETE CASCADE
+    await client.query({
+      text: `UPDATE student_enquiries SET class_id = NULL
+             WHERE school_id = $1 AND class_id = $2`,
+      values: [schoolId, classId]
+    });
+    await client.query({
+      text: `UPDATE academic_information SET class_id = NULL
+             WHERE school_id = $1 AND class_id = $2`,
+      values: [schoolId, classId]
+    });
+
+    // Remove exam_details rows (NOT NULL FK, can't set null)
+    await client.query({
+      text: `DELETE FROM exam_details
+             WHERE school_id = $1 AND class_id = $2`,
+      values: [schoolId, classId]
+    });
+
+    // Now delete the class (cascades to class_sections, classes_assign, subject_class_assign)
+    const { rowCount } = await client.query({
+      text: `DELETE FROM school_classes
+             WHERE school_id = $1 AND id = $2`,
+      values: [schoolId, classId]
+    });
+
+    await client.query('COMMIT');
+    return rowCount > 0;
+  } catch (e) {
+    await client.query('ROLLBACK');
+    throw e;
+  } finally {
+    client.release();
+  }
 };
 
 const getSchoolClassById = async ({ schoolId, classId }) => {
