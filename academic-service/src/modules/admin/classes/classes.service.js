@@ -1,46 +1,5 @@
 const repo = require('./classes.repository');
 
-// ─── Validators ──────────────────────────────────────────────────────────
-
-// The set of attached sections must be a contiguous prefix of the
-// canonical section_templates list ordered by order_number.
-// Why: user requirement — sections go A,B,C,D,E,F,A1,A2,… in order.
-// No skipping (no "A, D, F"); no Red without everything before it.
-const assertContiguousPrefix = (selectedIdSet, allActiveOrdered) => {
-  const selectedCount = selectedIdSet.size;
-  for (let i = 0; i < allActiveOrdered.length; i++) {
-    const tpl = allActiveOrdered[i];
-    const inSelected = selectedIdSet.has(tpl.id);
-
-    if (i < selectedCount && !inSelected) {
-      // Found a gap — name the first missing template + the first "bad"
-      // template (out-of-order one) so the error message is actionable.
-      let bad = null;
-      for (let j = i + 1; j < allActiveOrdered.length; j++) {
-        if (selectedIdSet.has(allActiveOrdered[j].id)) { bad = allActiveOrdered[j]; break; }
-      }
-      const err = new Error(
-        bad
-          ? `Cannot attach '${bad.section_name}' without first attaching '${tpl.section_name}'`
-          : `Missing required section '${tpl.section_name}' in selection`
-      );
-      err.statusCode     = 400;
-      err.code           = 'SECTION_ORDER_VIOLATION';
-      err.missing_before = tpl.section_name;
-      throw err;
-    }
-
-    if (i >= selectedCount && inSelected) {
-      const err = new Error(
-        `Section '${tpl.section_name}' cannot be selected — earlier sections must be attached first`
-      );
-      err.statusCode = 400;
-      err.code       = 'SECTION_ORDER_VIOLATION';
-      throw err;
-    }
-  }
-};
-
 // ─── Popup endpoint ──────────────────────────────────────────────────────
 
 // Popup payload:
@@ -79,7 +38,6 @@ const createClassWithSections = async ({ schoolId, classTemplateId, sectionTempl
   }
 
   const mergedIdSet = new Set([...defaultIdSet, ...uniqueExtras]);
-  assertContiguousPrefix(mergedIdSet, allActive);
 
   // Materialise templates in canonical order for the insert
   const sectionTemplates = allActive.filter(t => mergedIdSet.has(t.id));
@@ -151,9 +109,6 @@ const attachSection = async ({ schoolId, classId, sectionTemplateId }) => {
     err.statusCode = 409; err.code = 'SECTION_ALREADY_ATTACHED'; throw err;
   }
 
-  const mergedIdSet = new Set([...currentIdSet, sectionTemplateId]);
-  assertContiguousPrefix(mergedIdSet, allActive);
-
   const attached = await repo.attachSection({
     schoolId, classId,
     sectionTemplateId,
@@ -173,18 +128,6 @@ const detachSection = async ({ schoolId, classId, classSectionId }) => {
   if (!row) {
     const err = new Error('Section not found on this class');
     err.statusCode = 404; err.code = 'SECTION_NOT_FOUND'; throw err;
-  }
-  if (row.is_default) {
-    const err = new Error('Default sections (A, B, C, D) cannot be removed from a class');
-    err.statusCode = 400; err.code = 'DEFAULT_SECTION_LOCKED'; throw err;
-  }
-
-  // Tail-only detach — any other detach would create a gap in the prefix.
-  const current  = await repo.listSections({ schoolId, classId });
-  const tail     = current[current.length - 1];
-  if (!tail || tail.section_template_id !== row.section_template_id) {
-    const err = new Error('Sections must be removed in reverse order — detach the last one first');
-    err.statusCode = 400; err.code = 'SECTION_ORDER_VIOLATION'; throw err;
   }
 
   await repo.detachSection({ schoolId, classId, classSectionId });
