@@ -215,26 +215,28 @@ const createTeacher = async (schoolId, teacherData) => {
       }
     }
 
-    // Bridge 1 pre-check: make sure the email isn't already taken in auth_db.
-    // If it is, refuse to create the teacher — otherwise we'd end up with a
-    // teacher_records row whose auth_user_id stays null and who can't log in.
+    const newTeacher = await teacherRepository.createTeacher(schoolId, teacherData);
+
+    // Bridge 1: auto-create login credentials in auth_db
+    // If email already exists in auth_db, link to existing auth user
     if (teacherData.primary_email) {
       const existingAuthUser = await authPool.query(
         `SELECT id FROM users WHERE email = $1 LIMIT 1`,
         [teacherData.primary_email]
       );
       if (existingAuthUser.rows.length > 0) {
-        const error = new Error(`Email ${teacherData.primary_email} is already registered as a login. Use a different email.`);
-        error.statusCode = 409;
-        error.code = 'EMAIL_ALREADY_REGISTERED';
-        throw error;
+        // Link teacher to existing auth user
+        await pool.query(
+          `UPDATE teacher_records SET auth_user_id = $1 WHERE id = $2`,
+          [existingAuthUser.rows[0].id, newTeacher.id]
+        );
+        console.log(`Bridge 1: linked teacher ${newTeacher.first_name} to existing auth user (${teacherData.primary_email})`);
+      } else {
+        await createAuthUser(newTeacher);
       }
+    } else {
+      await createAuthUser(newTeacher);
     }
-
-    const newTeacher = await teacherRepository.createTeacher(schoolId, teacherData);
-
-    // Bridge 1: auto-create login credentials in auth_db
-    await createAuthUser(newTeacher);
 
     const convertedTeacher = await convertPathsToUrls(newTeacher);
 
