@@ -50,14 +50,21 @@ const createTeacher = async (req, res, next) => {
     const schoolId = req.user.school_id;
     const teacherData = req.body;
 
-    // Parse class_ids if it comes as a JSON string from FormData
-    if (teacherData.class_ids && typeof teacherData.class_ids === 'string') {
-      try {
-        teacherData.class_ids = JSON.parse(teacherData.class_ids);
-      } catch (e) {
-        // If parsing fails, initialize as empty array
-        teacherData.class_ids = [];
-      }
+    // Handle class_ids - should be an array from FormData
+    // OLD CODE (commented out - was trying to parse as JSON string):
+    // if (teacherData.class_ids && typeof teacherData.class_ids === 'string') {
+    //   try {
+    //     teacherData.class_ids = JSON.parse(teacherData.class_ids);
+    //   } catch (e) {
+    //     teacherData.class_ids = [];
+    //   }
+    // }
+
+    // NEW CODE - Handle array directly from FormData
+    if (!Array.isArray(teacherData.class_ids) && teacherData.class_ids) {
+      teacherData.class_ids = [teacherData.class_ids]; // Convert single value to array
+    } else if (!teacherData.class_ids) {
+      teacherData.class_ids = []; // Initialize as empty array if not provided
     }
 
     // Handle file uploads - save to database and get file URLs
@@ -106,14 +113,21 @@ const updateTeacher = async (req, res, next) => {
       throw error;
     }
 
-    // Parse class_ids if it comes as a JSON string from FormData
-    if (updateData.class_ids && typeof updateData.class_ids === 'string') {
-      try {
-        updateData.class_ids = JSON.parse(updateData.class_ids);
-      } catch (e) {
-        // If parsing fails, initialize as empty array
-        updateData.class_ids = [];
-      }
+    // Handle class_ids - should be an array from FormData
+    // OLD CODE (commented out - was trying to parse as JSON string):
+    // if (updateData.class_ids && typeof updateData.class_ids === 'string') {
+    //   try {
+    //     updateData.class_ids = JSON.parse(updateData.class_ids);
+    //   } catch (e) {
+    //     updateData.class_ids = [];
+    //   }
+    // }
+
+    // NEW CODE - Handle array directly from FormData
+    if (!Array.isArray(updateData.class_ids) && updateData.class_ids) {
+      updateData.class_ids = [updateData.class_ids]; // Convert single value to array
+    } else if (!updateData.class_ids) {
+      updateData.class_ids = []; // Initialize as empty array if not provided
     }
 
     // Handle file uploads - save to database and get file URLs
