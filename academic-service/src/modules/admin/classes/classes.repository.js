@@ -102,6 +102,92 @@ const createClassWithSectionsTxn = async ({ schoolId, classTemplateId, className
   }
 };
 
+const listClassTemplatesByIds = async (ids) => {
+  if (!ids || ids.length === 0) return [];
+  const { rows } = await pool.query({
+    text: `SELECT id, class_name, order_number
+           FROM class_templates
+           WHERE id = ANY($1::uuid[]) AND is_active = true`,
+    values: [ids]
+  });
+  return rows;
+};
+
+// bulkSaveStructureTxn — additive only.
+// For each class template id:
+//   - if a school_classes row already exists for (school_id, class_name): skip
+//     entirely (do NOT touch its sections — those are managed per-class via
+//     attach/detach endpoints).
+//   - if it does not exist: insert it AND attach the given section templates.
+// This guarantees existing classes' sections are never wiped by a bulk save,
+// which is what the UI's "add new classes" flow needs.
+const bulkSaveStructureTxn = async ({ schoolId, classTemplates, sectionTemplates }) => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    const result = [];
+    for (const cTpl of classTemplates) {
+      // Insert only when missing — ON CONFLICT DO NOTHING returns 0 rows on conflict.
+      const insert = await client.query({
+        text: `INSERT INTO school_classes (school_id, class_name, template_id, order_number)
+               VALUES ($1, $2, $3, $4)
+               ON CONFLICT (school_id, class_name) DO NOTHING
+               RETURNING id, class_name, template_id, order_number`,
+        values: [schoolId, cTpl.class_name, cTpl.id, (cTpl.order_number == null ? 0 : cTpl.order_number)]
+      });
+
+      let cls;
+      let isNew;
+      if (insert.rows.length > 0) {
+        cls = insert.rows[0];
+        isNew = true;
+      } else {
+        // Already existed — fetch the row so we can return it, but skip section attach.
+        const existing = await client.query({
+          text: `SELECT id, class_name, template_id, order_number
+                 FROM school_classes
+                 WHERE school_id = $1 AND class_name = $2`,
+          values: [schoolId, cTpl.class_name]
+        });
+        cls = existing.rows[0];
+        isNew = false;
+      }
+
+      // Only attach sections to brand-new classes.
+      if (isNew) {
+        for (const sTpl of sectionTemplates) {
+          await client.query({
+            text: `INSERT INTO class_sections (school_id, class_id, section_template_id, section_name)
+                   VALUES ($1, $2, $3, $4)
+                   ON CONFLICT (school_id, class_id, section_template_id) DO NOTHING`,
+            values: [schoolId, cls.id, sTpl.id, sTpl.section_name]
+          });
+        }
+      }
+
+      const sectionsResult = await client.query({
+        text: `SELECT cs.id, cs.section_template_id, cs.section_name, st.is_default
+               FROM class_sections cs
+               JOIN section_templates st ON st.id = cs.section_template_id
+               WHERE cs.school_id = $1 AND cs.class_id = $2
+               ORDER BY st.order_number ASC`,
+        values: [schoolId, cls.id]
+      });
+
+      result.push({ class: cls, sections: sectionsResult.rows, created: isNew });
+    }
+
+    await client.query('COMMIT');
+    return result;
+  } catch (e) {
+    await client.query('ROLLBACK');
+    throw e;
+  } finally {
+    client.release();
+  }
+};
+
 const attachSection = async ({ schoolId, classId, sectionTemplateId, sectionName }) => {
   const { rows } = await pool.query({
     text: `INSERT INTO class_sections (school_id, class_id, section_template_id, section_name)
@@ -179,6 +265,8 @@ module.exports = {
   listSections,
   getClassSectionWithTemplate,
   createClassWithSectionsTxn,
+  listClassTemplatesByIds,
+  bulkSaveStructureTxn,
   attachSection,
   detachSection,
   deleteClass,

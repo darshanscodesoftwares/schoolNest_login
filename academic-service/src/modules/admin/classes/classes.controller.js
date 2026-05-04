@@ -76,6 +76,19 @@ const detachSection = async (req, res, next) => {
   } catch (e) { return next(e); }
 };
 
+const bulkSaveStructure = async (req, res, next) => {
+  try {
+    assertAdmin(req.user);
+    const { class_template_ids, section_template_ids } = req.body;
+    const data = await svc.bulkSaveStructure({
+      schoolId:           req.user.school_id,
+      classTemplateIds:   class_template_ids,
+      sectionTemplateIds: section_template_ids
+    });
+    return res.status(200).json({ success: true, message: 'Class structure saved', data });
+  } catch (e) { return next(e); }
+};
+
 const deleteClass = async (req, res, next) => {
   try {
     assertAdmin(req.user);
@@ -94,5 +107,6 @@ module.exports = {
   nextAvailableSection,
   attachSection,
   detachSection,
-  deleteClass
+  deleteClass,
+  bulkSaveStructure
 };

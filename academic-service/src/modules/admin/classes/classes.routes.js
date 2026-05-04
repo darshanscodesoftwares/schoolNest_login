@@ -6,6 +6,10 @@ const router = express.Router();
 // "Add New Class" popup — pick a class template + optional extra sections
 router.post('/', ctrl.createClassWithSections);
 
+// Bulk save: apply one section list to many classes in a single transaction.
+// Must come before the /:classId routes so 'structure' isn't read as a UUID.
+router.post('/structure', ctrl.bulkSaveStructure);
+
 // List every class this school has onboarded (with section_count)
 router.get('/', ctrl.listClasses);
 

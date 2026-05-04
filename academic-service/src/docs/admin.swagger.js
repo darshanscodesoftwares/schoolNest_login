@@ -2488,6 +2488,90 @@
 
 /**
  * @swagger
+ * /api/v1/academic/admin/classes/structure:
+ *   post:
+ *     tags: [Admin - Classes]
+ *     summary: Bulk-save class structure (apply one section list to many classes)
+ *     description: >
+ *       Atomic bulk upsert. For every `class_template_id` in the payload:
+ *
+ *       1. Upserts a `school_classes` row from the matching `class_templates` entry.
+ *       2. Replaces that class's `class_sections` to **exactly match** `section_template_ids`
+ *          (detaches extras, attaches missing ones).
+ *
+ *       Same section list applies to every selected class. Empty `section_template_ids`
+ *       is valid and clears all sections for the selected classes.
+ *
+ *       Used by the Settings page "Manage Class & Section Structure" bulk modal.
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [class_template_ids]
+ *             properties:
+ *               class_template_ids:
+ *                 type: array
+ *                 minItems: 1
+ *                 items: { type: string, format: uuid }
+ *                 description: One or more class_template UUIDs to onboard.
+ *               section_template_ids:
+ *                 type: array
+ *                 items: { type: string, format: uuid }
+ *                 description: Section template UUIDs to apply to every selected class.
+ *           examples:
+ *             withSections:
+ *               value:
+ *                 class_template_ids: ["uuid-class-1", "uuid-class-2"]
+ *                 section_template_ids: ["uuid-A", "uuid-B", "uuid-C", "uuid-D"]
+ *             clearSections:
+ *               value:
+ *                 class_template_ids: ["uuid-class-1"]
+ *                 section_template_ids: []
+ *     responses:
+ *       200:
+ *         description: Per-class result with the freshly-built section list.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success: { type: boolean, example: true }
+ *                 message: { type: string, example: Class structure saved }
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       class:
+ *                         type: object
+ *                         properties:
+ *                           id: { type: string, format: uuid }
+ *                           class_name: { type: string, example: Class 1 }
+ *                           template_id: { type: string, format: uuid }
+ *                           order_number: { type: integer, example: 4 }
+ *                       sections:
+ *                         type: array
+ *                         items:
+ *                           type: object
+ *                           properties:
+ *                             id: { type: string, format: uuid }
+ *                             section_template_id: { type: string, format: uuid }
+ *                             section_name: { type: string, example: A }
+ *                             is_default: { type: boolean }
+ *       400:
+ *         description: >
+ *           Validation error. Codes:
+ *           - `VALIDATION_ERROR` — empty or missing `class_template_ids`
+ *           - `INVALID_TEMPLATE` — one or more UUIDs don't exist or aren't active
+ *       403: { description: Not an admin }
+ */
+
+/**
+ * @swagger
  * /api/v1/academic/admin/classes/{classId}/sections:
  *   get:
  *     tags: [Admin - Classes]

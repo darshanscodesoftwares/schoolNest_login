@@ -150,6 +150,48 @@ const deleteClass = async ({ schoolId, classId }) => {
   }
 };
 
+// Bulk save: applies the same section list to every selected class.
+// For each class: upsert school_classes from class_templates, then make
+// class_sections exactly match the given section_template_ids (detach extras,
+// attach missing).
+const bulkSaveStructure = async ({ schoolId, classTemplateIds, sectionTemplateIds }) => {
+  if (!Array.isArray(classTemplateIds) || classTemplateIds.length === 0) {
+    const err = new Error('class_template_ids must be a non-empty array');
+    err.statusCode = 400;
+    err.code       = 'VALIDATION_ERROR';
+    throw err;
+  }
+
+  const sectionIds = Array.isArray(sectionTemplateIds) ? Array.from(new Set(sectionTemplateIds)) : [];
+  const classIds   = Array.from(new Set(classTemplateIds));
+
+  const classTemplates = await repo.listClassTemplatesByIds(classIds);
+  if (classTemplates.length !== classIds.length) {
+    const err = new Error('One or more class_template_ids are invalid');
+    err.statusCode = 400;
+    err.code       = 'INVALID_TEMPLATE';
+    throw err;
+  }
+
+  let sectionTemplates = [];
+  if (sectionIds.length > 0) {
+    const allActive  = await repo.listActiveSectionTemplatesOrdered();
+    const byId       = new Map(allActive.map(t => [t.id, t]));
+    for (const id of sectionIds) {
+      if (!byId.has(id)) {
+        const err = new Error('One or more section_template_ids are invalid');
+        err.statusCode = 400;
+        err.code       = 'INVALID_TEMPLATE';
+        throw err;
+      }
+    }
+    // Preserve canonical order from section_templates.order_number
+    sectionTemplates = allActive.filter(t => sectionIds.includes(t.id));
+  }
+
+  return repo.bulkSaveStructureTxn({ schoolId, classTemplates, sectionTemplates });
+};
+
 module.exports = {
   createClassWithSections,
   listClasses,
@@ -157,5 +199,6 @@ module.exports = {
   nextAvailableSection,
   attachSection,
   detachSection,
-  deleteClass
+  deleteClass,
+  bulkSaveStructure
 };
