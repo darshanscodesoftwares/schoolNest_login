@@ -79,6 +79,38 @@ const classesAssignService = {
       }
     }
 
+    // Rule: each teacher can be class teacher of at most one (class, section).
+    // Reject if any teacher in the payload is already assigned anywhere in this school,
+    // or appears more than once in the same payload.
+    const seenTeachers = new Set();
+    for (const assignment of assignments) {
+      if (seenTeachers.has(assignment.teacher_id)) {
+        const error = new Error(
+          `Teacher cannot be assigned to more than one section in the same submission`
+        );
+        error.statusCode = 409;
+        error.code = 'TEACHER_ALREADY_ASSIGNED';
+        throw error;
+      }
+      seenTeachers.add(assignment.teacher_id);
+
+      const existing = await classesAssignRepository.getExistingTeacherAssignment(
+        school_id,
+        assignment.teacher_id
+      );
+      if (existing) {
+        const where = existing.class_name
+          ? `${existing.class_name} - ${existing.section_name}`
+          : `section ${existing.section_name}`;
+        const error = new Error(
+          `Teacher is already class teacher of ${where}. A teacher can be class teacher of only one class-section.`
+        );
+        error.statusCode = 409;
+        error.code = 'TEACHER_ALREADY_ASSIGNED';
+        throw error;
+      }
+    }
+
     // Prepare assignments with school_id and class_id
     const assignmentsToCreate = assignments.map((assignment) => ({
       school_id,
@@ -178,6 +210,27 @@ const classesAssignService = {
 
     const finalTeacherId = teacher_id || assignment.teacher_id;
     const finalSection   = section_name || assignment.section_name;
+
+    // Rule (update path): if teacher is changing, the new teacher must not
+    // already be class teacher of a different class-section.
+    if (finalTeacherId && finalTeacherId !== assignment.teacher_id) {
+      const existing = await classesAssignRepository.getExistingTeacherAssignment(
+        school_id,
+        finalTeacherId,
+        assignment_id
+      );
+      if (existing) {
+        const where = existing.class_name
+          ? `${existing.class_name} - ${existing.section_name}`
+          : `section ${existing.section_name}`;
+        const error = new Error(
+          `Teacher is already class teacher of ${where}. A teacher can be class teacher of only one class-section.`
+        );
+        error.statusCode = 409;
+        error.code = 'TEACHER_ALREADY_ASSIGNED';
+        throw error;
+      }
+    }
 
     const updated = await classesAssignRepository.updateAssignment({
       school_id,

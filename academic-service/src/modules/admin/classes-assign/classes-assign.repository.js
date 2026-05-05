@@ -130,6 +130,25 @@ const classesAssignRepository = {
     return result.rows.length > 0;
   },
 
+  // Check if a teacher already has any class-teacher assignment in this school.
+  // A teacher can be class teacher of at most one (class, section). Optionally
+  // ignores a specific assignment row (used during update so a teacher can keep
+  // their own assignment while editing).
+  getExistingTeacherAssignment: async (school_id, teacher_id, ignore_assignment_id) => {
+    const params = [school_id, teacher_id];
+    let text = `SELECT ca.id, ca.class_id, ca.section_name, sc.class_name
+                FROM classes_assign ca
+                LEFT JOIN school_classes sc ON sc.id = ca.class_id
+                WHERE ca.school_id = $1 AND ca.teacher_id = $2`;
+    if (ignore_assignment_id) {
+      params.push(ignore_assignment_id);
+      text += ` AND ca.id <> $3`;
+    }
+    text += ` LIMIT 1`;
+    const result = await pool.query({ text, values: params });
+    return result.rows[0] || null;
+  },
+
   // Delete all assignments for a class
   deleteClassAssignments: async (school_id, class_id) => {
     const query = {
