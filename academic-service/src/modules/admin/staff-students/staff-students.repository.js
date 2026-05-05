@@ -3,6 +3,10 @@ const pool = require('../../../config/db');
 // Get all approved students with specific fields for staff
 const getApprovedStudents = async (schoolId, filters = {}) => {
   try {
+    // DISTINCT ON (sa.id) requires inner ORDER BY to start with sa.id, so we
+    // sort newest-first in an outer wrapper. _created_at is projected only to
+    // drive that sort and is dropped from the response in the controller layer
+    // (or simply ignored by the FE).
     let query = `
       SELECT DISTINCT ON (sa.id)
         pi.student_id,
@@ -18,7 +22,9 @@ const getApprovedStudents = async (schoolId, filters = {}) => {
         ci.student_phone,
         ci.student_email,
         sa.admission_status,
-        ai.admission_number
+        ai.admission_number,
+        sa.created_at AS _created_at,
+        sa.id AS _sa_id
       FROM students_admission sa
       LEFT JOIN personal_information pi ON sa.id = pi.student_id
       LEFT JOIN academic_information ai ON sa.id = ai.student_id
@@ -76,21 +82,22 @@ const getApprovedStudents = async (schoolId, filters = {}) => {
       params.push(`%${filters.parentGuardian}%`);
     }
 
-    query += ` ORDER BY sa.id, sa.created_at ASC`;
+    // Inner ORDER BY satisfies DISTINCT ON; outer wrapper does the user-visible sort.
+    query += ` ORDER BY sa.id`;
+    let outer = `SELECT * FROM (${query}) t ORDER BY t._created_at DESC NULLS LAST, t._sa_id`;
 
-    // Add pagination if provided
     if (filters.limit) {
       paramIndex++;
-      query += ` LIMIT $${paramIndex}`;
+      outer += ` LIMIT $${paramIndex}`;
       params.push(filters.limit);
     }
     if (filters.offset) {
       paramIndex++;
-      query += ` OFFSET $${paramIndex}`;
+      outer += ` OFFSET $${paramIndex}`;
       params.push(filters.offset);
     }
 
-    const result = await pool.query(query, params);
+    const result = await pool.query(outer, params);
     return result.rows;
   } catch (error) {
     console.error('❌ Error fetching approved students:', error);

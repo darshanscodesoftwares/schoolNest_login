@@ -3,8 +3,10 @@ const pool = require('../../../../config/db');
 // Get all teachers
 const getAllTeachers = async (schoolId, filters = {}) => {
   try {
-    // Use DISTINCT ON to avoid duplicate rows from class join
-    let query = `
+    // DISTINCT ON (tr.id) deduplicates rows produced by the class join.
+    // Postgres requires its ORDER BY to start with tr.id, so we sort the
+    // deduped result in an outer query to put newest teachers on top.
+    let inner = `
       SELECT DISTINCT ON (tr.id) tr.*
       FROM teacher_records tr
     `;
@@ -12,56 +14,53 @@ const getAllTeachers = async (schoolId, filters = {}) => {
     const params = [schoolId];
     let paramIndex = 1;
 
-    // Add class join BEFORE WHERE clause if classes filter is present
     if (filters.classes) {
-      query += ` INNER JOIN school_classes sc ON sc.id = ANY(tr.class_ids)`;
+      inner += ` INNER JOIN school_classes sc ON sc.id = ANY(tr.class_ids)`;
     }
 
-    query += ` WHERE tr.school_id = $1`;
+    inner += ` WHERE tr.school_id = $1`;
 
-    // Optional filters
     if (filters.designation) {
       paramIndex++;
-      query += ` AND tr.designation ILIKE $${paramIndex}`;
+      inner += ` AND tr.designation ILIKE $${paramIndex}`;
       params.push(`%${filters.designation}%`);
     }
 
     if (filters.department_id) {
       paramIndex++;
-      query += ` AND tr.department_id = $${paramIndex}`;
+      inner += ` AND tr.department_id = $${paramIndex}`;
       params.push(filters.department_id);
     }
 
     if (filters.employment_status) {
       paramIndex++;
-      query += ` AND tr.employment_status = $${paramIndex}`;
+      inner += ` AND tr.employment_status = $${paramIndex}`;
       params.push(filters.employment_status);
     }
 
-    // New text search filters
     if (filters.teacherName) {
       paramIndex++;
-      query += ` AND tr.first_name ILIKE $${paramIndex}`;
-      const searchPattern = `%${filters.teacherName}%`;
-      params.push(searchPattern);
+      inner += ` AND tr.first_name ILIKE $${paramIndex}`;
+      params.push(`%${filters.teacherName}%`);
     }
 
-    // Class search - join happens above, add condition here
     if (filters.classes) {
       paramIndex++;
-      query += ` AND sc.class_name ILIKE $${paramIndex}`;
+      inner += ` AND sc.class_name ILIKE $${paramIndex}`;
       params.push(`%${filters.classes}%`);
     }
 
     if (filters.experience) {
       paramIndex++;
-      query += ` AND tr.total_experience_years = $${paramIndex}`;
+      inner += ` AND tr.total_experience_years = $${paramIndex}`;
       params.push(parseInt(filters.experience, 10));
     }
 
-    query += ` ORDER BY tr.id, tr.created_at ASC`;
+    // Inner ORDER BY satisfies DISTINCT ON requirement.
+    inner += ` ORDER BY tr.id`;
 
-    // Add pagination if provided
+    let query = `SELECT * FROM (${inner}) t ORDER BY t.created_at DESC NULLS LAST, t.id`;
+
     if (filters.limit) {
       paramIndex++;
       query += ` LIMIT $${paramIndex}`;
