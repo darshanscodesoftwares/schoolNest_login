@@ -163,6 +163,17 @@ const bulkSaveStructureTxn = async ({ schoolId, classTemplates, sectionTemplates
                    ON CONFLICT (school_id, class_id, section_template_id) DO NOTHING`,
             values: [schoolId, cls.id, sTpl.id, sTpl.section_name]
           });
+
+          // Mirror into the legacy `sections` table so older endpoints
+          // (Exams form's /admin/lookups/sections, etc.) still see the
+          // school's sections without each call site having to migrate to
+          // the class_sections model. Per-school dedupe by section_name.
+          await client.query({
+            text: `INSERT INTO sections (school_id, section_name)
+                   VALUES ($1, $2)
+                   ON CONFLICT (school_id, section_name) DO NOTHING`,
+            values: [schoolId, sTpl.section_name]
+          });
         }
       }
 
