@@ -25,7 +25,7 @@ const getAllDrivers = async (schoolId, filters = {}) => {
       params.push(`%${filters.bus_number}%`);
     }
 
-    query += ` ORDER BY created_at ASC`;
+    query += ` ORDER BY created_at DESC`;
 
     // Add pagination if provided
     if (filters.limit) {
