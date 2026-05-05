@@ -50,7 +50,7 @@ const classesAssignRepository = {
              s.id as section_id
              FROM classes_assign ca
              LEFT JOIN teacher_records tr ON (ca.teacher_id = tr.auth_user_id OR ca.teacher_id = tr.id::text)
-             LEFT JOIN sections s ON ca.section_name = s.section_name
+             LEFT JOIN sections s ON s.section_name = ca.section_name AND s.school_id = ca.school_id
              WHERE ca.school_id = $1
              ORDER BY ca.created_at DESC`,
       values: [school_id],
@@ -68,7 +68,7 @@ const classesAssignRepository = {
              s.id as section_id
              FROM classes_assign ca
              LEFT JOIN teacher_records tr ON (ca.teacher_id = tr.auth_user_id OR ca.teacher_id = tr.id::text)
-             LEFT JOIN sections s ON ca.section_name = s.section_name
+             LEFT JOIN sections s ON s.section_name = ca.section_name AND s.school_id = ca.school_id
              WHERE ca.school_id = $1 AND ca.class_id = $2::uuid
              ORDER BY ca.section_name`,
       values: [school_id, class_id],
@@ -86,7 +86,7 @@ const classesAssignRepository = {
              s.id as section_id
              FROM classes_assign ca
              LEFT JOIN teacher_records tr ON (ca.teacher_id = tr.auth_user_id OR ca.teacher_id = tr.id::text)
-             LEFT JOIN sections s ON ca.section_name = s.section_name
+             LEFT JOIN sections s ON s.section_name = ca.section_name AND s.school_id = ca.school_id
              WHERE ca.school_id = $1 AND ca.id = $2`,
       values: [school_id, assignment_id],
     };
@@ -263,7 +263,7 @@ const classesAssignRepository = {
       text: `SELECT DISTINCT ca.section_name,
              s.id as section_id
              FROM classes_assign ca
-             LEFT JOIN sections s ON ca.section_name = s.section_name
+             LEFT JOIN sections s ON s.section_name = ca.section_name AND s.school_id = ca.school_id
              WHERE ca.school_id = $1
              ORDER BY ca.section_name ASC`,
       values: [school_id],
