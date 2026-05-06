@@ -81,7 +81,7 @@ const getTimetableEntries = async ({ schoolId, class_name, section, academic_yea
                   tr.first_name AS teacher_name
            FROM timetable t
            LEFT JOIN teacher_records tr ON tr.id = t.teacher_id AND tr.school_id = t.school_id
-           WHERE t.class_definition_id = $1 AND t.day_of_week = ANY($2::text[])
+           WHERE t.class_definition_id = $1::uuid AND t.day_of_week = ANY($2::text[])
            ORDER BY t.day_of_week ASC, t.period_number ASC`,
     values: [classDefId, days]
   });
@@ -114,7 +114,7 @@ const deletePeriod = async ({ schoolId, class_name, section, academic_year, day_
 
   await pool.query({
     text: `DELETE FROM timetable
-           WHERE class_definition_id = $1 AND day_of_week = $2 AND period_number = $3`,
+           WHERE class_definition_id = $1::uuid AND day_of_week = $2 AND period_number = $3`,
     values: [classDefId, day_of_week, period_number]
   });
 };
@@ -125,7 +125,7 @@ const setStatus = async ({ schoolId, class_name, section, academic_year, status 
 
   await pool.query({
     text: `UPDATE timetable SET status = $1
-           WHERE class_definition_id = $2`,
+           WHERE class_definition_id = $2::uuid`,
     values: [status, classDefId]
   });
 };
