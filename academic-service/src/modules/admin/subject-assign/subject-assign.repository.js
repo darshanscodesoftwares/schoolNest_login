@@ -37,7 +37,7 @@ const subjectAssignRepository = {
         // Check if this assignment already exists
         const existing = await client.query(
           `SELECT id FROM subject_class_assign
-           WHERE school_id = $1 AND subject_id = $2 AND class_id = $3 LIMIT 1`,
+           WHERE school_id = $1 AND subject_id = $2::uuid AND class_id = $3::uuid LIMIT 1`,
           [school_id, subject_id, class_id]
         );
 
