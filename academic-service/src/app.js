@@ -50,6 +50,8 @@ const adminTimetableRoutes           = require('./modules/admin/timetable/admin.
 const adminClassTemplatesRoutes      = require('./modules/admin/class-templates/class-templates.routes');
 const adminSectionTemplatesRoutes    = require('./modules/admin/section-templates/section-templates.routes');
 const adminClassesRoutes             = require('./modules/admin/classes/classes.routes');
+const academicYearsRoutes            = require('./modules/admin/academic-years/academic-years.routes');
+const { scheduleAcademicYearGeneration } = require('./jobs/academic-year-auto-generate');
 
 // ─────────────────────────────────────────────────────────────────────────────
 const app = express();
@@ -119,7 +121,11 @@ app.use('/api/v1/academic/admin/timetable',         authMiddleware, adminTimetab
 app.use('/api/v1/academic/admin/class-templates',   authMiddleware, adminClassTemplatesRoutes);
 app.use('/api/v1/academic/admin/section-templates', authMiddleware, adminSectionTemplatesRoutes);
 app.use('/api/v1/academic/admin/classes',           authMiddleware, adminClassesRoutes);
+app.use('/api/v1/academic/admin/academic-years',    authMiddleware, academicYearsRoutes);
 app.use('/api/v1/academic', masterDataRoutes);
+
+// Start academic year auto-generation cron job (runs Dec 30 at 00:00)
+scheduleAcademicYearGeneration();
 
 // ── 404 ───────────────────────────────────────────────────────────────────────
 app.use((_req, res) => {
