@@ -68,11 +68,19 @@ const subjectAssignService = {
       }
     }
 
-    // Create subject
-    const subject = await subjectAssignRepository.createSubject({
+    // Check if subject already exists
+    let subject = await subjectAssignRepository.getSubjectByName({
       school_id,
       subject_name,
     });
+
+    // Create subject only if it doesn't exist
+    if (!subject) {
+      subject = await subjectAssignRepository.createSubject({
+        school_id,
+        subject_name,
+      });
+    }
 
     // Create batch assignments
     const assignmentsToCreate = classAssignments.map((assignment) => ({

@@ -33,24 +33,33 @@ const subjectAssignRepository = {
       await client.query("BEGIN");
 
       const results = [];
-      assignments.forEach(({ school_id, subject_id, class_id, teacher_id, sequence }, index) => {
-        // Use provided sequence or fallback to index
-        const seq = sequence !== undefined ? sequence : index + 1;
-        results.push(
-          client.query(
-            `INSERT INTO subject_class_assign (school_id, subject_id, class_id, teacher_id, sequence)
-             VALUES ($1, $2, $3, $4, $5)
-             RETURNING *`,
-            [school_id, subject_id, class_id, teacher_id, seq]
-          )
+      for (const { school_id, subject_id, class_id, teacher_id, sequence } of assignments) {
+        // Check if this assignment already exists
+        const existing = await client.query(
+          `SELECT id FROM subject_class_assign
+           WHERE school_id = $1 AND subject_id = $2 AND class_id = $3 LIMIT 1`,
+          [school_id, subject_id, class_id]
         );
-      });
 
-      const queryResults = await Promise.all(results);
-      const insertedRows = queryResults.map(result => result.rows[0]);
+        // Skip if already exists
+        if (existing.rows && existing.rows.length > 0) {
+          continue;
+        }
+
+        // Use provided sequence or fallback
+        const seq = sequence !== undefined ? sequence : 1;
+        const result = await client.query(
+          `INSERT INTO subject_class_assign (school_id, subject_id, class_id, teacher_id, sequence)
+           VALUES ($1, $2, $3, $4, $5)
+           RETURNING *`,
+          [school_id, subject_id, class_id, teacher_id, seq]
+        );
+
+        results.push(result.rows[0]);
+      }
 
       await client.query("COMMIT");
-      return insertedRows;
+      return results;
     } catch (error) {
       await client.query("ROLLBACK");
       throw error;
@@ -91,6 +100,21 @@ const subjectAssignRepository = {
     };
     const result = await pool.query(query);
     return result.rows[0];
+  },
+
+  // Get subject by name for a school
+  getSubjectByName: async ({ school_id, subject_name }) => {
+    const query = {
+      text: `SELECT s.id,
+             s.subject_name,
+             s.created_at,
+             s.updated_at
+             FROM subjects s
+             WHERE s.school_id = $1 AND s.subject_name = $2`,
+      values: [school_id, subject_name],
+    };
+    const result = await pool.query(query);
+    return result.rows[0] || null;
   },
 
   // Get all class assignments for a subject
