@@ -80,7 +80,7 @@ const getTimetableEntries = async ({ schoolId, class_name, section, academic_yea
     text: `SELECT t.period_number, t.day_of_week, t.subject, t.teacher_id, t.status,
                   tr.first_name AS teacher_name
            FROM timetable t
-           LEFT JOIN teacher_records tr ON tr.id = t.teacher_id AND tr.school_id = t.school_id
+           LEFT JOIN teacher_records tr ON tr.id = t.teacher_id::uuid AND tr.school_id = t.school_id
            WHERE t.class_definition_id = $1::uuid AND t.day_of_week = ANY($2::text[])
            ORDER BY t.day_of_week ASC, t.period_number ASC`,
     values: [classDefId, days]
