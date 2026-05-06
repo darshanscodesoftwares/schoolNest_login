@@ -95,7 +95,7 @@ const upsertPeriod = async ({ schoolId, class_name, section, academic_year, day_
   const { rows } = await pool.query({
     text: `INSERT INTO timetable
              (school_id, class_definition_id, class_name, section, day_of_week, period_number, subject, teacher_id, start_time, end_time, status)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'DRAFT')
+           VALUES ($1, $2::uuid, $3, $4, $5, $6, $7, $8::uuid, $9, $10, 'DRAFT')
            ON CONFLICT (school_id, class_name, section, day_of_week, period_number)
            DO UPDATE SET
              subject    = EXCLUDED.subject,
