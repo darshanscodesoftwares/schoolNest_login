@@ -144,19 +144,21 @@ const findTeacherById = async (teacher_id, school_id) => {
  * Searches parent_guardian_information (father_phone / mother_phone) —
  * the phone given during the child's admission.
  *
- * A parent with 2-3 children will have multiple parent_guardian_information
- * rows (one per admission) but the SAME email → same auth_db user.
- * We deduplicate by email so the result is one auth user regardless of
- * how many children they have. After OTP login, the parent API returns
- * all children linked via students.parent_id.
+ * A parent can have admissions across multiple schools using the same email
+ * (e.g. transferred between schools, or shared contact across siblings in
+ * different schools). We dedupe by (email, school_id) so the caller gets
+ * one entry per (parent_id, school) — letting them pick a school context
+ * when the parent has kids in more than one. children_count and school_id
+ * are scoped to the admission's school, NOT the auth user's school field
+ * (which is just whichever school happened to create the auth user first).
  */
 const findParentsByPhone = async (phone) => {
   try {
     const normalizedPhone = phone.replace(/[\s\-\+]/g, '').replace(/^91/, '');
 
-    // Find all admissions where this phone is father or mother
+    // One row per (email, school_id) — i.e. one entry per school the parent has kids in
     const parentInfoRes = await academicPool.query(
-      `SELECT DISTINCT ON (COALESCE(father_email, mother_email))
+      `SELECT DISTINCT ON (COALESCE(father_email, mother_email), school_id)
               father_full_name, father_email, father_phone,
               mother_full_name, mother_email, mother_phone, school_id
        FROM parent_guardian_information
@@ -168,7 +170,6 @@ const findParentsByPhone = async (phone) => {
 
     if (parentInfoRes.rows.length === 0) return [];
 
-    // Resolve each unique parent email to an auth_db user
     const results = [];
     for (const row of parentInfoRes.rows) {
       var parentEmail = row.father_email || row.mother_email;
@@ -178,7 +179,7 @@ const findParentsByPhone = async (phone) => {
       if (!parentEmail) continue;
 
       const userRes = await pool.query(
-        `SELECT u.id, u.school_id, u.name, u.email, r.name AS role
+        `SELECT u.id, u.name, u.email, r.name AS role
          FROM users u
          INNER JOIN roles r ON r.id = u.role_id
          WHERE u.email = $1 AND r.name = 'PARENT'
@@ -187,15 +188,15 @@ const findParentsByPhone = async (phone) => {
       );
 
       if (userRes.rows[0]) {
-        // Count how many children this parent has
+        // Count children for this parent in THIS school (the admission's school)
         const childrenRes = await academicPool.query(
           `SELECT COUNT(*) as count FROM students WHERE parent_id = $1 AND school_id = $2`,
-          [userRes.rows[0].id, userRes.rows[0].school_id]
+          [userRes.rows[0].id, row.school_id]
         );
 
         results.push({
           id: userRes.rows[0].id,
-          school_id: userRes.rows[0].school_id,
+          school_id: row.school_id,
           name: parentName,
           email: parentEmail,
           phone: parentPhone,
@@ -212,17 +213,19 @@ const findParentsByPhone = async (phone) => {
 };
 
 /**
- * Find parent auth user by ID
+ * Find parent auth user by ID. The auth user's stored school_id is just
+ * whichever school created them first — the actual login-school context
+ * comes from the OTP session (the admission record matched by phone).
  */
-const findParentById = async (parentId, schoolId) => {
+const findParentById = async (parentId) => {
   try {
     const result = await pool.query(
-      `SELECT u.id, u.school_id, u.name, u.email, r.name AS role
+      `SELECT u.id, u.name, u.email, r.name AS role
        FROM users u
        INNER JOIN roles r ON r.id = u.role_id
-       WHERE u.id = $1 AND u.school_id = $2 AND r.name = 'PARENT'
+       WHERE u.id = $1 AND r.name = 'PARENT'
        LIMIT 1`,
-      [parentId, schoolId]
+      [parentId]
     );
     return result.rows[0] || null;
   } catch (error) {

@@ -102,7 +102,7 @@ const verifyOTP = async ({ otp_session_id, otp_code }) => {
     }
 
     // Fetch parent from auth_db to confirm they still exist
-    var parent = await authRepository.findParentById(otpData.parent_id, otpData.school_id);
+    var parent = await authRepository.findParentById(otpData.parent_id);
 
     if (!parent) {
       var error = new Error('Parent account not found');
@@ -111,17 +111,20 @@ const verifyOTP = async ({ otp_session_id, otp_code }) => {
       throw error;
     }
 
-    // Generate JWT — user_id = parent auth ID (e.g. PAR201 or UUID)
+    // School context comes from the OTP session (matched via the admission
+    // record's school), NOT from the auth user's stored school_id field.
+    var schoolId = otpData.school_id;
+
     var token = generateToken({
       user_id: parent.id,
       name: parent.name,
       role: 'PARENT',
-      school_id: parent.school_id
+      school_id: schoolId
     });
 
     otpStore.delete(otp_session_id);
 
-    console.log('OTP verified for parent: ' + parent.name + ' (School: ' + parent.school_id + ')');
+    console.log('OTP verified for parent: ' + parent.name + ' (School: ' + schoolId + ')');
 
     return {
       token: token,
@@ -131,7 +134,7 @@ const verifyOTP = async ({ otp_session_id, otp_code }) => {
         email: parent.email,
         phone: otpData.phone,
         role: 'PARENT',
-        school_id: parent.school_id,
+        school_id: schoolId,
         children_count: otpData.children_count
       }
     };
