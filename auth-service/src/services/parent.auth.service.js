@@ -114,6 +114,7 @@ const verifyOTP = async ({ otp_session_id, otp_code }) => {
     // Generate JWT — user_id = parent auth ID (e.g. PAR201 or UUID)
     var token = generateToken({
       user_id: parent.id,
+      name: parent.name,
       role: 'PARENT',
       school_id: parent.school_id
     });

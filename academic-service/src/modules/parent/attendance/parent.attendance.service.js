@@ -34,10 +34,18 @@ const assertValidMonth = (month) => {
 
 const getParentProfile = async (user) => {
   assertParentRole(user);
-  return parentRepository.getParentProfileWithChildren({
+  const profile = await parentRepository.getParentProfileWithChildren({
     schoolId: user.school_id,
     parentId: user.user_id
   });
+
+  // Override with name from auth service (which has the correct name)
+  // The JWT token comes from auth-service which has the latest user.name
+  if (user.name) {
+    profile.parent_name = user.name;
+  }
+
+  return profile;
 };
 
 const getParentStudents = async (user) => {
