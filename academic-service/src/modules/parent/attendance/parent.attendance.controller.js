@@ -9,6 +9,16 @@ const getParentProfile = async (req, res, next) => {
   }
 };
 
+const getStudentProfile = async (req, res, next) => {
+  try {
+    const { studentId } = req.params;
+    const student = await parentService.getStudentProfile({ user: req.user, studentId });
+    return res.status(200).json({ success: true, data: student });
+  } catch (error) {
+    return next(error);
+  }
+};
+
 const getParentStudents = async (req, res, next) => {
   try {
     const students = await parentService.getParentStudents(req.user);
@@ -61,6 +71,7 @@ const getRecentAttendance = async (req, res, next) => {
 
 module.exports = {
   getParentProfile,
+  getStudentProfile,
   getParentStudents,
   getAttendanceSummary,
   getMonthlyAttendance,

@@ -48,6 +48,16 @@ const getParentProfile = async (user) => {
   return profile;
 };
 
+const getStudentProfile = async ({ user, studentId }) => {
+  assertParentRole(user);
+  await assertStudentOwnership(studentId, user);
+
+  return parentRepository.getStudentProfileById({
+    schoolId: user.school_id,
+    studentId
+  });
+};
+
 const getParentStudents = async (user) => {
   assertParentRole(user);
   return parentRepository.getStudentsByParent({
@@ -110,6 +120,7 @@ const getRecentAttendance = async ({ user, studentId }) => {
 
 module.exports = {
   getParentProfile,
+  getStudentProfile,
   getParentStudents,
   getAttendanceSummary,
   getMonthlyAttendance,

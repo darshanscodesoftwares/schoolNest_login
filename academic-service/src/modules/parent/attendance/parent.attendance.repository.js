@@ -88,6 +88,63 @@ const getStudentsByParent = async ({ schoolId, parentId }) => {
   return rows;
 };
 
+const getStudentProfileById = async ({ schoolId, studentId }) => {
+  // Step 1: Get student from students table
+  const studentQuery = {
+    text: `SELECT
+             s.id AS student_id,
+             s.name AS student_name,
+             s.roll_no,
+             s.school_id,
+             c.name AS class_name,
+             c.section AS class_section
+           FROM students s
+           LEFT JOIN classes c ON s.class_id = c.id
+           WHERE s.school_id = $1 AND s.id = $2`,
+    values: [schoolId, studentId]
+  };
+  const studentResult = await pool.query(studentQuery);
+  if (studentResult.rows.length === 0) return null;
+
+  const student = studentResult.rows[0];
+
+  // Step 2: Get admission data for this student
+  const admissionQuery = {
+    text: `SELECT
+             ci.student_email,
+             ci.student_phone,
+             ai.current_street,
+             ai.current_city,
+             ai.current_state,
+             ai.current_pincode
+           FROM students_admission sa
+           LEFT JOIN personal_information pi ON sa.id = pi.student_id AND pi.school_id = $1
+           LEFT JOIN contact_information ci ON sa.id = ci.student_id AND ci.school_id = $1
+           LEFT JOIN address_information ai ON sa.id = ai.student_id AND ai.school_id = $1
+           WHERE sa.school_id = $1
+             AND LOWER(CONCAT(COALESCE(pi.first_name, ''), ' ', COALESCE(pi.last_name, ''))) = LOWER($2)
+           LIMIT 1`,
+    values: [schoolId, student.student_name]
+  };
+  const admissionResult = await pool.query(admissionQuery);
+  const admission = admissionResult.rows[0] || {};
+
+  return {
+    student_id: student.student_id,
+    student_name: student.student_name,
+    roll_no: student.roll_no,
+    school_id: student.school_id,
+    class_name: student.class_name,
+    class_section: student.class_section,
+    student_email: admission.student_email || null,
+    student_phone: admission.student_phone || null,
+    current_street: admission.current_street || null,
+    current_city: admission.current_city || null,
+    current_state: admission.current_state || null,
+    current_pincode: admission.current_pincode || null
+  };
+};
+
 const verifyStudentBelongsToParent = async ({ studentId, parentId, schoolId }) => {
   const query = {
     text: `SELECT id FROM students
@@ -138,6 +195,7 @@ const getRecentAttendance = async ({ schoolId, studentId }) => {
 
 module.exports = {
   getParentProfileWithChildren,
+  getStudentProfileById,
   getStudentsByParent,
   verifyStudentBelongsToParent,
   getAttendanceSummary,

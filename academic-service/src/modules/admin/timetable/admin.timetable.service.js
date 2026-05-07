@@ -108,13 +108,13 @@ const deletePeriod = async ({ schoolId, class_name, section, academic_year, day_
   return repo.deletePeriod({ schoolId, class_name, section, academic_year, day_of_week, period_number });
 };
 
-const setStatus = async ({ schoolId, class_name, section, academic_year, status }) => {
+const setStatus = async ({ schoolId, class_name, section, academic_year, status, teacher_ids }) => {
   if (!class_name || !section || !academic_year) {
     const e = new Error('class_name, section, and academic_year are required');
     e.statusCode = 400;
     throw e;
   }
-  return repo.setStatus({ schoolId, class_name, section, academic_year, status });
+  return repo.setStatus({ schoolId, class_name, section, academic_year, status, teacher_ids: teacher_ids || [] });
 };
 
 module.exports = { getPeriodConfig, upsertPeriodConfig, getTimetableGrid, upsertPeriod, deletePeriod, setStatus };

@@ -60,9 +60,16 @@ const deletePeriod = async (req, res, next) => {
 const publish = async (req, res, next) => {
   try {
     assertAdmin(req.user);
-    const { class_name, section, academic_year } = req.body;
-    await svc.setStatus({ schoolId: req.user.school_id, class_name, section, academic_year, status: 'PUBLISHED' });
-    return res.status(200).json({ success: true, message: 'Timetable published' });
+    const { class_name, section, academic_year, teacher_ids } = req.body;
+    await svc.setStatus({
+      schoolId: req.user.school_id,
+      class_name,
+      section,
+      academic_year,
+      status: 'PUBLISHED',
+      teacher_ids: teacher_ids || []
+    });
+    return res.status(200).json({ success: true, message: 'Timetable published', data: { class_name, section, academic_year, teacher_ids } });
   } catch (e) { return next(e); }
 };
 

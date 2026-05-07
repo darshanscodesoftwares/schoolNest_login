@@ -119,16 +119,24 @@ const deletePeriod = async ({ schoolId, class_name, section, academic_year, day_
   });
 };
 
-const setStatus = async ({ schoolId, class_name, section, academic_year, status }) => {
+const setStatus = async ({ schoolId, class_name, section, academic_year, status, teacher_ids }) => {
   // Get class_definition_id
   const classDefId = await getOrCreateClassDefinition({ schoolId, class_name, section, academic_year });
 
+  // Update timetable status for all entries in this class/section
   await pool.query({
     text: `UPDATE timetable SET status = $1
            WHERE class_definition_id = $2::uuid`,
     values: [status, classDefId]
   });
+
+  // teacher_ids are passed for logging/audit purposes - add logging if needed
+  if (teacher_ids && teacher_ids.length > 0) {
+    // You can add audit logging here if needed
+    // Example: LOG event that this timetable was published with these teachers
+  }
 };
+
 
 module.exports = {
   getOrCreateClassDefinition,

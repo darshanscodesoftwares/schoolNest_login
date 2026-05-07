@@ -6,6 +6,9 @@ const router = express.Router();
 // Get parent profile + all children info (for parent app login page)
 router.get('/profile', parentController.getParentProfile);
 
+// Get specific student profile details
+router.get('/profile/:studentId', parentController.getStudentProfile);
+
 router.get('/students', parentController.getParentStudents);
 
 router.get(
