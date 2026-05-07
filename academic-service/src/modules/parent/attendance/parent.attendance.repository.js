@@ -28,10 +28,10 @@ const getParentProfileWithChildren = async ({ schoolId, parentId }) => {
   };
   const studentsResult = await pool.query(studentsQuery);
 
-  // Step 3: For each student, try to get contact + address info from admission form
+  // Step 3: For each student, get contact + address info from admission form
   const children = await Promise.all(
     studentsResult.rows.map(async (student) => {
-      // Try to find admission record by matching school_id (and other criteria if available)
+      // Find admission record matching this student by name and school_id
       const admissionQuery = {
         text: `SELECT
                  ci.student_email,
@@ -41,11 +41,13 @@ const getParentProfileWithChildren = async ({ schoolId, parentId }) => {
                  ai.current_state,
                  ai.current_pincode
                FROM students_admission sa
+               LEFT JOIN personal_information pi ON sa.id = pi.student_id AND pi.school_id = $1
                LEFT JOIN contact_information ci ON sa.id = ci.student_id AND ci.school_id = $1
                LEFT JOIN address_information ai ON sa.id = ai.student_id AND ai.school_id = $1
                WHERE sa.school_id = $1
+                 AND LOWER(CONCAT(COALESCE(pi.first_name, ''), ' ', COALESCE(pi.last_name, ''))) = LOWER($2)
                LIMIT 1`,
-        values: [schoolId]
+        values: [schoolId, student.student_name]
       };
       const admissionResult = await pool.query(admissionQuery);
       const admission = admissionResult.rows[0] || {};
