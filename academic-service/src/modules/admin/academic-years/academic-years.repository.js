@@ -7,7 +7,7 @@ const academicYearsRepository = {
       text: `SELECT id, school_id, year_name, start_date, end_date, is_active, created_at
              FROM academic_years
              WHERE school_id = $1
-             ORDER BY year_name DESC`,
+             ORDER BY year_name ASC`,
       values: [school_id],
     };
     const result = await pool.query(query);

@@ -12,8 +12,8 @@ const assertAdmin = (user) => {
 const getPeriodConfig = async (req, res, next) => {
   try {
     assertAdmin(req.user);
-    const { class_name, academic_year } = req.query;
-    const data = await svc.getPeriodConfig({ schoolId: req.user.school_id, class_name, academic_year });
+    const { class_name, section, academic_year } = req.query;
+    const data = await svc.getPeriodConfig({ schoolId: req.user.school_id, class_name, section, academic_year });
     return res.status(200).json({ success: true, data });
   } catch (e) { return next(e); }
 };
@@ -21,8 +21,8 @@ const getPeriodConfig = async (req, res, next) => {
 const upsertPeriodConfig = async (req, res, next) => {
   try {
     assertAdmin(req.user);
-    const { class_name, academic_year, periods } = req.body;
-    const data = await svc.upsertPeriodConfig({ schoolId: req.user.school_id, class_name, academic_year, periods });
+    const { class_name, section, academic_year, periods } = req.body;
+    const data = await svc.upsertPeriodConfig({ schoolId: req.user.school_id, class_name, section, academic_year, periods });
     return res.status(200).json({ success: true, message: 'Period config saved', data });
   } catch (e) { return next(e); }
 };

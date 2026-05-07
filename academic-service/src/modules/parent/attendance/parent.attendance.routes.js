@@ -3,6 +3,9 @@ const parentController = require('./parent.attendance.controller');
 
 const router = express.Router();
 
+// Get parent profile + all children info (for parent app login page)
+router.get('/profile', parentController.getParentProfile);
+
 router.get('/students', parentController.getParentStudents);
 
 router.get(

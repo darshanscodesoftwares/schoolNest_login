@@ -24,13 +24,13 @@ const getOrCreateClassDefinition = async ({ schoolId, class_name, section, acade
   return rows[0].id;
 };
 
-const getPeriodConfig = async ({ schoolId, class_name, academic_year }) => {
+const getPeriodConfig = async ({ schoolId, class_name, section, academic_year }) => {
   const { rows } = await pool.query({
     text: `SELECT period_number, label, is_break, start_time, end_time
            FROM timetable_period_config
-           WHERE school_id = $1 AND class_name = $2 AND academic_year = $3
+           WHERE school_id = $1 AND class_name = $2 AND section = $3 AND academic_year = $4
            ORDER BY period_number ASC`,
-    values: [schoolId, class_name, academic_year]
+    values: [schoolId, class_name, section, academic_year]
   });
   return rows;
 };
@@ -45,25 +45,25 @@ const getPeriodSlot = async ({ schoolId, class_name, academic_year, period_numbe
   return rows[0] || null;
 };
 
-const replacePeriodConfig = async ({ schoolId, class_name, academic_year, periods }) => {
+const replacePeriodConfig = async ({ schoolId, class_name, section, academic_year, periods }) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
     await client.query({
-      text:   'DELETE FROM timetable_period_config WHERE school_id = $1 AND class_name = $2 AND academic_year = $3',
-      values: [schoolId, class_name, academic_year]
+      text:   'DELETE FROM timetable_period_config WHERE school_id = $1 AND class_name = $2 AND section = $3 AND academic_year = $4',
+      values: [schoolId, class_name, section, academic_year]
     });
     for (var i = 0; i < periods.length; i++) {
       var p = periods[i];
       await client.query({
         text: `INSERT INTO timetable_period_config
-                 (school_id, class_name, academic_year, period_number, label, is_break, start_time, end_time)
-               VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-        values: [schoolId, class_name, academic_year, p.period_number, p.label || '', p.is_break || false, p.start_time, p.end_time]
+                 (school_id, class_name, section, academic_year, period_number, label, is_break, start_time, end_time)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+        values: [schoolId, class_name, section, academic_year, p.period_number, p.label || '', p.is_break || false, p.start_time, p.end_time]
       });
     }
     await client.query('COMMIT');
-    return getPeriodConfig({ schoolId, class_name, academic_year });
+    return getPeriodConfig({ schoolId, class_name, section, academic_year });
   } catch (e) {
     await client.query('ROLLBACK');
     throw e;

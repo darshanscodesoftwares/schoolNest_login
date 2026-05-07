@@ -32,6 +32,14 @@ const assertValidMonth = (month) => {
   }
 };
 
+const getParentProfile = async (user) => {
+  assertParentRole(user);
+  return parentRepository.getParentProfileWithChildren({
+    schoolId: user.school_id,
+    parentId: user.user_id
+  });
+};
+
 const getParentStudents = async (user) => {
   assertParentRole(user);
   return parentRepository.getStudentsByParent({
@@ -93,6 +101,7 @@ const getRecentAttendance = async ({ user, studentId }) => {
 };
 
 module.exports = {
+  getParentProfile,
   getParentStudents,
   getAttendanceSummary,
   getMonthlyAttendance,

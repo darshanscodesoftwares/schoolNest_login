@@ -2,22 +2,22 @@ const repo = require('./admin.timetable.repository');
 
 const VALID_DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
-const getPeriodConfig = async ({ schoolId, class_name, academic_year }) => {
-  if (!class_name || !academic_year) {
-    const e = new Error('class_name and academic_year are required');
+const getPeriodConfig = async ({ schoolId, class_name, section, academic_year }) => {
+  if (!class_name || !section || !academic_year) {
+    const e = new Error('class_name, section, and academic_year are required');
     e.statusCode = 400;
     throw e;
   }
-  return repo.getPeriodConfig({ schoolId, class_name, academic_year });
+  return repo.getPeriodConfig({ schoolId, class_name, section, academic_year });
 };
 
-const upsertPeriodConfig = async ({ schoolId, class_name, academic_year, periods }) => {
-  if (!class_name || !academic_year || !Array.isArray(periods) || periods.length === 0) {
-    const e = new Error('class_name, academic_year, and periods[] are required');
+const upsertPeriodConfig = async ({ schoolId, class_name, section, academic_year, periods }) => {
+  if (!class_name || !section || !academic_year || !Array.isArray(periods) || periods.length === 0) {
+    const e = new Error('class_name, section, academic_year, and periods[] are required');
     e.statusCode = 400;
     throw e;
   }
-  return repo.replacePeriodConfig({ schoolId, class_name, academic_year, periods });
+  return repo.replacePeriodConfig({ schoolId, class_name, section, academic_year, periods });
 };
 
 const getTimetableGrid = async ({ schoolId, class_name, section, academic_year, day }) => {
@@ -34,7 +34,7 @@ const getTimetableGrid = async ({ schoolId, class_name, section, academic_year, 
 
   const days = day ? [day] : VALID_DAYS;
 
-  const config  = await repo.getPeriodConfig({ schoolId, class_name, academic_year });
+  const config  = await repo.getPeriodConfig({ schoolId, class_name, section, academic_year });
   const entries = await repo.getTimetableEntries({ schoolId, class_name, section, academic_year, days });
 
   // Build lookup: "day|period_number" → entry
