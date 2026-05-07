@@ -1,43 +1,38 @@
 const pool = require('../../../config/db');
+const authPool = require('../../../config/auth-db');
 
 const getParentProfileWithChildren = async ({ schoolId, parentId }) => {
-  const query = {
+  // Step 1: Get parent info from auth_db
+  const parentQuery = {
+    text: `SELECT name, email FROM users WHERE id = $1 AND school_id = $2`,
+    values: [parentId, schoolId]
+  };
+  const parentResult = await authPool.query(parentQuery);
+  if (parentResult.rows.length === 0) return null;
+
+  const { name: parent_name, email: parent_email } = parentResult.rows[0];
+
+  // Step 2: Get children from academic_db
+  const childrenQuery = {
     text: `SELECT
-             u.name AS parent_name,
-             u.email AS parent_email,
              s.id AS student_id,
              s.name AS student_name,
              s.roll_no,
              c.name AS class_name,
              c.section AS class_section
-           FROM auth_db.users u
-           LEFT JOIN students s ON u.id = s.parent_id AND s.school_id = $1
+           FROM students s
            LEFT JOIN classes c ON s.class_id = c.id
-           WHERE u.id = $2 AND u.school_id = $1
+           WHERE s.school_id = $1 AND s.parent_id = $2
            ORDER BY s.name ASC`,
     values: [schoolId, parentId]
   };
+  const childrenResult = await pool.query(childrenQuery);
 
-  const { rows } = await pool.query(query);
-
-  // Aggregate data: parent info + array of children
-  if (rows.length === 0) return null;
-
-  const parentData = {
-    parent_name: rows[0].parent_name,
-    parent_email: rows[0].parent_email,
-    children: rows
-      .filter(row => row.student_id) // Only rows with student data
-      .map(row => ({
-        student_id: row.student_id,
-        student_name: row.student_name,
-        roll_no: row.roll_no,
-        class_name: row.class_name,
-        class_section: row.class_section
-      }))
+  return {
+    parent_name,
+    parent_email,
+    children: childrenResult.rows
   };
-
-  return parentData;
 };
 
 const getStudentsByParent = async ({ schoolId, parentId }) => {
