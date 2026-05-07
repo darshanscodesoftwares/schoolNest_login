@@ -39,10 +39,10 @@ const getTimetableGrid = async (req, res, next) => {
 const upsertPeriod = async (req, res, next) => {
   try {
     assertAdmin(req.user);
-    const { class_name, section, academic_year, day_of_week, period_number, subject, teacher_id } = req.body;
+    const { class_name, section, academic_year, day_of_week, period_number, subject, teacher_id, status } = req.body;
     const data = await svc.upsertPeriod({
       schoolId: req.user.school_id,
-      class_name, section, academic_year, day_of_week, period_number, subject, teacher_id
+      class_name, section, academic_year, day_of_week, period_number, subject, teacher_id, status
     });
     return res.status(200).json({ success: true, message: 'Period saved', data });
   } catch (e) { return next(e); }

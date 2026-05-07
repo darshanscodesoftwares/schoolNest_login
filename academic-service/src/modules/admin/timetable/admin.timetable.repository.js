@@ -88,22 +88,23 @@ const getTimetableEntries = async ({ schoolId, class_name, section, academic_yea
   return rows;
 };
 
-const upsertPeriod = async ({ schoolId, class_name, section, academic_year, day_of_week, period_number, subject, teacher_id, start_time, end_time }) => {
+const upsertPeriod = async ({ schoolId, class_name, section, academic_year, day_of_week, period_number, subject, teacher_id, start_time, end_time, status }) => {
   // Get or create class_definition
   const classDefId = await getOrCreateClassDefinition({ schoolId, class_name, section, academic_year });
 
   const { rows } = await pool.query({
     text: `INSERT INTO timetable
              (school_id, class_definition_id, class_name, section, day_of_week, period_number, subject, teacher_id, start_time, end_time, status)
-           VALUES ($1, $2::uuid, $3, $4, $5, $6, $7, $8::uuid, $9, $10, 'DRAFT')
+           VALUES ($1, $2::uuid, $3, $4, $5, $6, $7, $8::uuid, $9, $10, $11)
            ON CONFLICT (school_id, class_name, section, day_of_week, period_number)
            DO UPDATE SET
              subject    = EXCLUDED.subject,
              teacher_id = EXCLUDED.teacher_id,
              start_time = EXCLUDED.start_time,
-             end_time   = EXCLUDED.end_time
+             end_time   = EXCLUDED.end_time,
+             status     = EXCLUDED.status
            RETURNING *`,
-    values: [schoolId, classDefId, class_name, section, day_of_week, period_number, subject, teacher_id, start_time, end_time]
+    values: [schoolId, classDefId, class_name, section, day_of_week, period_number, subject, teacher_id, start_time, end_time, status || 'DRAFT']
   });
   return rows[0];
 };

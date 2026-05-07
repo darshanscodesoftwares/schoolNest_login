@@ -72,7 +72,7 @@ const getTimetableGrid = async ({ schoolId, class_name, section, academic_year, 
   };
 };
 
-const upsertPeriod = async ({ schoolId, class_name, section, academic_year, day_of_week, period_number, subject, teacher_id }) => {
+const upsertPeriod = async ({ schoolId, class_name, section, academic_year, day_of_week, period_number, subject, teacher_id, status }) => {
   if (!class_name || !section || !academic_year || !day_of_week || period_number == null || !subject) {
     const e = new Error('class_name, section, academic_year, day_of_week, period_number, and subject are required');
     e.statusCode = 400;
@@ -95,7 +95,8 @@ const upsertPeriod = async ({ schoolId, class_name, section, academic_year, day_
     schoolId, class_name, section, academic_year, day_of_week, period_number, subject,
     teacher_id: teacher_id || null,
     start_time: slot.start_time,
-    end_time:   slot.end_time
+    end_time:   slot.end_time,
+    status: status || 'DRAFT'
   });
 };
 
