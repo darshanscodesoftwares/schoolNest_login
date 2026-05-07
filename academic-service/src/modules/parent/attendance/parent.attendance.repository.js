@@ -12,28 +12,63 @@ const getParentProfileWithChildren = async ({ schoolId, parentId }) => {
 
   const parent_name = parentResult.rows[0].name;
 
-  // Step 2: Get children + student email from academic_db
-  const childrenQuery = {
+  // Step 2: Get children from students table
+  const studentsQuery = {
     text: `SELECT
              s.id AS student_id,
              s.name AS student_name,
              s.roll_no,
              c.name AS class_name,
-             c.section AS class_section,
-             ci.student_email
+             c.section AS class_section
            FROM students s
            LEFT JOIN classes c ON s.class_id = c.id
-           LEFT JOIN students_admission sa ON s.id::text LIKE sa.id::text
-           LEFT JOIN contact_information ci ON sa.id = ci.student_id AND ci.school_id = $1
            WHERE s.school_id = $1 AND s.parent_id = $2
            ORDER BY s.name ASC`,
     values: [schoolId, parentId]
   };
-  const childrenResult = await pool.query(childrenQuery);
+  const studentsResult = await pool.query(studentsQuery);
+
+  // Step 3: For each student, try to get contact + address info from admission form
+  const children = await Promise.all(
+    studentsResult.rows.map(async (student) => {
+      // Try to find admission record by matching school_id (and other criteria if available)
+      const admissionQuery = {
+        text: `SELECT
+                 ci.student_email,
+                 ci.student_phone,
+                 ai.current_street,
+                 ai.current_city,
+                 ai.current_state,
+                 ai.current_pincode
+               FROM students_admission sa
+               LEFT JOIN contact_information ci ON sa.id = ci.student_id AND ci.school_id = $1
+               LEFT JOIN address_information ai ON sa.id = ai.student_id AND ai.school_id = $1
+               WHERE sa.school_id = $1
+               LIMIT 1`,
+        values: [schoolId]
+      };
+      const admissionResult = await pool.query(admissionQuery);
+      const admission = admissionResult.rows[0] || {};
+
+      return {
+        student_id: student.student_id,
+        student_name: student.student_name,
+        roll_no: student.roll_no,
+        class_name: student.class_name,
+        class_section: student.class_section,
+        student_email: admission.student_email || null,
+        student_phone: admission.student_phone || null,
+        current_street: admission.current_street || null,
+        current_city: admission.current_city || null,
+        current_state: admission.current_state || null,
+        current_pincode: admission.current_pincode || null
+      };
+    })
+  );
 
   return {
     parent_name,
-    children: childrenResult.rows
+    children
   };
 };
 
