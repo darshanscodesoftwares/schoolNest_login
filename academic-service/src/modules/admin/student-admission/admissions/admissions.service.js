@@ -34,16 +34,31 @@ const runBridge2 = async (schoolId, admissionId) => {
     const studentName = `${personal.first_name} ${personal.last_name}`.trim();
 
     // Resolve admin school_class → teacher/parent classes table
-    // Find classes.id WHERE school_id AND name matches school_classes.class_name AND section matches
+    const classNameRes = await pool.query(
+      `SELECT class_name FROM school_classes WHERE id = $1 AND school_id = $2 LIMIT 1`,
+      [academic.class_id, schoolId]
+    );
+    const resolvedClassName = classNameRes.rows[0] && classNameRes.rows[0].class_name;
+
     const classRes = await pool.query(
-      `SELECT c.id FROM classes c
-       JOIN school_classes sc ON sc.class_name = c.name
-       WHERE c.school_id = $1 AND sc.id = $2 AND c.section = $3
-       LIMIT 1`,
-      [schoolId, academic.class_id, academic.section]
+      `SELECT id FROM classes WHERE school_id = $1 AND name = $2 AND section = $3 LIMIT 1`,
+      [schoolId, resolvedClassName, academic.section]
     );
 
-    const classId = (classRes.rows[0] && classRes.rows[0].id) || null;
+    let classId = (classRes.rows[0] && classRes.rows[0].id) || null;
+
+    // No teacher assigned yet — create a placeholder row so the student can be enrolled now.
+    // Bridge 3 will claim this row (update teacher_id in-place) when a teacher is assigned.
+    if (!classId && resolvedClassName) {
+      const placeholderRes = await pool.query(
+        `INSERT INTO classes (school_id, name, section, subject, teacher_id)
+         VALUES ($1, $2, $3, 'General', 'SYSTEM')
+         RETURNING id`,
+        [schoolId, resolvedClassName, academic.section]
+      );
+      classId = placeholderRes.rows[0] && placeholderRes.rows[0].id;
+      console.log(`Bridge 2: created placeholder class row for ${resolvedClassName} ${academic.section} (id: ${classId})`);
+    }
 
     // ── Create parent in auth_db ────────────────────────────────────────────
     let parentAuthId = null;

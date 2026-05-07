@@ -17,13 +17,26 @@ const syncToClassesTable = async (school_id, class_id, section_name, teacher_id)
 
     const className = classRes.rows[0].class_name;
 
-    // UPSERT into classes table (teacher/parent modules use this)
-    await pool.query(
-      `INSERT INTO classes (school_id, name, section, subject, teacher_id)
-       VALUES ($1, $2, $3, $4, $5)
-       ON CONFLICT DO NOTHING`,
-      [school_id, className, section_name, 'General', teacher_id]
+    // Claim Bridge 2 placeholder if one exists — updates in-place so students' class_id refs stay valid.
+    // Otherwise insert a fresh row.
+    const placeholderRes = await pool.query(
+      `SELECT id FROM classes WHERE school_id = $1 AND name = $2 AND section = $3 AND teacher_id = 'SYSTEM' LIMIT 1`,
+      [school_id, className, section_name]
     );
+
+    if (placeholderRes.rows[0]) {
+      await pool.query(
+        `UPDATE classes SET teacher_id = $1, subject = 'General' WHERE id = $2`,
+        [teacher_id, placeholderRes.rows[0].id]
+      );
+    } else {
+      await pool.query(
+        `INSERT INTO classes (school_id, name, section, subject, teacher_id)
+         VALUES ($1, $2, $3, $4, $5)
+         ON CONFLICT DO NOTHING`,
+        [school_id, className, section_name, 'General', teacher_id]
+      );
+    }
 
     console.log(`Bridge 3: classes table synced — ${className} ${section_name} → teacher ${teacher_id}`);
   } catch (error) {

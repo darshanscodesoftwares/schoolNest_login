@@ -26,3 +26,6 @@ build/
 
 # Uploads
 uploads/
+
+# One-off local maintenance scripts (run from local against local/Render)
+backfill-bridge2.js
