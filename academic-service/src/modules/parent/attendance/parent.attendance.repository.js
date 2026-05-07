@@ -10,7 +10,7 @@ const getParentProfileWithChildren = async ({ schoolId, parentId }) => {
   const parentResult = await authPool.query(parentQuery);
   if (parentResult.rows.length === 0) return null;
 
-  const { name: parent_name, email: parent_email } = parentResult.rows[0];
+  const parent_name = parentResult.rows[0].name;
 
   // Step 2: Get children + student email from academic_db
   const childrenQuery = {
@@ -33,7 +33,6 @@ const getParentProfileWithChildren = async ({ schoolId, parentId }) => {
 
   return {
     parent_name,
-    parent_email,
     children: childrenResult.rows
   };
 };
