@@ -12,12 +12,13 @@ const getParentProfileWithChildren = async ({ schoolId, parentId }) => {
 
   const parent_name = parentResult.rows[0].name;
 
-  // Step 2: Get children from students table
+  // Step 2: Get children from students table (filtered by school_id)
   const studentsQuery = {
     text: `SELECT
              s.id AS student_id,
              s.name AS student_name,
              s.roll_no,
+             s.school_id,
              c.name AS class_name,
              c.section AS class_section
            FROM students s
@@ -56,6 +57,7 @@ const getParentProfileWithChildren = async ({ schoolId, parentId }) => {
         student_id: student.student_id,
         student_name: student.student_name,
         roll_no: student.roll_no,
+        school_id: student.school_id,
         class_name: student.class_name,
         class_section: student.class_section,
         student_email: admission.student_email || null,
