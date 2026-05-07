@@ -52,10 +52,18 @@ const getStudentProfile = async ({ user, studentId }) => {
   assertParentRole(user);
   await assertStudentOwnership(studentId, user);
 
-  return parentRepository.getStudentProfileById({
+  const profile = await parentRepository.getStudentProfileById({
     schoolId: user.school_id,
     studentId
   });
+
+  // Override with name from auth service (which has the correct name)
+  // The JWT token comes from auth-service which has the latest user.name
+  if (user.name) {
+    profile.parent_name = user.name;
+  }
+
+  return profile;
 };
 
 const getParentStudents = async (user) => {
