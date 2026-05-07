@@ -12,16 +12,19 @@ const getParentProfileWithChildren = async ({ schoolId, parentId }) => {
 
   const { name: parent_name, email: parent_email } = parentResult.rows[0];
 
-  // Step 2: Get children from academic_db
+  // Step 2: Get children + student email from academic_db
   const childrenQuery = {
     text: `SELECT
              s.id AS student_id,
              s.name AS student_name,
              s.roll_no,
              c.name AS class_name,
-             c.section AS class_section
+             c.section AS class_section,
+             ci.student_email
            FROM students s
            LEFT JOIN classes c ON s.class_id = c.id
+           LEFT JOIN students_admission sa ON s.id::text LIKE sa.id::text
+           LEFT JOIN contact_information ci ON sa.id = ci.student_id AND ci.school_id = $1
            WHERE s.school_id = $1 AND s.parent_id = $2
            ORDER BY s.name ASC`,
     values: [schoolId, parentId]
