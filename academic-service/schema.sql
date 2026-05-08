@@ -327,3 +327,66 @@ CREATE TABLE IF NOT EXISTS payments (
 CREATE INDEX IF NOT EXISTS idx_payments_school ON payments (school_id);
 CREATE INDEX IF NOT EXISTS idx_payments_student ON payments (school_id, student_id);
 CREATE INDEX IF NOT EXISTS idx_payments_fee ON payments (student_fee_id);
+
+-- ============================================================
+-- Migration 027: Global subject catalog + section-aware subject teacher assignment
+-- ============================================================
+
+-- 1. subject_catalog table (super-admin owned, like class_templates)
+CREATE TABLE IF NOT EXISTS subject_catalog (
+  id            UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+  subject_name  VARCHAR(100) UNIQUE NOT NULL,
+  order_number  INT          NOT NULL DEFAULT 0,
+  is_active     BOOLEAN      NOT NULL DEFAULT TRUE,
+  created_at    TIMESTAMP    NOT NULL DEFAULT NOW(),
+  updated_at    TIMESTAMP    NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_subject_catalog_active ON subject_catalog (is_active);
+
+-- Seed the 14 canonical subjects
+INSERT INTO subject_catalog (subject_name, order_number) VALUES
+  ('Biology',            1),
+  ('Chemistry',          2),
+  ('Computer Science',   3),
+  ('English',            4),
+  ('French',             5),
+  ('Geography',          6),
+  ('Hindi',              7),
+  ('History',            8),
+  ('Maths',              9),
+  ('Physical Education', 10),
+  ('Physics',            11),
+  ('Science',            12),
+  ('Social Science',     13),
+  ('Tamil',              14)
+ON CONFLICT (subject_name) DO NOTHING;
+
+-- 2. Add catalog_id to subjects table
+ALTER TABLE subjects
+  ADD COLUMN IF NOT EXISTS catalog_id UUID REFERENCES subject_catalog(id);
+
+CREATE INDEX IF NOT EXISTS idx_subjects_catalog ON subjects (catalog_id);
+
+-- 3. Add section_name to subject_class_assign table
+ALTER TABLE subject_class_assign
+  ADD COLUMN IF NOT EXISTS section_name VARCHAR(50);
+
+-- Update unique constraint to include section_name
+ALTER TABLE subject_class_assign
+  DROP CONSTRAINT IF EXISTS subject_class_assign_school_id_subject_id_class_id_key;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conname = 'subject_class_assign_unique_per_section'
+  ) THEN
+    ALTER TABLE subject_class_assign
+    ADD CONSTRAINT subject_class_assign_unique_per_section
+    UNIQUE (school_id, subject_id, class_id, section_name);
+  END IF;
+END $$;
+
+CREATE INDEX IF NOT EXISTS idx_subject_class_assign_section
+  ON subject_class_assign (school_id, class_id, section_name);

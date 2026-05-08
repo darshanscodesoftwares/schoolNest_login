@@ -276,7 +276,7 @@ CREATE TABLE IF NOT EXISTS student_enquiries (
   contact_number      VARCHAR(20)  NOT NULL,
   email               VARCHAR(150),
   class_id            UUID         REFERENCES school_classes(id),
-  academic_year       VARCHAR(20),
+  academic_year       UUID         REFERENCES academic_years(id) ON DELETE SET NULL,
   preferred_medium    VARCHAR(50),
   current_school_name VARCHAR(255),
   residential_area    VARCHAR(255),
@@ -292,6 +292,7 @@ CREATE TABLE IF NOT EXISTS student_enquiries (
 );
 CREATE INDEX IF NOT EXISTS idx_student_enquiries_school  ON student_enquiries(school_id);
 CREATE INDEX IF NOT EXISTS idx_student_enquiries_status ON student_enquiries(school_id, enquiry_status);
+CREATE INDEX IF NOT EXISTS idx_student_enquiries_academic_year ON student_enquiries(school_id, academic_year);
 
 -- ============================================================
 -- STUDENT ADMISSIONS (Full lifecycle)
