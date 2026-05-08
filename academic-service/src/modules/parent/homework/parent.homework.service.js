@@ -11,7 +11,7 @@ const assertParentRole = (user) => {
   }
 };
 
-const getHomework = async ({ user, tab }) => {
+const getHomework = async ({ user, tab, studentId }) => {
   assertParentRole(user);
 
   const resolvedTab = tab || 'today';
@@ -24,10 +24,22 @@ const getHomework = async ({ user, tab }) => {
   }
 
   // Get all children of this parent
-  const students = await homeworkRepository.getStudentsByParent({
+  let students = await homeworkRepository.getStudentsByParent({
     schoolId: user.school_id,
     parentId: user.user_id
   });
+
+  // Optional: filter to a single child. Reject if the studentId isn't theirs.
+  if (studentId) {
+    const owned = students.find((s) => s.student_id === studentId);
+    if (!owned) {
+      const error = new Error('Parent not authorized for this student');
+      error.statusCode = 403;
+      error.code = 'FORBIDDEN';
+      throw error;
+    }
+    students = [owned];
+  }
 
   if (!students.length) {
     return {

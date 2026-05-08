@@ -2,11 +2,12 @@ const homeworkService = require('./parent.homework.service');
 
 const getHomework = async (req, res, next) => {
   try {
-    const { tab } = req.query;
+    const { tab, student_id } = req.query;
 
     const result = await homeworkService.getHomework({
       user: req.user,
-      tab
+      tab,
+      studentId: student_id
     });
 
     return res.status(200).json(result);
