@@ -276,12 +276,14 @@ const subjectAssignController = {
           return {
             id: subject.id,
             subject_name: subject.subject_name,
+            catalog_id: subject.catalog_id,
             class_count: enrichedAssignments.length,
             class_display: classDisplay,  // "LKG-12th" or "LKG UKG 6th 7th..."
             assignments: enrichedAssignments.map((assignment) => ({
               assignment_id: assignment.id,
               class_id: assignment.class_id,
               class_name: assignment.class_name,
+              section_name: assignment.section_name,
               teacher_id: assignment.teacher_id,
               teacher_name: assignment.teacher_name,
               created_at: assignment.created_at,
@@ -549,6 +551,7 @@ const subjectAssignController = {
           assignment_id: row.assignment_id,
           teacher_id: row.teacher_id,
           teacher_name: row.teacher_name,
+          section_name: row.section_name,
           created_at: row.created_at,
           updated_at: row.updated_at,
         });
