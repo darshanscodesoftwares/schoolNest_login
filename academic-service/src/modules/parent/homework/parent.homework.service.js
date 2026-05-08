@@ -45,23 +45,27 @@ const getHomework = async ({ user, tab }) => {
         schoolId: user.school_id,
         classId: student.class_id,
         tab: resolvedTab
-      })
+      }).then((rows) => ({ student, rows }))
     )
   );
 
-  // Flatten + deduplicate (siblings may share a class)
-  const seen = new Set();
-  const homework = [];
-  for (const arr of homeworkArrays) {
-    for (const hw of arr) {
-      if (!seen.has(hw.id)) {
-        seen.add(hw.id);
-        homework.push(hw);
+  // Flatten + dedupe by homework id, accumulating which children each homework applies to.
+  // A parent with siblings in the same class sees one homework row tagged with both kids.
+  const byId = new Map();
+  for (const { student, rows } of homeworkArrays) {
+    for (const hw of rows) {
+      const existing = byId.get(hw.id);
+      const studentRef = { student_id: student.student_id, student_name: student.name };
+      if (existing) {
+        existing.students.push(studentRef);
+      } else {
+        byId.set(hw.id, Object.assign({}, hw, { students: [studentRef] }));
       }
     }
   }
 
-  homework.sort((a, b) => new Date(a.due_date) - new Date(b.due_date));
+  const homework = Array.from(byId.values())
+    .sort((a, b) => new Date(a.due_date) - new Date(b.due_date));
 
   return {
     success: true,
