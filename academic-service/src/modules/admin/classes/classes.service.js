@@ -192,6 +192,26 @@ const bulkSaveStructure = async ({ schoolId, classTemplateIds, sectionTemplateId
   return repo.bulkSaveStructureTxn({ schoolId, classTemplates, sectionTemplates });
 };
 
+// Flat structure for FE pickers: every class with its sections inline.
+const getStructure = async ({ schoolId }) => {
+  const classes = await repo.listClasses(schoolId);
+  const out = [];
+  for (const cls of classes) {
+    const sections = await repo.listSections({ schoolId, classId: cls.id });
+    out.push({
+      class_id:    cls.id,
+      class_name:  cls.class_name,
+      template_id: cls.template_id,
+      sections:    sections.map((s) => ({
+        class_section_id: s.id,
+        section_name:     s.section_name,
+        is_default:       s.is_default
+      }))
+    });
+  }
+  return out;
+};
+
 module.exports = {
   createClassWithSections,
   listClasses,
@@ -200,5 +220,6 @@ module.exports = {
   attachSection,
   detachSection,
   deleteClass,
-  bulkSaveStructure
+  bulkSaveStructure,
+  getStructure
 };

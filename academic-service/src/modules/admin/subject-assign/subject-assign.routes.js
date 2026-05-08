@@ -12,6 +12,18 @@ router.get("/subject-assign", subjectAssignController.getAllSubjects);
 // Specific routes MUST be defined before generic :subjectId/:classId routes
 // to prevent path conflicts (Express matches routes in order)
 
+// GET /subject-assign/teacher/:teacherId — list (subject, class, section) for a teacher
+router.get(
+  "/subject-assign/teacher/:teacherId",
+  subjectAssignController.getAssignmentsForTeacher
+);
+
+// PUT /subject-assign/:subjectId/assignments — bulk replace (powers EDIT modal)
+router.put(
+  "/subject-assign/:subjectId/assignments",
+  subjectAssignController.bulkReplaceAssignments
+);
+
 // GET /subject-assign/classes/full-list - Get all classes with subjects and teachers
 router.get(
   "/subject-assign/classes/full-list",

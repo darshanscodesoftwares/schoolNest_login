@@ -10,6 +10,10 @@ router.post('/', ctrl.createClassWithSections);
 // Must come before the /:classId routes so 'structure' isn't read as a UUID.
 router.post('/structure', ctrl.bulkSaveStructure);
 
+// Flat list of every (class + sections[]) pair for this school — used by FE
+// pickers (subject teacher assignment, etc.). Must come before /:classId.
+router.get('/structure', ctrl.getStructure);
+
 // List every class this school has onboarded (with section_count)
 router.get('/', ctrl.listClasses);
 

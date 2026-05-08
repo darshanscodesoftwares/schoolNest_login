@@ -89,6 +89,14 @@ const bulkSaveStructure = async (req, res, next) => {
   } catch (e) { return next(e); }
 };
 
+const getStructure = async (req, res, next) => {
+  try {
+    assertAdmin(req.user);
+    const data = await svc.getStructure({ schoolId: req.user.school_id });
+    return res.status(200).json({ success: true, data });
+  } catch (e) { return next(e); }
+};
+
 const deleteClass = async (req, res, next) => {
   try {
     assertAdmin(req.user);
@@ -108,5 +116,6 @@ module.exports = {
   attachSection,
   detachSection,
   deleteClass,
-  bulkSaveStructure
+  bulkSaveStructure,
+  getStructure
 };

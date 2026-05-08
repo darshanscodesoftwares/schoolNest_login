@@ -167,12 +167,13 @@ const formatClassDisplay = (assignments) => {
 };
 
 const subjectAssignController = {
-  // Create subject with batch class assignments
+  // Create subject with batch class+section assignments
   // POST /api/v1/academic/admin/subject-assign
-  // Body: { subject_name, class_assignments: [{class_id, teacher_id}, ...] }
+  // New body: { catalog_id, class_assignments: [{class_id, section_name, teacher_id}, ...] }
+  // Legacy body: { subject_name, class_assignments: [{class_id, teacher_id}, ...] }
   createSubject: async (req, res, next) => {
     try {
-      const { subject_name, class_assignments } = req.body;
+      const { subject_name, catalog_id, class_assignments } = req.body;
       const school_id = req.user.school_id;
       const user = req.user;
 
@@ -180,7 +181,8 @@ const subjectAssignController = {
         user,
         school_id,
         subject_name,
-        class_assignments
+        class_assignments,
+        catalog_id
       );
 
       return res.status(201).json({
@@ -191,6 +193,51 @@ const subjectAssignController = {
           assignments: result.assignments,
         },
       });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  // PUT /api/v1/academic/admin/subject-assign/:subjectId/assignments
+  // Bulk replace ALL assignments for one of the school's subjects.
+  // Body: { catalog_id?, assignments: [{class_id, section_name, teacher_id}] }
+  bulkReplaceAssignments: async (req, res, next) => {
+    try {
+      const { subjectId } = req.params;
+      const { catalog_id, assignments } = req.body || {};
+      const school_id = req.user.school_id;
+
+      const result = await subjectAssignService.bulkReplaceAssignments({
+        user: req.user,
+        school_id,
+        subject_id: subjectId,
+        catalog_id,
+        assignments,
+      });
+
+      return res.json({
+        success: true,
+        message: "Subject assignments replaced",
+        data: result,
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  // GET /api/v1/academic/admin/subject-assign/teacher/:teacherId
+  getAssignmentsForTeacher: async (req, res, next) => {
+    try {
+      const { teacherId } = req.params;
+      const school_id = req.user.school_id;
+
+      const data = await subjectAssignService.getAssignmentsForTeacher({
+        user: req.user,
+        school_id,
+        teacher_id: teacherId,
+      });
+
+      return res.json({ success: true, data });
     } catch (error) {
       next(error);
     }

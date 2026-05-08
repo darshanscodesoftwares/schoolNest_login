@@ -15,24 +15,38 @@ const assertAdminRole = (user) => {
 };
 
 const subjectAssignService = {
-  // Create subject with batch class assignments
+  // Create assignments for a school's subject (catalog-driven).
+  //
+  // New contract: caller MUST provide catalog_id (the global subject) + each
+  // assignment carries class_id, section_name, teacher_id. The school's
+  // `subjects` row for that catalog entry is created on demand (idempotent).
+  //
+  // Legacy contract: subject_name + class-only assignments. Kept so older
+  // callers still work — but the resulting rows have section_name = NULL,
+  // which the new EDIT flow will surface for cleanup.
   createSubjectWithAssignments: async (
     user,
     school_id,
     subject_name,
-    classAssignments
+    classAssignments,
+    catalog_id // optional; preferred path
   ) => {
     assertAdminRole(user);
 
-    if (!school_id || !subject_name || !classAssignments || classAssignments.length === 0) {
+    if (!school_id || !classAssignments || classAssignments.length === 0) {
       const error = new Error(
-        "Missing required fields: school_id, subject_name, classAssignments"
+        "Missing required fields: school_id, classAssignments"
       );
       error.statusCode = 400;
       throw error;
     }
 
-    // Validate each assignment
+    if (!catalog_id && !subject_name) {
+      const error = new Error("Either catalog_id or subject_name is required");
+      error.statusCode = 400;
+      throw error;
+    }
+
     const pool = require("../../../config/db");
     for (const assignment of classAssignments) {
       if (!assignment.class_id || !assignment.teacher_id) {
@@ -42,14 +56,20 @@ const subjectAssignService = {
         error.statusCode = 400;
         throw error;
       }
+      // section_name is optional for legacy callers but required for catalog flow
+      if (catalog_id && !assignment.section_name) {
+        const error = new Error(
+          "Each assignment must include section_name when using catalog_id"
+        );
+        error.statusCode = 400;
+        throw error;
+      }
 
-      // Validate teacher_id is a valid UUID and exists in teacher_records
       try {
         const teacherCheck = await pool.query(
           `SELECT id FROM teacher_records WHERE id = $1::uuid AND school_id = $2 LIMIT 1`,
           [assignment.teacher_id, school_id]
         );
-
         if (!teacherCheck.rows || teacherCheck.rows.length === 0) {
           const error = new Error(
             `Invalid teacher_id: ${assignment.teacher_id}. Teacher not found in school.`
@@ -59,7 +79,6 @@ const subjectAssignService = {
         }
       } catch (err) {
         if (err.statusCode === 400) throw err;
-        // If UUID cast fails, teacher_id is invalid format
         const error = new Error(
           `Invalid teacher_id format: ${assignment.teacher_id}. Must be a valid UUID.`
         );
@@ -68,36 +87,111 @@ const subjectAssignService = {
       }
     }
 
-    // Check if subject already exists
-    let subject = await subjectAssignRepository.getSubjectByName({
-      school_id,
-      subject_name,
-    });
-
-    // Create subject only if it doesn't exist
-    if (!subject) {
-      subject = await subjectAssignRepository.createSubject({
+    // Resolve the subjects row — prefer catalog import, fall back to legacy
+    let subject;
+    if (catalog_id) {
+      subject = await subjectAssignRepository.importFromCatalog({
+        school_id,
+        catalog_id,
+      });
+    } else {
+      subject = await subjectAssignRepository.getSubjectByName({
         school_id,
         subject_name,
       });
+      if (!subject) {
+        subject = await subjectAssignRepository.createSubject({
+          school_id,
+          subject_name,
+        });
+      }
     }
 
-    // Create batch assignments
-    const assignmentsToCreate = classAssignments.map((assignment) => ({
+    const assignmentsToCreate = classAssignments.map((a) => ({
       school_id,
       subject_id: subject.id,
-      class_id: assignment.class_id,
-      teacher_id: assignment.teacher_id,
+      class_id: a.class_id,
+      section_name: a.section_name || null,
+      teacher_id: a.teacher_id,
+      sequence: a.sequence,
     }));
 
     const results = await subjectAssignRepository.createBatchSubjectClassAssign(
       assignmentsToCreate
     );
 
-    return {
-      subject,
-      assignments: results,
-    };
+    return { subject, assignments: results };
+  },
+
+  // Bulk replace ALL assignments for one of the school's subjects. Powers the
+  // EDIT modal's Save button — caller sends the desired final list, server
+  // diffs and applies inserts/updates/deletes in one transaction.
+  bulkReplaceAssignments: async ({
+    user,
+    school_id,
+    subject_id,
+    catalog_id, // optional: re-point this subject at a different catalog entry
+    assignments,
+  }) => {
+    assertAdminRole(user);
+
+    if (!school_id || !subject_id || !Array.isArray(assignments)) {
+      const error = new Error("school_id, subject_id, assignments[] are required");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    // Validate every assignment up front
+    const pool = require("../../../config/db");
+    for (const a of assignments) {
+      if (!a.class_id || !a.section_name || !a.teacher_id) {
+        const error = new Error(
+          "Each assignment must include class_id, section_name, teacher_id"
+        );
+        error.statusCode = 400;
+        throw error;
+      }
+      const teacherCheck = await pool.query(
+        `SELECT id FROM teacher_records WHERE id = $1::uuid AND school_id = $2 LIMIT 1`,
+        [a.teacher_id, school_id]
+      );
+      if (!teacherCheck.rows[0]) {
+        const error = new Error(`Invalid teacher_id: ${a.teacher_id}`);
+        error.statusCode = 400;
+        throw error;
+      }
+    }
+
+    // Re-point catalog if requested
+    if (catalog_id) {
+      await pool.query(
+        `UPDATE subjects
+         SET catalog_id = $1::uuid,
+             subject_name = COALESCE((SELECT subject_name FROM subject_catalog WHERE id = $1::uuid), subject_name),
+             updated_at = NOW()
+         WHERE id = $2::uuid AND school_id = $3`,
+        [catalog_id, subject_id, school_id]
+      );
+    }
+
+    const results = await subjectAssignRepository.bulkReplaceAssignments({
+      school_id,
+      subject_id,
+      assignments,
+    });
+
+    return { subject_id, assignments: results };
+  },
+
+  // List all (subject, class, section) a teacher is assigned to in this school.
+  getAssignmentsForTeacher: async ({ user, school_id, teacher_id }) => {
+    assertAdminRole(user);
+    if (!school_id || !teacher_id) {
+      const error = new Error("school_id and teacher_id are required");
+      error.statusCode = 400;
+      throw error;
+    }
+    return subjectAssignRepository.getAssignmentsForTeacher({ school_id, teacher_id });
   },
 
   // Get all subjects for a school

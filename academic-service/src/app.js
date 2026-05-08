@@ -39,6 +39,7 @@ const driverRecordsRoutes        = require('./modules/admin/staff-students/drive
 const otherStaffRoutes           = require('./modules/admin/staff-students/other-staff/other-staff.routes');
 const classesAssignRoutes        = require('./modules/admin/classes-assign/classes-assign.routes');
 const subjectAssignRoutes        = require('./modules/admin/subject-assign/subject-assign.routes');
+const subjectCatalogRoutes       = require('./modules/admin/subject-catalog/subject-catalog.routes');
 const sectionsRoutes             = require('./modules/admin/Exams&Results/sections.routes');
 const examsRoutes                = require('./modules/admin/Exams&Results/exams.routes');
 const announcementsRoutes        = require('./modules/admin/announcements/announcements.routes');
@@ -112,6 +113,7 @@ app.use('/api/v1/academic/admin/drivers', authMiddleware, driverRecordsRoutes);
 app.use('/api/v1/academic/admin/other-staff', authMiddleware, otherStaffRoutes);
 app.use('/api/v1/academic/admin', authMiddleware, classesAssignRoutes);
 app.use('/api/v1/academic/admin', authMiddleware, subjectAssignRoutes);
+app.use('/api/v1/academic/admin', authMiddleware, subjectCatalogRoutes);
 app.use('/api/v1/academic/admin', authMiddleware, sectionsRoutes);
 app.use('/api/v1/academic/admin', authMiddleware, examsRoutes);
 app.use('/api/v1/academic/admin/announcements', authMiddleware, announcementsRoutes);
